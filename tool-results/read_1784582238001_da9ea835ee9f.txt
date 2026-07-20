@@ -1,0 +1,759 @@
+     1→# TeslaPrimeCapital — Phase 2: File Structure & Technical Architecture Specification
+     2→
+     3→> **Document Type:** Technical Architecture — File Structure
+     4→> **Phase:** 2 — Managed Investment Plan Platform
+     5→> **Version:** 1.0.0
+     6→> **Last Updated:** 2025-01-01
+     7→> **Status:** Final
+     8→
+     9→---
+    10→
+    11→## Table of Contents
+    12→
+    13→1. [Monorepo Structure Overview](#1-monorepo-structure-overview)
+    14→2. [Root Configuration Files](#2-root-configuration-files)
+    15→3. [Frontend Package Structure](#3-frontend-package-structure)
+    16→4. [Backend Package Structure](#4-backend-package-structure)
+    17→5. [Worker Package Structure](#5-worker-package-structure)
+    18→6. [Shared Package Structure](#6-shared-package-structure)
+    19→7. [Docker Configuration](#7-docker-configuration)
+    20→8. [Environment Variable Documentation](#8-environment-variable-documentation)
+    21→9. [Import Conventions](#9-import-conventions)
+    22→10. [Naming Conventions](#10-naming-conventions)
+    23→11. [Dependency Management](#11-dependency-management)
+    24→
+    25→---
+    26→
+    27→## 1. Monorepo Structure Overview
+    28→
+    29→### 1.1 Why a Monorepo
+    30→
+    31→TeslaPrimeCapital adopts a monorepo architecture managed with **pnpm workspaces** because the project consists of three tightly coupled deployable units (frontend, backend API, background worker) that share TypeScript types, validation schemas, constants, and business-domain knowledge. A monorepo ensures that a single `pnpm install` at the repository root hydrates all workspace dependencies atomically, eliminating version skew between the shared package and its consumers. Cross-cutting changes — for example, adding a new investment plan enum to `packages/shared` and immediately consuming it in the backend controller and the frontend dropdown — are performed in a single commit, which simplifies code review, refactoring, and release management. The alternative (separate repositories with published npm packages) would introduce coordination overhead that is unnecessary at this project scale and deployment cadence. Additionally, the monorepo structure allows Turborepo to cache build artifacts across packages, dramatically reducing CI build times by only rebuilding packages whose dependencies have changed.
+    32→
+    33→### 1.2 Workspace Package Names
+    34→
+    35→| Workspace Path | Package Name | Description |
+    36→|---|---|---|
+    37→| `apps/web` | `@teslaprime/web` | Next.js 16 frontend (App Router) |
+    38→| `apps/api` | `@teslaprime/api` | Node.js REST API (Express/Fastify) |
+    39→| `apps/worker` | `@teslaprime/worker` | BullMQ background job processors |
+    40→| `packages/shared` | `@teslaprime/shared` | Shared types, constants, schemas |
+    41→
+    42→### 1.3 Dependency Relationships
+    43→
+    44→```
+    45→@teslaprime/web    ──depends-on──>  @teslaprime/shared
+    46→@teslaprime/api    ──depends-on──>  @teslaprime/shared
+    47→@teslaprime/worker ──depends-on──>  @teslaprime/shared
+    48→@teslaprime/worker ──depends-on──>  @teslaprime/api  (imports services/repositories)
+    49→```
+    50→
+    51→The worker package depends on the API package's service and repository layers to reuse business logic (e.g., the withdrawal processing service) without duplication. The shared package has **zero** workspace dependencies — it is a leaf node that only uses external npm packages (`zod`, `date-fns`). This directed acyclic graph (DAG) prevents circular workspace dependencies. Turborepo uses this dependency graph to determine parallelizable builds and correct topological build order.
+    52→
+    53→### 1.4 Top-Level Directory Tree
+    54→
+    55→```
+    56→tesla-prime-capital/
+    57→├── apps/
+    58→│   ├── web/                          # Frontend - Next.js 16 (App Router)
+    59→│   ├── api/                          # Backend REST API (Express/Fastify)
+    60→│   └── worker/                       # Background job processors (BullMQ)
+    61→├── packages/
+    62→│   └── shared/                       # Shared types, constants, schemas
+    63→├── docker/
+    64→│   ├── web.Dockerfile
+    65→│   ├── api.Dockerfile
+    66→│   ├── worker.Dockerfile
+    67→│   └── .dockerignore
+    68→├── .github/
+    69→│   └── workflows/
+    70→│       ├── ci.yml
+    71→│       └── deploy.yml
+    72→├── docs/
+    73→│   ├── phase1-docs/
+    74→│   └── phase2-docs/
+    75→├── scripts/
+    76→│   ├── seed-db.sh
+    77→│   ├── generate-types.sh
+    78→│   └── run-migrations.sh
+    79→├── .nvmrc
+    80→├── .gitignore
+    81→├── .prettierrc
+    82→├── .eslintrc.js
+    83→├── package.json
+    84→├── pnpm-lock.yaml
+    85→├── pnpm-workspace.yaml
+    86→├── tsconfig.base.json
+    87→├── turbo.json
+    88→└── docker-compose.yml
+    89→```
+    90→
+    91→The root-level `package.json` acts as the workspace anchor. It contains no application code — only scripts that delegate to workspace packages (e.g., `"dev:web": "pnpm --filter @teslaprime/web dev"`), shared dev dependencies (`typescript`, `eslint`, `prettier`, `turbo`), and the `pnpm-workspace.yaml` pointer configuration. The `docker/` directory at root level centralizes all Dockerfiles, making container build context paths cleaner. The `scripts/` directory holds operational scripts used during development and deployment. The `.github/workflows/` directory contains GitHub Actions CI/CD pipeline definitions for automated testing, linting, type-checking, and deployment via Coolify webhooks.
+    92→
+    93→---
+    94→
+    95→## 2. Root Configuration Files
+    96→
+    97→### 2.1 `package.json` (Root)
+    98→
+    99→The root `package.json` serves as the monorepo manifest. It declares the project name as `tesla-prime-capital`, sets `private: true` to prevent accidental npm publication, and defines workspace scripts that serve as the single entry point for all development commands. Key scripts include `dev` (starts all services via turbo in parallel), `build` (builds all packages in dependency order), `lint` (runs eslint across all workspaces), `format` (runs prettier with --write across all workspaces), `format:check` (runs prettier in check mode for CI), `test` (runs vitest across all workspaces), `test:ci` (runs tests with coverage and no watch mode), `db:generate` (prisma generate in the api workspace), `db:migrate` (prisma migrate deploy against the target database), `db:migrate:dev` (prisma migrate dev for local development), `db:seed` (executes the prisma seed script), `db:studio` (opens Prisma Studio), and `docker:up` / `docker:down` for local Docker Compose orchestration. The `devDependencies` at root level include `typescript@^5.6.0`, `eslint@^9.0.0`, `prettier@^3.4.0`, `turbo@^2.3.0`, `@types/node@^22.0.0`, `vitest@^2.1.0`, and `@typescript-eslint/eslint-plugin@^8.0.0`. These are hoisted and shared by all workspace packages to ensure exact version consistency. The `engines` field specifies `"node": ">=22.0.0"` and `"pnpm": ">=9.0.0"` to enforce minimum tooling versions.
+   100→
+   101→### 2.2 `pnpm-workspace.yaml`
+   102→
+   103→```yaml
+   104→packages:
+   105→  - "apps/*"
+   106→  - "packages/*"
+   107→```
+   108→
+   109→This is the sole configuration that tells pnpm which directories to treat as workspace packages. The glob patterns `apps/*` and `packages/*` are scanned recursively for directories containing a `package.json`. When `pnpm install` is run at the root, pnpm resolves inter-workspace dependencies using the `workspace:*` protocol, symlinks them into each package's `node_modules`, and hoists common dependencies to the root `node_modules` for deduplication. This results in significantly faster installs and lower disk usage compared to npm or yarn workspaces. The `catalog` feature of pnpm may also be leveraged in the future to centralize dependency version management across all workspaces.
+   110→
+   111→### 2.3 `tsconfig.base.json`
+   112→
+   113→The base TypeScript configuration is inherited by all workspace packages via the `extends` field. It sets `strict: true` (enabling all strict type-checking options), `target: "ES2022"` (aligning with Node.js 22 baseline), `module: "ESNext"`, `moduleResolution: "bundler"` (optimized for modern bundlers like webpack/turbopack), `esModuleInterop: true`, `skipLibCheck: true` (improves build speed by skipping type checking of declaration files), `forceConsistentCasingInFileNames: true`, `resolveJsonModule: true`, `isolatedModules: true` (required by certain bundlers), and `declaration: true` (emits .d.ts files for the shared package). Path aliases are intentionally **not** defined here - each workspace defines its own aliases in its local `tsconfig.json` that extends this base, avoiding conflicting path mappings.
+   114→
+   115→### 2.4 `turbo.json`
+   116→
+   117→Turbo is used as the monorepo build orchestrator. The `turbo.json` defines pipelines for `build`, `dev`, `lint`, `test`, and `type-check` tasks. The `build` pipeline specifies `dependsOn: ["^build"]` ensuring packages are built in topological order (shared before api before worker before web). The `#build` cacheable subset includes `outputs: ["dist/**", ".next/**", ".prisma/client/**"]`. The `dev` pipeline uses `persistent: true` and `cache: false` since dev servers are long-running processes. Input glob patterns include `**/*.ts`, `**/*.tsx`, `**/*.json` for cache invalidation. Environment variables that affect build output (e.g., `NODE_ENV`, `DATABASE_URL`) are listed in the `env` array. The `globalDependencies` array includes `tsconfig.base.json` and `.eslintrc.js` so that changes to shared configuration invalidate all package caches.
+   118→
+   119→### 2.5 `.eslintrc.js`
+   120→
+   121→The root ESLint configuration extends `eslint:recommended`, `plugin:@typescript-eslint/recommended`, and `prettier`. It sets the parser to `@typescript-eslint/parser` and defines rules: `@typescript-eslint/no-unused-vars: ["error", { argsIgnorePattern: "^_" }]`, `@typescript-eslint/no-explicit-any: "error"`, `@typescript-eslint/consistent-type-imports: "error"`, `@typescript-eslint/no-unused-expressions: "error"`, and `no-console: ["warn", { allow: ["warn", "error"] }]`. Each workspace can override rules with its own `.eslintrc.js`. The web workspace additionally extends `next/core-web-vitals` for Next.js-specific linting rules.
+   122→
+   123→### 2.6 `.prettierrc`
+   124→
+   125→```json
+   126→{
+   127→  "semi": true,
+   128→  "singleQuote": true,
+   129→  "trailingComma": "all",
+   130→  "printWidth": 100,
+   131→  "tabWidth": 2,
+   132→  "arrowParens": "always",
+   133→  "endOfLine": "lf",
+   134→  "bracketSpacing": true,
+   135→  "jsxSingleQuote": false
+   136→}
+   137→```
+   138→
+   139→All workspaces share this Prettier configuration without override. The `printWidth` of 100 accommodates TypeScript type annotations without excessive wrapping. The `trailingComma: "all"` ensures cleaner git diffs when items are appended to arrays or objects.
+   140→
+   141→### 2.7 `docker-compose.yml`
+   142→
+   143→Defined at root level for local development, orchestrating five services: `web` (Next.js:3000), `api` (Node.js:4000), `worker`, `postgres` (PostgreSQL 16:5432 with named volume `pgdata`), and `redis` (Redis 7:6379 with named volume `redisdata`). All application services share an `app-network` bridge network. Postgres health check: `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB`. Redis health check: `redis-cli ping`. The `api` and `worker` declare `depends_on` with `condition: service_healthy`. Environment files are referenced per service (`.env.web`, `.env.api`, `.env.worker`). Restart policy: `unless-stopped`. Detailed Docker configuration is covered in Section 7.
+   144→
+   145→### 2.8 `.env.example`
+   146→
+   147→Documents every environment variable across all services in a single file. Organized into commented sections: `# -- Shared --`, `# -- Database --`, `# -- Redis --`, `# -- Frontend --`, `# -- Backend API --`, `# -- Worker --`. Each variable includes a descriptive comment, placeholder value, and required/optional indication. Committed to version control; actual `.env` files are gitignored.
+   148→
+   149→### 2.9 `.gitignore`
+   150→
+   151→Covers: `node_modules/`, `dist/`, `.next/`, `build/`, `.turbo/`, `*.log`, `.env`, `.env.*.local`, `.DS_Store`, `.Thumbs.db`, `coverage/`, `.prisma/client/`, `docker/data/`, `.vercel/`, `.coolify/`, `.vscode/`, `.idea/`, `*.swp`, `*.swo`.
+   152→
+   153→### 2.10 `.nvmrc`
+   154→
+   155→```
+   156→22.12.0
+   157→```
+   158→
+   159→Pins Node.js to 22.12.0 LTS. Docker images use `FROM node:22.12.0-alpine` for environment parity between local development, CI, and production.
+   160→
+   161→---
+   162→
+   163→## 3. Frontend Package Structure (apps/web)
+   164→
+   165→The frontend is a Next.js 16 application using the App Router paradigm with React Server Components as the default rendering model. Client interactivity is opted into via `"use client"` directives on leaf components only. Tailwind CSS 4 with the shadcn/ui component library provides the design system. The directory structure follows a domain-driven organization with route groups that segregate access control boundaries without affecting URL paths.
+   166→
+   167→### 3.1 Full Directory Tree
+   168→
+   169→```
+   170→apps/web/
+   171→├── public/
+   172→│   ├── favicon.ico
+   173→│   ├── robots.txt
+   174→│   ├── sitemap.xml
+   175→│   ├── og-image.png
+   176→│   └── images/
+   177→│       ├── logo.svg
+   178→│       ├── logo-dark.svg
+   179→│       ├── hero-illustration.svg
+   180→│       └── placeholders/
+   181→│           ├── plan-card.png
+   182→│           └── avatar-fallback.png
+   183→├── app/
+   184→│   ├── layout.tsx                          # Root layout (fonts, providers, shell)
+   185→│   ├── loading.tsx                         # Root loading spinner
+   186→│   ├── not-found.tsx                       # Global 404 page
+   187→│   ├── error.tsx                           # Global error boundary
+   188→│   ├── globals.css                         # Tailwind directives + CSS vars
+   189→│   ├── (public)/
+   190→│   │   ├── layout.tsx                      # Public layout (marketing nav, footer)
+   191→│   │   ├── page.tsx                        # Homepage
+   192→│   │   ├── about/page.tsx
+   193→│   │   ├── plans/page.tsx
+   194→│   │   ├── pricing/page.tsx
+   195→│   │   ├── faq/page.tsx
+   196→│   │   ├── contact/page.tsx
+   197→│   │   ├── terms/page.tsx
+   198→│   │   ├── privacy/page.tsx
+   199→│   │   └── blog/
+   200→│   │       ├── page.tsx
+   201→│   │       └── [slug]/page.tsx
+   202→│   ├── (auth)/
+   203→│   │   ├── layout.tsx                      # Auth layout (centered card)
+   204→│   │   ├── login/page.tsx
+   205→│   │   ├── register/page.tsx
+   206→│   │   ├── forgot-password/page.tsx
+   207→│   │   ├── reset-password/page.tsx
+   208→│   │   ├── verify-email/page.tsx
+   209→│   │   └── two-factor/page.tsx
+   210→│   ├── (dashboard)/
+   211→│   │   ├── layout.tsx                      # Dashboard layout (sidebar, topbar)
+   212→│   │   ├── page.tsx                        # Dashboard overview
+   213→│   │   ├── profile/page.tsx
+   214→│   │   ├── security/
+   215→│   │   │   ├── page.tsx
+   216→│   │   │   └── change-password/page.tsx
+   217→│   │   ├── wallet/
+   218→│   │   │   ├── page.tsx
+   219→│   │   │   ├── deposit/page.tsx
+   220→│   │   │   └── withdraw/page.tsx
+   221→│   │   ├── investments/
+   222→│   │   │   ├── page.tsx
+   223→│   │   │   ├── [id]/page.tsx
+   224→│   │   │   ├── invest/page.tsx
+   225→│   │   │   └── history/page.tsx
+   226→│   │   ├── kyc/page.tsx
+   227→│   │   ├── referrals/
+   228→│   │   │   ├── page.tsx
+   229→│   │   │   └── earnings/page.tsx
+   230→│   │   ├── notifications/page.tsx
+   231→│   │   ├── support/
+   232→│   │   │   ├── page.tsx
+   233→│   │   │   ├── new/page.tsx
+   234→│   │   │   └── [id]/page.tsx
+   235→│   │   └── transactions/page.tsx
+   236→│   └── (admin)/
+   237→│       ├── layout.tsx                      # Admin layout (admin sidebar)
+   238→│       ├── page.tsx                        # Admin dashboard
+   239→│       ├── users/
+   240→│       │   ├── page.tsx
+   241→│       │   └── [id]/page.tsx
+   242→│       ├── investments/
+   243→│       │   ├── page.tsx
+   244→│       │   └── plans/
+   245→│       │       ├── page.tsx
+   246→│       │       └── new/page.tsx
+   247→│       ├── deposits/page.tsx
+   248→│       ├── withdrawals/page.tsx
+   249→│       ├── kyc/page.tsx
+   250→│       ├── referrals/page.tsx
+   251→│       ├── support/
+   252→│       │   ├── page.tsx
+   253→│       │   └── [id]/page.tsx
+   254→│       ├── notifications/page.tsx
+   255→│       ├── reports/
+   256→│       │   ├── page.tsx
+   257→│       │   └── [reportId]/page.tsx
+   258→│       ├── settings/page.tsx
+   259→│       └── audit-log/page.tsx
+   260→├── components/
+   261→│   ├── ui/                                 # Primitive UI components (shadcn/ui)
+   262→│   │   ├── button.tsx
+   263→│   │   ├── input.tsx
+   264→│   │   ├── select.tsx
+   265→│   │   ├── textarea.tsx
+   266→│   │   ├── dialog.tsx
+   267→│   │   ├── sheet.tsx
+   268→│   │   ├── dropdown-menu.tsx
+   269→│   │   ├── table.tsx
+   270→│   │   ├── badge.tsx
+   271→│   │   ├── card.tsx
+   272→│   │   ├── avatar.tsx
+   273→│   │   ├── tabs.tsx
+   274→│   │   ├── toast.tsx
+   275→│   │   ├── toaster.tsx
+   276→│   │   ├── use-toast.ts
+   277→│   │   ├── skeleton.tsx
+   278→│   │   ├── switch.tsx
+   279→│   │   ├── progress.tsx
+   280→│   │   ├── separator.tsx
+   281→│   │   ├── tooltip.tsx
+   282→│   │   ├── alert.tsx
+   283→│   │   ├── accordion.tsx
+   284→│   │   ├── breadcrumb.tsx
+   285→│   │   ├── pagination.tsx
+   286→│   │   ├── data-table.tsx                   # Reusable table (sort, filter)
+   287→│   │   ├── form.tsx                         # RHF + Zod integration
+   288→│   │   ├── chart.tsx                        # Recharts wrapper
+   289→│   │   ├── file-upload.tsx                  # File upload (Cloudinary)
+   290→│   │   ├── loading-spinner.tsx
+   291→│   │   ├── empty-state.tsx
+   292→│   │   └── index.ts
+   293→│   ├── layout/
+   294→│   │   ├── public-header.tsx
+   295→│   │   ├── public-footer.tsx
+   296→│   │   ├── dashboard-sidebar.tsx
+   297→│   │   ├── dashboard-topbar.tsx
+   298→│   │   ├── admin-sidebar.tsx
+   299→│   │   ├── admin-topbar.tsx
+   300→│   │   ├── mobile-nav.tsx
+   301→│   │   ├── page-header.tsx
+   302→│   │   └── index.ts
+   303→│   ├── auth/
+   304→│   │   ├── login-form.tsx
+   305→│   │   ├── register-form.tsx
+   306→│   │   ├── forgot-password-form.tsx
+   307→│   │   ├── reset-password-form.tsx
+   308→│   │   ├── two-factor-form.tsx
+   309→│   │   ├── social-login-buttons.tsx
+   310→│   │   └── index.ts
+   311→│   ├── wallet/
+   312→│   │   ├── wallet-balance-card.tsx
+   313→│   │   ├── wallet-activity-list.tsx
+   314→│   │   ├── deposit-form.tsx
+   315→│   │   ├── deposit-method-selector.tsx
+   316→│   │   ├── withdrawal-form.tsx
+   317→│   │   ├── withdrawal-bank-form.tsx
+   318→│   │   ├── withdrawal-crypto-form.tsx
+   319→│   │   └── index.ts
+   320→│   ├── investments/
+   321→│   │   ├── plan-card.tsx
+   322→│   │   ├── plan-comparison-table.tsx
+   323→│   │   ├── invest-form.tsx
+   324→│   │   ├── investment-card.tsx
+   325→│   │   ├── investment-detail-header.tsx
+   326→│   │   ├── investment-progress-chart.tsx
+   327→│   │   ├── investment-earnings-table.tsx
+   328→│   │   ├── active-investments-list.tsx
+   329→│   │   └── index.ts
+   330→│   ├── deposits/
+   331→│   │   ├── deposit-history-table.tsx
+   332→│   │   ├── deposit-status-badge.tsx
+   333→│   │   ├── deposit-confirmation-card.tsx
+   334→│   │   └── index.ts
+   335→│   ├── withdrawals/
+   336→│   │   ├── withdrawal-history-table.tsx
+   337→│   │   ├── withdrawal-status-badge.tsx
+   338→│   │   └── index.ts
+   339→│   ├── referrals/
+   340→│   │   ├── referral-link-card.tsx
+   341→│   │   ├── referral-stats-cards.tsx
+   342→│   │   ├── referral-earnings-table.tsx
+   343→│   │   ├── referral-tree-view.tsx
+   344→│   │   └── index.ts
+   345→│   ├── kyc/
+   346→│   │   ├── kyc-status-card.tsx
+   347→│   │   ├── kyc-upload-form.tsx
+   348→│   │   ├── kyc-document-preview.tsx
+   349→│   │   ├── kyc-review-panel.tsx
+   350→│   │   └── index.ts
+   351→│   ├── notifications/
+   352→│   │   ├── notification-bell.tsx
+   353→│   │   ├── notification-dropdown.tsx
+   354→│   │   ├── notification-list.tsx
+   355→│   │   ├── notification-item.tsx
+   356→│   │   └── index.ts
+   357→│   ├── support/
+   358→│   │   ├── ticket-form.tsx
+   359→│   │   ├── ticket-list.tsx
+   360→│   │   ├── ticket-detail.tsx
+   361→│   │   ├── ticket-message.tsx
+   362→│   │   ├── ticket-status-badge.tsx
+   363→│   │   └── index.ts
+   364→│   ├── admin/
+   365→│   │   ├── user-table-filters.tsx
+   366→│   │   ├── user-detail-panel.tsx
+   367→│   │   ├── plan-editor-form.tsx
+   368→│   │   ├── deposit-approval-row.tsx
+   369→│   │   ├── withdrawal-approval-row.tsx
+   370→│   │   ├── kyc-verification-row.tsx
+   371→│   │   ├── metric-card.tsx
+   372→│   │   ├── revenue-chart.tsx
+   373→│   │   ├── broadcast-form.tsx
+   374→│   │   ├── system-settings-form.tsx
+   375→│   │   └── index.ts
+   376→│   └── shared/                              # Cross-domain composites
+   377→│       ├── confirm-dialog.tsx
+   378→│       ├── amount-input.tsx
+   379→│       ├── date-range-picker.tsx
+   380→│       ├── search-input.tsx
+   381→│       ├── status-pill.tsx
+   382→│       ├── copy-button.tsx
+   383→│       └── index.ts
+   384→├── hooks/
+   385→│   ├── auth/
+   386→│   │   ├── use-login.ts
+   387→│   │   ├── use-register.ts
+   388→│   │   ├── use-forgot-password.ts
+   389→│   │   ├── use-reset-password.ts
+   390→│   │   ├── use-current-user.ts
+   391→│   │   ├── use-logout.ts
+   392→│   │   └── index.ts
+   393→│   ├── wallet/
+   394→│   │   ├── use-wallet-balance.ts
+   395→│   │   ├── use-initiate-deposit.ts
+   396→│   │   ├── use-initiate-withdrawal.ts
+   397→│   │   ├── use-wallet-transactions.ts
+   398→│   │   └── index.ts
+   399→│   ├── investments/
+   400→│   │   ├── use-plans.ts
+   401→│   │   ├── use-create-investment.ts
+   402→│   │   ├── use-active-investments.ts
+   403→│   │   ├── use-investment-detail.ts
+   404→│   │   ├── use-investment-history.ts
+   405→│   │   └── index.ts
+   406→│   ├── deposits/
+   407→│   │   ├── use-deposits.ts
+   408→│   │   ├── use-upload-proof.ts
+   409→│   │   └── index.ts
+   410→│   ├── withdrawals/
+   411→│   │   ├── use-withdrawals.ts
+   412→│   │   └── index.ts
+   413→│   ├── referrals/
+   414→│   │   ├── use-referral-stats.ts
+   415→│   │   ├── use-referral-earnings.ts
+   416→│   │   └── index.ts
+   417→│   ├── kyc/
+   418→│   │   ├── use-kyc-status.ts
+   419→│   │   ├── use-submit-kyc.ts
+   420→│   │   └── index.ts
+   421→│   ├── notifications/
+   422→│   │   ├── use-notifications.ts
+   423→│   │   ├── use-mark-read.ts
+   424→│   │   └── index.ts
+   425→│   ├── support/
+   426→│   │   ├── use-tickets.ts
+   427→│   │   ├── use-create-ticket.ts
+   428→│   │   ├── use-ticket-messages.ts
+   429→│   │   └── index.ts
+   430→│   ├── admin/
+   431→│   │   ├── use-admin-users.ts
+   432→│   │   ├── use-admin-investments.ts
+   433→│   │   ├── use-admin-deposits.ts
+   434→│   │   ├── use-admin-withdrawals.ts
+   435→│   │   ├── use-admin-kyc-queue.ts
+   436→│   │   ├── use-admin-metrics.ts
+   437→│   │   ├── use-admin-reports.ts
+   438→│   │   └── index.ts
+   439→│   └── common/
+   440→│       ├── use-debounce.ts
+   441→│       ├── use-media-query.ts
+   442→│       ├── use-local-storage.ts
+   443→│       ├── use-countdown.ts
+   444→│       └── index.ts
+   445→├── lib/
+   446→│   ├── api-client.ts                       # Axios/fetch wrapper with auth
+   447→│   ├── auth.ts                             # Token management (get/set JWT)
+   448→│   ├── formatters.ts                       # Currency, date, percentage fmt
+   449→│   ├── validators.ts                       # Frontend-only validation helpers
+   450→│   ├── query-client.ts                     # TanStack Query client config
+   451→│   └── utils.ts                            # General utilities (cn helper, etc.)
+   452→├── types/
+   453→│   ├── api.ts                              # API response type wrappers
+   454→│   ├── auth.ts                             # Auth-related frontend types
+   455→│   ├── wallet.ts                           # Wallet/frontend DTO types
+   456→│   ├── investment.ts                       # Investment display types
+   457→│   └── index.ts
+   458→├── styles/                                 # Reserved for global CSS overrides
+   459→├── providers/
+   460→│   ├── auth-provider.tsx                   # Auth context provider
+   461→│   ├── query-provider.tsx                  # TanStack Query provider
+   462→│   ├── toast-provider.tsx                  # Sonner/Toast provider
+   463→│   └── theme-provider.tsx                  # Dark/light mode provider
+   464→├── next.config.ts
+   465→├── tailwind.config.ts
+   466→├── postcss.config.js
+   467→├── tsconfig.json
+   468→├── vitest.config.ts
+   469→├── .eslintrc.js
+   470→├── .prettierrc
+   471→└── package.json
+   472→```
+   473→
+   474→### 3.2 Key Frontend Files Explained
+   475→
+   476→The `app/layout.tsx` is the root layout that wraps every page. It imports Google Fonts (Inter for body text, a display font for headings), wraps children in the `ThemeProvider`, `QueryProvider`, `AuthProvider`, and `ToastProvider`, and renders the `<html>` and `<body>` tags. Route group layouts - `(public)/layout.tsx`, `(auth)/layout.tsx`, `(dashboard)/layout.tsx`, `(admin)/layout.tsx` - each apply their own navigation shell without affecting the URL structure. The `(dashboard)/layout.tsx` includes session checks and renders the sidebar/topbar chrome. The `(admin)/layout.tsx` additionally verifies the user has `ADMIN` or `SUPER_ADMIN` role and redirects unauthorized users.
+   477→
+   478→The `lib/api-client.ts` creates a configured Axios (or native fetch wrapper) instance with a request interceptor that attaches the JWT from cookies/storage and a response interceptor that handles 401 responses by redirecting to login. It provides typed convenience methods (`get<T>`, `post<T>`, `put<T>`, `patch<T>`, `delete<T>`) that unwrap the API standard envelope `{ data, meta, message }`. The `lib/query-client.ts` creates a TanStack Query `QueryClient` with defaults: `staleTime: 60_000` (1 minute), `retry: 1`, `refetchOnWindowFocus: false`.
+   479→
+   480→The `hooks/` directory follows a domain-mirroring convention. Each hook encapsulates a TanStack Query `useQuery` or `useMutation` call along with its loading/error states. For example, `use-active-investments.ts` returns `{ data: Investment[], isLoading, error, refetch }` by calling `useQuery` with the key `['investments', 'active']`. Mutation hooks like `use-create-investment.ts` wrap `useMutation` and include `onSuccess` callbacks that invalidate relevant query keys to trigger automatic refetching.
+   481→
+   482→The `components/ui/` directory contains shadcn/ui-style primitive components. Each component is self-contained, accepts forwarded refs, uses `cva` (class-variance-authority) for variant management, and exports a named export alongside the default export. The `index.ts` barrel file re-exports all primitives for convenient imports like `import { Button, Card, Dialog } from '@/components/ui'`.
+   483→
+   484→The `providers/` directory contains client-side context providers that wrap the application. `auth-provider.tsx` manages the user session state, exposes `user`, `isLoading`, and `login`/`logout` functions through React context, and periodically refreshes the JWT token before expiry. `query-provider.tsx` creates and provides the TanStack Query client. `theme-provider.tsx` manages dark/light/system theme preference using `next-themes`.
+   485→
+   486→---
+   487→
+   488→## 4. Backend Package Structure (apps/api)
+   489→
+   490→The backend is a Node.js REST API built with Express (or Fastify as an alternative) following a strict layered architecture. Each domain module (auth, users, wallets, investments, deposits, withdrawals, referrals, kyc, notifications, support, admin) has its own route, controller, service, and repository files. This separation ensures that business logic in services can be reused by both the API routes and the worker package without crossing layer boundaries.
+   491→
+   492→### 4.1 Full Directory Tree
+   493→
+   494→```
+   495→apps/api/
+   496→├── src/
+   497→│   ├── index.ts                            # Entry point: create app, listen, shutdown
+   498→│   ├── app.ts                              # Express app factory (middleware, routes)
+   499→│   ├── routes/
+   500→│   │   ├── index.ts                        # Route aggregator
+   501→│   │   ├── auth.routes.ts
+   502→│   │   ├── user.routes.ts
+   503→│   │   ├── wallet.routes.ts
+   504→│   │   ├── investment.routes.ts
+   505→│   │   ├── deposit.routes.ts
+   506→│   │   ├── withdrawal.routes.ts
+   507→│   │   ├── referral.routes.ts
+   508→│   │   ├── kyc.routes.ts
+   509→│   │   ├── notification.routes.ts
+   510→│   │   ├── support.routes.ts
+   511→│   │   └── admin.routes.ts
+   512→│   ├── controllers/
+   513→│   │   ├── auth.controller.ts
+   514→│   │   ├── user.controller.ts
+   515→│   │   ├── wallet.controller.ts
+   516→│   │   ├── investment.controller.ts
+   517→│   │   ├── deposit.controller.ts
+   518→│   │   ├── withdrawal.controller.ts
+   519→│   │   ├── referral.controller.ts
+   520→│   │   ├── kyc.controller.ts
+   521→│   │   ├── notification.controller.ts
+   522→│   │   ├── support.controller.ts
+   523→│   │   └── admin.controller.ts
+   524→│   ├── services/
+   525→│   │   ├── auth.service.ts
+   526→│   │   ├── user.service.ts
+   527→│   │   ├── wallet.service.ts
+   528→│   │   ├── investment.service.ts
+   529→│   │   ├── deposit.service.ts
+   530→│   │   ├── withdrawal.service.ts
+   531→│   │   ├── referral.service.ts
+   532→│   │   ├── kyc.service.ts
+   533→│   │   ├── notification.service.ts
+   534→│   │   ├── support.service.ts
+   535→│   │   ├── admin.service.ts
+   536→│   │   └── email.service.ts                # Centralized email dispatch
+   537→│   ├── repositories/
+   538→│   │   ├── base.repository.ts              # Generic CRUD base
+   539→│   │   ├── user.repository.ts
+   540→│   │   ├── wallet.repository.ts
+   541→│   │   ├── investment.repository.ts
+   542→│   │   ├── deposit.repository.ts
+   543→│   │   ├── withdrawal.repository.ts
+   544→│   │   ├── referral.repository.ts
+   545→│   │   ├── kyc.repository.ts
+   546→│   │   ├── notification.repository.ts
+   547→│   │   ├── support.repository.ts
+   548→│   │   └── transaction-log.repository.ts
+   549→│   ├── middleware/
+   550→│   │   ├── auth.middleware.ts               # JWT verification
+   551→│   │   ├── rbac.middleware.ts              # Role-based access control
+   552→│   │   ├── rate-limit.middleware.ts         # Rate limiting
+   553→│   │   ├── validate.middleware.ts           # Request validation (Zod)
+   554→│   │   ├── error-handler.middleware.ts      # Global error handler
+   555→│   │   ├── request-logger.middleware.ts     # HTTP request logging
+   556→│   │   └── cors.middleware.ts              # CORS configuration
+   557→│   ├── validators/
+   558→│   │   ├── auth.validator.ts
+   559→│   │   ├── user.validator.ts
+   560→│   │   ├── investment.validator.ts
+   561→│   │   ├── deposit.validator.ts
+   562→│   │   ├── withdrawal.validator.ts
+   563→│   │   ├── kyc.validator.ts
+   564→│   │   ├── support.validator.ts
+   565→│   │   └── admin.validator.ts
+   566→│   ├── utils/
+   567→│   │   ├── hash.ts                         # bcrypt/argon2 password hashing
+   568→│   │   ├── jwt.ts                          # JWT sign/verify helpers
+   569→│   │   ├── crypto.ts                       # Encryption/decryption utilities
+   570→│   │   ├── format-currency.ts              # Currency formatting
+   571→│   │   ├── date-utils.ts                   # Date arithmetic helpers
+   572→│   │   ├── id.ts                           # NanoID/UUID generation
+   573→│   │   ├── pagination.ts                   # Prisma skip/take calculator
+   574→│   │   └── response.ts                     # Standard API response envelope
+   575→│   ├── config/
+   576→│   │   ├── index.ts                        # Config aggregator
+   577→│   │   ├── env.ts                          # Zod-validated env variables
+   578→│   │   ├── database.ts                     # Prisma client singleton
+   579→│   │   ├── redis.ts                        # Redis client (ioredis)
+   580→│   │   └── queue.ts                        # BullMQ connection & queues
+   581→│   ├── jobs/
+   582→│   │   ├── index.ts                        # Job type registry
+   583→│   │   ├── email.job.ts                    # Email send job
+   584→│   │   ├── withdrawal-process.job.ts       # Withdrawal processing
+   585→│   │   ├── investment-maturity.job.ts      # Investment maturity payout
+   586→│   │   ├── cache-invalidation.job.ts       # Redis cache warm/invalidation
+   587→│   │   ├── report-generation.job.ts        # Report PDF/CSV generation
+   588→│   │   └── gift-card-verify.job.ts         # Gift card verification
+   589→│   ├── events/
+   590→│   │   ├── index.ts                        # Event emitter setup
+   591→│   │   ├── deposit-created.event.ts
+   592→│   │   ├── withdrawal-requested.event.ts
+   593→│   │   ├── investment-activated.event.ts
+   594→│   │   ├── investment-matured.event.ts
+   595→│   │   ├── kyc-submitted.event.ts
+   596→│   │   ├── kyc-approved.event.ts
+   597→│   │   ├── kyc-rejected.event.ts
+   598→│   │   ├── referral-commission-earned.event.ts
+   599→│   │   └── user-registered.event.ts
+   600→│   ├── email/
+   601→│   │   ├── index.ts                        # Email template registry
+   602→│   │   ├── welcome-email.tsx               # React Email template
+   603→│   │   ├── verify-email.tsx
+   604→│   │   ├── password-reset.tsx
+   605→│   │   ├── deposit-confirmed.tsx
+   606→│   │   ├── withdrawal-processed.tsx
+   607→│   │   ├── withdrawal-rejected.tsx
+   608→│   │   ├── investment-activated.tsx
+   609→│   │   ├── investment-matured.tsx
+   610→│   │   ├── kyc-approved-email.tsx
+   611→│   │   ├── kyc-rejected-email.tsx
+   612→│   │   ├── referral-bonus.tsx
+   613→│   │   ├── two-factor-enabled.tsx
+   614→│   │   ├── support-reply.tsx
+   615→│   │   └── email-layout.tsx                # Shared HTML wrapper
+   616→│   ├── integrations/
+   617→│   │   ├── cloudinary.ts                   # Cloudinary upload/transform
+   618→│   │   ├── resend.ts                       # Resend email provider
+   619→│   │   └── crypto-payment.ts               # Crypto payment gateway
+   620→│   └── types/
+   621→│       └── express.d.ts                    # Express request augmentation
+   622→├── prisma/
+   623→│   ├── schema.prisma                       # Full database schema
+   624→│   ├── migrations/                         # Migration SQL files
+   625→│   │   └── ...
+   626→│   └── seed.ts                             # Database seed script
+   627→├── tsconfig.json
+   628→├── vitest.config.ts
+   629→├── .eslintrc.js
+   630→├── .prettierrc
+   631→└── package.json
+   632→```
+   633→
+   634→### 4.2 Backend Layer Responsibilities
+   635→
+   636→**Routes** (`src/routes/`): Define HTTP endpoints, attach middleware chains (auth, validation, RBAC), and delegate to controllers. Each route file exports an `Express.Router` instance. The `routes/index.ts` aggregates all routers and mounts them under versioned prefixes (e.g., `/api/v1/auth`, `/api/v1/investments`). Route files contain no business logic — they are pure HTTP concern mapping.
+   637→
+   638→**Controllers** (`src/controllers/`): Extract and validate request parameters (body, params, query), call the appropriate service method, and return a standardized HTTP response using the `response.ts` utility. Controllers handle HTTP-specific concerns like status codes, response formatting, and calling next() for the error handler. They translate between HTTP request/response and the service layer domain types.
+   639→
+   640→**Services** (`src/services/`): Contain all business logic. A service method might orchestrate multiple repository calls, perform calculations (e.g., ROI computation, referral commission splitting), emit domain events, and enqueue background jobs. Services are designed to be framework-agnostic so they can be imported by the worker package without pulling in Express dependencies. Transaction boundaries are managed here using Prisma's `$transaction` API.
+   641→
+   642→**Repositories** (`src/repositories/`): Encapsulate all database access through Prisma queries. The `base.repository.ts` provides generic CRUD methods (`findById`, `findAll`, `create`, `update`, `delete`) that domain repositories extend with specific query methods (e.g., `findActiveByUserId`, `countByStatusInDateRange`). Repositories return Prisma model instances or plain objects, never HTTP-specific types.
+   643→
+   644→**Middleware** (`src/middleware/`): Seven middleware modules handle cross-cutting concerns. `auth.middleware.ts` verifies the JWT from the Authorization header, decodes the payload, attaches `req.user`, and calls `next()`. `rbac.middleware.ts` checks `req.user.role` against an array of allowed roles and returns 403 if unauthorized. `rate-limit.middleware.ts` applies per-IP or per-user rate limiting using Redis as the store. `validate.middleware.ts` takes a Zod schema and validates `req.body`, `req.params`, or `req.query`, returning 400 with detailed error messages on failure. `error-handler.middleware.ts` is the final middleware in the chain that catches all unhandled errors, logs them, and returns a sanitized error response.
+   645→
+   646→**Events** (`src/events/`): Domain events use Node.js `EventEmitter` (or a dedicated emitter instance). Events are emitted by services after state changes (e.g., `eventEmitter.emit('deposit.created', deposit)`). Event listeners in the same process can react immediately — for example, the deposit-created listener enqueues an admin notification job and a user confirmation email job. This decouples the service from downstream side effects.
+   647→
+   648→**Email** (`src/email/`): React Email templates are authored as `.tsx` components. Each template accepts typed props (e.g., `{ userName: string; amount: number; currency: string }`). The `email-layout.tsx` provides the shared HTML skeleton with header, footer, and styling. The `index.ts` registry maps template names to components and provides a `sendEmail(templateName, props, to)` function that renders the template to HTML and dispatches it via the Resend integration.
+   649→
+   650→---
+   651→
+   652→## 5. Worker Package Structure (apps/worker)
+   653→
+   654→The worker package is a standalone Node.js process that connects to the same Redis instance as the API and processes jobs from BullMQ queues. It imports service and repository layers directly from `@teslaprime/api` to avoid duplicating business logic. The worker is designed to be horizontally scalable — multiple worker instances can run concurrently, and BullMQ handles job distribution and concurrency control.
+   655→
+   656→### 5.1 Full Directory Tree
+   657→
+   658→```
+   659→apps/worker/
+   660→├── src/
+   661→│   ├── index.ts                            # Entry point: start all workers
+   662→│   ├── processors/
+   663→│   │   ├── email.processor.ts              # Renders & sends emails via Resend
+   664→│   │   ├── withdrawal.processor.ts         # Processes withdrawal approvals
+   665→│   │   ├── investment-maturity.processor.ts # Calculates & credits ROI on maturity
+   666→│   │   ├── cache-invalidation.processor.ts  # Warms/invalidates Redis caches
+   667→│   │   ├── report-generation.processor.ts   # Generates PDF/CSV reports
+   668→│   │   └── gift-card-verify.processor.ts    # Verifies gift card codes
+   669→│   ├── queues.ts                           # BullMQ queue definitions & workers
+   670→│   └── utils/
+   671→│       ├── logger.ts                       # Winston/Pino logger config
+   672→│       └── graceful-shutdown.ts            # SIGTERM/SIGINT handler
+   673→├── tsconfig.json
+   674→├── vitest.config.ts
+   675→├── .eslintrc.js
+   676→├── .prettierrc
+   677→└── package.json
+   678→```
+   679→
+   680→### 5.2 Worker Details
+   681→
+   682→**Email Processor** (`email.processor.ts`): Consumes jobs from the `email` queue. Each job payload contains `{ templateName, props, to, subject }`. The processor imports the email template registry and Resend client from the API package, renders the React Email template to HTML, and sends it. Failed jobs are retried with exponential backoff (3 attempts, delays of 30s, 120s, 300s). Dead-lettered jobs are logged for manual investigation.
+   683→
+   684→**Withdrawal Processor** (`withdrawal.processor.ts`): Processes withdrawals that have been approved by an admin. It verifies the user's wallet balance is sufficient, deducts the withdrawal amount (plus fees), records the transaction, enqueues a confirmation email, and updates the withdrawal status to `COMPLETED`. If the balance is insufficient or the crypto transfer fails, the status is set to `FAILED` and a notification email is sent. This processor handles external payment gateway interactions for crypto withdrawals.
+   685→
+   686→**Investment Maturity Processor** (`investment-maturity.processor.ts`): Runs on a scheduled basis (cron via BullMQ repeatable jobs). It queries for investments that have reached their maturity date and calculates the final ROI payout including any compounding effects. It credits the user's wallet balance, updates the investment status to `MATURED`, records the payout as a transaction, enqueues a maturity notification email, and recalculates any referral commissions owed on the earnings.
+   687→
+   688→**Cache Invalidation Processor** (`cache-invalidation.processor.ts`): Processes cache invalidation events. When data changes (e.g., a new deposit is confirmed), the API service emits an invalidation job specifying the cache key pattern. This processor deletes or refreshes the corresponding Redis cache entries. It also handles scheduled cache warming — pre-computing expensive queries (like admin dashboard aggregates) and storing them in Redis to keep API response times low.
+   689→
+   690→**Report Generator Processor** (`report-generation.processor.ts`): Generates downloadable reports (PDF, CSV, XLSX) for admin users. Job payload specifies `{ reportType, dateRange, filters, requestedBy }`. The processor queries the database for the requested data, formats it using a reporting library, stores the result in Cloudinary or a local file store, and notifies the requesting admin via an in-app notification and email with a download link. Common report types include: user activity reports, financial summaries (deposits vs withdrawals), investment performance by plan, and referral tree reports.
+   691→
+   692→**Gift Card Verification Processor** (`gift-card-verify.processor.ts`): Handles asynchronous verification of gift cards submitted as deposit proof. The processor calls the external gift card verification API, parses the response (balance, currency, validity), updates the deposit record with the verified amount, and if the verification is successful, auto-approves the deposit and credits the user's wallet. Failed verifications are flagged for manual review.
+   693→
+   694→---
+   695→
+   696→## 6. Shared Package Structure (packages/shared)
+   697→
+   698→The shared package is the single source of truth for all cross-package TypeScript types, business constants, validation schemas, and pure utility functions. It has zero runtime dependencies on other workspace packages and minimal external dependencies (only `zod` for validation and `date-fns` for date utilities). The shared package is built (compiled to JavaScript) before the other packages so they can import from it.
+   699→
+   700→### 6.1 Full Directory Tree
+   701→
+   702→```
+   703→packages/shared/
+   704→├── src/
+   705→│   ├── index.ts                            # Main barrel export
+   706→│   ├── types/
+   707→│   │   ├── index.ts                        # Types barrel export
+   708→│   │   ├── api.types.ts                    # ApiResponse<T>, PaginatedResponse<T>, ApiError
+   709→│   │   ├── auth.types.ts                   # LoginPayload, RegisterPayload, TokenPayload, Session
+   710→│   │   ├── user.types.ts                   # User, UserProfile, UserAdminView
+   711→│   │   ├── wallet.types.ts                 # Wallet, WalletBalance, Transaction, TransactionType
+   712→│   │   ├── investment.types.ts             # Investment, InvestmentPlan, InvestmentStatus
+   713→│   │   ├── deposit.types.ts                # Deposit, DepositStatus, DepositMethod
+   714→│   │   ├── withdrawal.types.ts             # Withdrawal, WithdrawalStatus, WithdrawalMethod
+   715→│   │   ├── referral.types.ts               # Referral, ReferralEarning, ReferralStats
+   716→│   │   ├── kyc.types.ts                    # KYCSubmission, KYCDocument, KYCStatus, KYCLevel
+   717→│   │   ├── notification.types.ts           # Notification, NotificationType, NotificationPriority
+   718→│   │   ├── support.types.ts                # SupportTicket, TicketMessage, TicketStatus
+   719→│   │   └── admin.types.ts                  # AdminMetrics, SystemConfig, AuditLogEntry
+   720→│   ├── constants/
+   721→│   │   ├── index.ts                        # Constants barrel export
+   722→│   │   ├── roles.ts                        # UserRole enum, ROLE_HIERARCHY map
+   723→│   │   ├── kyc-levels.ts                   # KYC_LEVELS config (limits per level)
+   724→│   │   ├── plan-configs.ts                 # INVESTMENT_PLANS (name, min, max, ROI, duration)
+   725→│   │   ├── fees.ts                         # DEPOSIT_FEE, WITHDRAWAL_FEE, REFERRAL_COMMISSION
+   726→│   │   ├── currencies.ts                   # SUPPORTED_CURRENCIES, DEFAULT_CURRENCY
+   727→│   │   ├── limits.ts                       # MAX_DEPOSIT_DAILY, MAX_WITHDRAWAL_DAILY, etc.
+   728→│   │   ├── notifications.ts               # NOTIFICATION_TYPES, NOTIFICATION_CHANNELS
+   729→│   │   └── app.ts                          # APP_NAME, APP_URL, SUPPORT_EMAIL
+   730→│   ├── schemas/
+   731→│   │   ├── index.ts                        # Schemas barrel export
+   732→│   │   ├── auth.schema.ts                  # loginSchema, registerSchema, resetPasswordSchema
+   733→│   │   ├── user.schema.ts                  # updateUserSchema, changePasswordSchema
+   734→│   │   ├── investment.schema.ts            # createInvestmentSchema
+   735→│   │   ├── deposit.schema.ts               # createDepositSchema, uploadProofSchema
+   736→│   │   ├── withdrawal.schema.ts            # createWithdrawalSchema
+   737→│   │   ├── kyc.schema.ts                   # submitKycSchema
+   738→│   │   ├── support.schema.ts              # createTicketSchema, replyTicketSchema
+   739→│   │   └── pagination.schema.ts           # paginationSchema, sortSchema
+   740→│   └── utils/
+   741→│       ├── index.ts                        # Utils barrel export
+   742→│       ├── currency.ts                     # formatCurrency, parseCurrency, roundCurrency
+   743→│       ├── date.ts                         # formatDate, calculateMaturityDate, daysBetween
+   744→│       ├── percentage.ts                   # calculateROI, formatPercentage
+   745→│       ├── id.ts                           # isValidId, extractIdFromString
+   746→│       └── validation.ts                   # isValidEmail, isValidPhone, isStrongPassword
+   747→├── tsconfig.json
+   748→├── package.json
+   749→└── vitest.config.ts                        # Shared package also has unit tests
+   750→```
+   751→
+   752→### 6.2 Shared Package Details
+   753→
+   754→**Types** (`src/types/`): Every type is a TypeScript interface or type alias. The `api.types.ts` file defines the universal API response envelope: `ApiResponse<T>` with `{ success: boolean; data: T; message?: string; meta?: PaginationMeta }` and `PaginatedResponse<T>` extends this with `{ data: T[]; meta: { page: number; limit: number; total: number; totalPages: number } }`. Domain types mirror the Prisma models but are framework-agnostic — they do not include Prisma-specific types like `Prisma.UserInclude`. Enums are defined as TypeScript union types (e.g., `type InvestmentStatus = 'PENDING' | 'ACTIVE' | 'MATURED' | 'CANCELLED'`) for lightweight consumption without runtime overhead.
+   755→
+   756→**Constants** (`src/constants/`): The `roles.ts` file exports the `UserRole` type as `'USER' | 'KYC_OFFICER' | 'ADMIN' | 'SUPER_ADMIN'` and a `ROLE_HIERARCHY` map where numeric values indicate privilege level (USER=0, KYC_OFFICER=1, ADMIN=2, SUPER_ADMIN=3), used by the RBAC middleware for role comparison. The `plan-configs.ts` exports an array of investment plan configurations that is consumed by both the backend (plan validation, ROI calculation) and the frontend (plan cards, comparison tables). The `fees.ts` centralizes all fee percentages so that changes propagate to both frontend display logic and backend calculation logic.
+   757→
+   758→**Schemas** (`src/schemas/`): Zod validation schemas that are shared between the frontend (form validation with React Hook Form's `zodResolver`) and the backend (request validation middleware). For example, `createInvestmentSchema` validates that the `planId` is a valid UUID, the `amount` is a positive number within the plan's min/max range, and the user's wallet has sufficient balance. Schemas use `.refine()` and `.superRefine()` for cross-field validation. The `pagination.schema.ts` provides reusable schemas for `page`, `limit`, `sortBy`, and `sortOrder` query parameters used across all list endpoints.
+   759→

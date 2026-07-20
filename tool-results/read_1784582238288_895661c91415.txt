@@ -1,0 +1,2002 @@
+     1→# Database Schema — TeslaPrimeCapital
+     2→
+     3→**Project:** TeslaPrimeCapital — Enterprise Investment Platform  
+     4→**Phase:** 2 — Technical Architecture  
+     5→**Version:** 1.0.0  
+     6→**Status:** Single Source of Truth  
+     7→**Last Updated:** 2025-01  
+     8→
+     9→This document is the **authoritative, exhaustive schema definition** for the TeslaPrimeCapital platform. Every table, field, constraint, index, and relationship required by the platform is defined here. All application code, migrations, and data-access layers must conform to this specification.
+    10→
+    11→---
+    12→
+    13→## Table of Contents
+    14→
+    15→1. [Database Approach Overview](#1-database-approach-overview)
+    16→2. [Schema Design Principles](#2-schema-design-principles)
+    17→3. [Complete Prisma Schema](#3-complete-prisma-schema)
+    18→   - 3.1 [Enums](#31-enums)
+    19→   - 3.2 [Core User Models](#32-core-user-models)
+    20→   - 3.3 [Account & Wallet Models](#33-account--wallet-models)
+    21→   - 3.4 [Investment Plan Models](#34-investment-plan-models)
+    22→   - 3.5 [Deposit Models](#35-deposit-models)
+    23→   - 3.6 [Withdrawal Models](#36-withdrawal-models)
+    24→   - 3.7 [Referral & Binary Models](#37-referral--binary-models)
+    25→   - 3.8 [KYC Verification Models](#38-kyc-verification-models)
+    26→   - 3.9 [Admin & RBAC Models](#39-admin--rbac-models)
+    27→   - 3.10 [Notification & Email Models](#310-notification--email-models)
+    28→   - 3.11 [Support Ticket Models](#311-support-ticket-models)
+    29→   - 3.12 [Currency & Exchange Rate Models](#312-currency--exchange-rate-models)
+    30→   - 3.13 [Security & Session Models](#313-security--session-models)
+    31→   - 3.14 [Audit & Configuration Models](#314-audit--configuration-models)
+    32→   - 3.15 [Promo Code Models](#315-promo-code-models)
+    33→4. [Entity-Relationship Diagram (ERD)](#4-entity-relationship-diagram-erd)
+    34→5. [Index Strategy](#5-index-strategy)
+    35→6. [Data Partitioning Considerations](#6-data-partitioning-considerations)
+    36→7. [Migration Strategy](#7-migration-strategy)
+    37→8. [Seed Data Requirements](#8-seed-data-requirements)
+    38→
+    39→---
+    40→
+    41→## 1. Database Approach Overview
+    42→
+    43→### 1.1 Technology Stack
+    44→
+    45→| Component | Technology | Purpose |
+    46→|-----------|-----------|---------|
+    47→| Primary RDBMS | PostgreSQL 16+ | All persistent application data |
+    48→| ORM | Prisma ORM (v5+) | Type-safe database access, migrations, schema management |
+    49→| Caching / Ephemeral | Redis 7+ | Sessions, rate limits, exchange rate cache, job queues, OTP throttle |
+    50→| File Storage | Cloudinary | KYC documents, gift card screenshots |
+    51→| Email | Resend + React Email | Transactional and notification emails |
+    52→
+    53→### 1.2 Why PostgreSQL + Prisma
+    54→
+    55→**PostgreSQL** provides strict ACID compliance for financial data integrity, native `JSONB` support for flexible metadata columns, full-text search with `tsvector`/`tsquery` and GIN indexes, and mature tooling for backup (pg_dump + WAL archiving) and point-in-time recovery. These capabilities are essential for a financial platform handling investments, withdrawals, and audit trails.
+    56→
+    57→**Prisma ORM** delivers first-class PostgreSQL support with generated TypeScript types, an interactive transaction API (`prisma.$transaction()`) for multi-step financial operations, declarative migration management (`prisma migrate`), and a schema-first development workflow where the `schema.prisma` file serves as the single source of truth.
+    58→
+    59→### 1.3 Internal Accounting Currency
+    60→
+    61→USD is the sole internal accounting currency. All wallet balances, investment amounts, fee calculations, and commission values are stored in USD. Fiat display currencies (EUR, GBP, etc.) are handled at the presentation layer via real-time conversion using cached exchange rates. Cryptocurrency deposit amounts are converted to USD at the time of blockchain confirmation.
+    62→
+    63→### 1.4 Dual-Mode Data Separation
+    64→
+    65→Every user operates in two parallel modes: **Demo** and **Live**. Data separation is achieved through:
+    66→
+    67→- **Wallets**: Each user has exactly two wallets — one `demo`, one `live` — differentiated by the `type` field.
+    68→- **Investments**: The `mode` field on `UserInvestment` tags each investment as demo or live.
+    69→- **Transactions**: The `walletId` foreign key implicitly links each transaction to the correct mode via the wallet.
+    70→- **Deposits/Withdrawals**: The `mode` field explicitly tags each operation.
+    71→- **Referral Commissions**: Commissions from live deposits credit the sponsor's live wallet; demo commissions credit the demo wallet.
+    72→
+    73→---
+    74→
+    75→## 2. Schema Design Principles
+    76→
+    77→### 2.1 Normalization
+    78→
+    79→The schema adheres to **Third Normal Form (3NF)** as the baseline. Controlled denormalization is applied only where query performance demands it:
+    80→
+    81→- **Wallet balances** (`balance`, `availableBalance`, `lockedBalance`) are denormalized summaries maintained transactionally. The invariant `balance = availableBalance + lockedBalance` is always enforced application-side.
+    82→- **BinaryNode volumes** (`volumeLeft`, `volumeRight`) are incrementally updated denormalized counters to avoid recursive tree traversal on every query.
+    83→
+    84→### 2.2 UUID Primary Keys
+    85→
+    86→All entities use `UUID v4` as their primary key, generated application-side via `crypto.randomUUID()`. This prevents information leakage (no sequential ID enumeration), eliminates cross-environment ID collisions, and supports future distributed architectures.
+    87→
+    88→### 2.3 Soft Deletes
+    89→
+    90→All entities include a nullable `deletedAt` `DateTime` column. Hard `DELETE` is never used in application code. All queries include `WHERE deletedAt IS NULL` enforced through Prisma middleware. Hard deletes are reserved for GDPR erasure compliance after a mandatory holding period.
+    91→
+    92→### 2.4 Timestamps
+    93→
+    94→Every entity includes `createdAt` (non-nullable, default `now()`) and `updatedAt` (non-nullable, default `now()`, auto-updated via `@updatedAt`). These serve audit, debugging, and analytics purposes.
+    95→
+    96→### 2.5 Financial Precision
+    97→
+    98→All monetary values use `Decimal` type (mapped to PostgreSQL `NUMERIC(19,4)`). This prevents floating-point rounding errors that would be unacceptable in financial calculations. Return rates use `Decimal` for precision (e.g., `0.50` for 0.5%).
+    99→
+   100→---
+   101→
+   102→## 3. Complete Prisma Schema
+   103→
+   104→### 3.1 Enums
+   105→
+   106→```prisma
+   107→// ──────────────────────────────────────────────
+   108→// ENUM DEFINITIONS
+   109→// ──────────────────────────────────────────────
+   110→
+   111→/// User account status lifecycle
+   112→enum UserStatus {
+   113→  pending_verification  // Registered, email not yet verified
+   114→  active                // Fully operational
+   115→  suspended             // Temporarily restricted by admin
+   116→  banned                // Permanently restricted
+   117→  closed                // Account closed (GDPR or user request)
+   118→}
+   119→
+   120→/// KYC verification levels (progressive)
+   121→enum KycLevel {
+   122→  LEVEL_0  // Unverified — email only
+   123→  LEVEL_1  // Basic — government ID verified
+   124→  LEVEL_2  // Standard — ID + proof of address verified
+   125→  LEVEL_3  // Premium — ID + proof of address + selfie verified
+   126→}
+   127→
+   128→/// Wallet type for dual-mode separation
+   129→enum WalletType {
+   130→  demo
+   131→  live
+   132→}
+   133→
+   134→/// Transaction types for the financial ledger
+   135→enum TransactionType {
+   136→  deposit              // Funds entering the platform
+   137→  withdrawal           // Funds leaving the platform
+   138→  investment           // Principal committed to a plan
+   139→  investment_return    // Return credited upon plan maturity
+   140→  referral_bonus       // Direct referral commission
+   141→  binary_bonus         // Weekly binary bonus payout
+   142→  fee                  // Withdrawal or service fee
+   143→  promo_credit         // Promotional bonus credit
+   144→  balance_adjustment   // Manual admin balance correction
+   145→}
+   146→
+   147→/// Status lifecycle for transactions
+   148→enum TransactionStatus {
+   149→  pending
+   150→  completed
+   151→  failed
+   152→  reversed
+   153→}
+   154→
+   155→/// Investment lifecycle status
+   156→enum InvestmentStatus {
+   157→  active
+   158→  completed
+   159→  failed
+   160→  cancelled
+   161→}
+   162→
+   163→/// Deposit payment methods
+   164→enum DepositMethod {
+   165→  crypto
+   166→  gift_card
+   167→}
+   168→
+   169→/// Supported cryptocurrencies
+   170→enum CryptoCurrency {
+   171→  BTC
+   172→  ETH
+   173→  USDT
+   174→}
+   175→
+   176→/// Deposit lifecycle status
+   177→enum DepositStatus {
+   178→  pending                // Awaiting blockchain confirmation or admin review
+   179→  pending_verification   // Gift card awaiting admin review
+   180→  confirmed              // Funds credited to wallet
+   181→  rejected               // Declined with reason
+   182→  expired                // Timed out (crypto: no confirmation received)
+   183→}
+   184→
+   185→/// Withdrawal lifecycle status
+   186→enum WithdrawalStatus {
+   187→  pending      // Awaiting admin approval
+   188→  processing   // Approved, fund transfer in progress
+   189→  completed    // Transfer confirmed
+   190→  rejected     // Declined, funds returned to wallet
+   191→  failed       // Transfer failed after approval
+   192→}
+   193→
+   194→/// Withdrawal destination types
+   195→enum WithdrawalDestinationType {
+   196→  crypto
+   197→  bank
+   198→}
+   199→
+   200→/// Referral commission types
+   201→enum ReferralCommissionType {
+   202→  direct    // 10% of referred user's deposit
+   203→  binary    // Weekly binary bonus from weaker leg
+   204→}
+   205→
+   206→/// Referral commission status
+   207→enum ReferralCommissionStatus {
+   208→  pending
+   209→  paid
+   210→  reversed
+   211→}
+   212→
+   213→/// Binary tree node position
+   214→enum BinaryPosition {
+   215→  left
+   216→  right
+   217→}
+   218→
+   219→/// KYC document types
+   220→enum KycDocumentType {
+   221→  id_front
+   222→  id_back
+   223→  selfie
+   224→  proof_of_address
+   225→}
+   226→
+   227→/// KYC document review status
+   228→enum KycDocumentStatus {
+   229→  pending
+   230→  approved
+   231→  rejected
+   232→  expired
+   233→}
+   234→
+   235→/// Support ticket status
+   236→enum TicketStatus {
+   237→  open
+   238→  in_progress
+   239→  waiting_user
+   240→  resolved
+   241→  closed
+   242→}
+   243→
+   244→/// Support ticket priority
+   245→enum TicketPriority {
+   246→  low
+   247→  medium
+   248→  high
+   249→  urgent
+   250→}
+   251→
+   252→/// Admin role hierarchy
+   253→enum AdminRoleName {
+   254→  SUPER_ADMIN
+   255→  ADMIN
+   256→  COMPLIANCE
+   257→  SUPPORT
+   258→}
+   259→
+   260→/// Admin permission action types
+   261→enum PermissionAction {
+   262→  create
+   263→  read
+   264→  update
+   265→  delete
+   266→  ban
+   267→  approve
+   268→  reject
+   269→  export
+   270→  manage
+   271→  view
+   272→  respond
+   273→  close
+   274→  escalate
+   275→}
+   276→
+   277→/// Admin permission resource types
+   278→enum PermissionResource {
+   279→  users
+   280→  kyc
+   281→  deposits
+   282→  withdrawals
+   283→  investments
+   284→  plans
+   285→  referrals
+   286→  commissions
+   287→  tickets
+   288→  reports
+   289→  analytics
+   290→  audit_logs
+   291→  system_config
+   292→  roles
+   293→  settings
+   294→  notifications
+   295→  promotions
+   296→}
+   297→
+   298→/// Notification types
+   299→enum NotificationType {
+   300→  deposit_confirmed
+   301→  deposit_rejected
+   302→  withdrawal_processed
+   303→  withdrawal_rejected
+   304→  investment_activated
+   305→  investment_completed
+   306→  investment_return_credited
+   307→  referral_earned
+   308→  binary_bonus_credited
+   309→  kyc_submitted
+   310→  kyc_approved
+   311→  kyc_rejected
+   312→  kyc_reminder
+   313→  security_login_detected
+   314→  security_password_changed
+   315→  security_2fa_enabled
+   316→  security_2fa_disabled
+   317→  security_account_locked
+   318→  ticket_response
+   319→  ticket_resolved
+   320→  system_maintenance
+   321→  system_announcement
+   322→  promo_applied
+   323→  custom
+   324→}
+   325→
+   326→/// OTP types
+   327→enum OtpType {
+   328→  email_verification
+   329→  password_reset
+   330→  two_factor_setup
+   331→  two_factor_disable
+   332→  withdrawal_confirm
+   333→}
+   334→
+   335→/// Gift card submission status
+   336→enum GiftCardStatus {
+   337→  pending
+   338→  verified
+   339→  rejected
+   340→  expired
+   341→}
+   342→
+   343→/// Email log status
+   344→enum EmailStatus {
+   345→  sent
+   346→  delivered
+   347→  failed
+   348→  bounced
+   349→}
+   350→
+   351→/// Plan payout status
+   352→enum PayoutStatus {
+   353→  pending
+   354→  processed
+   355→  failed
+   356→}
+   357→
+   358→/// User active mode
+   359→enum UserMode {
+   360→  demo
+   361→  live
+   362→}
+   363→
+   364→/// Plan duration units
+   365→enum DurationUnit {
+   366→  hours
+   367→  days
+   368→}
+   369→
+   370→/// Promo code discount types
+   371→enum PromoDiscountType {
+   372→  percentage
+   373→  fixed
+   374→}
+   375→
+   376→/// Promo code status
+   377→enum PromoCodeStatus {
+   378→  active
+   379→  inactive
+   380→  expired
+   381→  fully_redeemed
+   382→}
+   383→```
+   384→
+   385→### 3.2 Core User Models
+   386→
+   387→```prisma
+   388→// ──────────────────────────────────────────────
+   389→// USER MODEL
+   390→// ──────────────────────────────────────────────
+   391→
+   392→model User {
+   393→  id                String     @id @default(uuid()) @db.Uuid
+   394→  email             String     @unique @db.VarChar(255)
+   395→  passwordHash      String     @map("password_hash") @db.VarChar(255)
+   396→  emailVerified     Boolean    @default(false) @map("email_verified")
+   397→  emailVerifiedAt   DateTime?  @map("email_verified_at")
+   398→
+   399→  // Status and role
+   400→  status            UserStatus @default(pending_verification)
+   401→  kycLevel          KycLevel   @default(LEVEL_0) @map("kyc_level")
+   402→  activeMode        UserMode   @default(demo) @map("active_mode")
+   403→
+   404→  // Referral
+   405→  referralCode      String     @unique @map("referral_code") @db.VarChar(12)
+   406→  referredById      String?    @map("referred_by_id") @db.Uuid
+   407→
+   408→  // 2FA
+   409→  twoFactorEnabled  Boolean    @default(false) @map("two_factor_enabled")
+   410→
+   411→  // Security tracking
+   412→  lastLoginAt       DateTime?  @map("last_login_at")
+   413→  lastLoginIp       String?    @map("last_login_ip") @db.VarChar(45)
+   414→  loginAttemptCount Int        @default(0) @map("login_attempt_count")
+   415→  lockedUntil       DateTime?  @map("locked_until")
+   416→
+   417→  // Preferences
+   418→  preferredCurrency String     @default("USD") @map("preferred_currency") @db.VarChar(3)
+   419→  preferredLanguage String     @default("en") @map("preferred_language") @db.VarChar(5)
+   420→
+   421→  // Timestamps
+   422→  createdAt         DateTime   @default(now()) @map("created_at")
+   423→  updatedAt         DateTime   @updatedAt @map("updated_at")
+   424→  deletedAt         DateTime?  @map("deleted_at")
+   425→
+   426→  // ── Relations ──
+   427→  profile           Profile?
+   428→  wallets           Wallet[]
+   429→  deposits          Deposit[]
+   430→  withdrawals       Withdrawal[]
+   431→  investments       UserInvestment[]
+   432→  notifications     Notification[]
+   433→  auditLogs         AuditLog[]
+   434→  supportTickets    SupportTicket[]
+   435→  kycDocuments      KYCDocument[]
+   436→  kycVerifications  KYCVerification[]
+   437→  referredBy        User?      @relation("ReferralTree", fields: [referredById], references: [id])
+   438→  referrals         User[]     @relation("ReferralTree")
+   439→  referralAsReferrer Referral[]
+   440→  referralAsReferred Referral[]
+   441→  referralCommissions ReferralCommission[]
+   442→  binaryNode        BinaryNode?
+   443→  sentTickets       SupportTicket[] @relation("AssignedTickets")
+   444→  verifiedDeposits  Deposit[]       @relation("DepositVerifier")
+   445→  verifiedKycDocs   KYCDocument[]   @relation("KycDocReviewer")
+   446→  processedWithdrawals Withdrawal[] @relation("WithdrawalProcessor")
+   447→  adminRecord       Admin?
+   448→  twoFactorAuth     TwoFactorAuth?
+   449→  userPromos        UserPromo[]
+   450→  otps              Otp[]
+   451→  emailLogs         EmailLog[]  @relation("EmailRecipient")
+   452→
+   453→  // ── Indexes ──
+   454→  @@index([status], map: "idx_user_status")
+   455→  @@index([kycLevel], map: "idx_user_kyc_level")
+   456→  @@index([referredById], map: "idx_user_referred_by")
+   457→  @@index([deletedAt], map: "idx_user_deleted_at")
+   458→  @@map("users")
+   459→}
+   460→
+   461→// ──────────────────────────────────────────────
+   462→// PROFILE MODEL
+   463→// ──────────────────────────────────────────────
+   464→
+   465→model Profile {
+   466→  id            String   @id @default(uuid()) @db.Uuid
+   467→  userId        String   @unique @map("user_id") @db.Uuid
+   468→
+   469→  // Personal information
+   470→  firstName     String?  @map("first_name") @db.VarChar(100)
+   471→  lastName      String?  @map("last_name") @db.VarChar(100)
+   472→  phone         String?  @map("phone") @db.VarChar(20)
+   473→  dateOfBirth   DateTime? @map("date_of_birth")
+   474→  avatarUrl     String?  @map("avatar_url") @db.VarChar(500)
+   475→  country       String?  @map("country") @db.VarChar(2)   // ISO 3166-1 alpha-2
+   476→
+   477→  // Address
+   478→  streetAddress String?  @map("street_address") @db.VarChar(255)
+   479→  city          String?  @map("city") @db.VarChar(100)
+   480→  state         String?  @map("state") @db.VarChar(100)
+   481→  postalCode    String?  @map("postal_code") @db.VarChar(20)
+   482→
+   483→  // Timestamps
+   484→  createdAt     DateTime @default(now()) @map("created_at")
+   485→  updatedAt     DateTime @updatedAt @map("updated_at")
+   486→
+   487→  // ── Relation ──
+   488→  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   489→
+   490→  @@map("profiles")
+   491→}
+   492→```
+   493→
+   494→### 3.3 Account & Wallet Models
+   495→
+   496→```prisma
+   497→// ──────────────────────────────────────────────
+   498→// ACCOUNT MODEL (Logical grouping — maps 1:1
+   499→// to User + Wallet pair; provides a unified
+   500→// view of a user's financial presence)
+   501→// ──────────────────────────────────────────────
+   502→
+   503→model Account {
+   504→  id                String     @id @default(uuid()) @db.Uuid
+   505→  userId            String     @unique @map("user_id") @db.Uuid
+   506→  mode              UserMode
+   507→  isActive          Boolean    @default(true) @map("is_active")
+   508→
+   509→  // Aggregate stats (denormalized, updated by jobs)
+   510→  totalDeposits     Decimal    @default(0) @map("total_deposits") @db.Decimal(19, 4)
+   511→  totalWithdrawals  Decimal    @default(0) @map("total_withdrawals") @db.Decimal(19, 4)
+   512→  totalInvested     Decimal    @default(0) @map("total_invested") @db.Decimal(19, 4)
+   513→  totalReturns      Decimal    @default(0) @map("total_returns") @db.Decimal(19, 4)
+   514→  totalCommissions  Decimal    @default(0) @map("total_commissions") @db.Decimal(19, 4)
+   515→
+   516→  createdAt         DateTime   @default(now()) @map("created_at")
+   517→  updatedAt         DateTime   @updatedAt @map("updated_at")
+   518→  deletedAt         DateTime?  @map("deleted_at")
+   519→
+   520→  // ── Relations ──
+   521→  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+   522→  wallet            Wallet?
+   523→
+   524→  @@unique([userId, mode], map: "uq_account_user_mode")
+   525→  @@index([mode], map: "idx_account_mode")
+   526→  @@map("accounts")
+   527→}
+   528→
+   529→// ──────────────────────────────────────────────
+   530→// WALLET MODEL
+   531→// ──────────────────────────────────────────────
+   532→
+   533→model Wallet {
+   534→  id                String     @id @default(uuid()) @db.Uuid
+   535→  userId            String     @map("user_id") @db.Uuid
+   536→  type              WalletType
+   537→
+   538→  // Balance fields (denormalized, maintained transactionally)
+   539→  balance           Decimal    @default(0) @db.Decimal(19, 4)
+   540→  availableBalance  Decimal    @default(0) @map("available_balance") @db.Decimal(19, 4)
+   541→  lockedBalance     Decimal    @default(0) @map("locked_balance") @db.Decimal(19, 4)
+   542→
+   543→  // Internal accounting currency
+   544→  currency          String     @default("USD") @db.VarChar(3)
+   545→
+   546→  createdAt         DateTime   @default(now()) @map("created_at")
+   547→  updatedAt         DateTime   @updatedAt @map("updated_at")
+   548→  deletedAt         DateTime?  @map("deleted_at")
+   549→
+   550→  // ── Relations ──
+   551→  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+   552→  transactions      Transaction[]
+   553→  deposits          Deposit[]
+   554→  withdrawals       Withdrawal[]
+   555→  account           Account?
+   556→
+   557→  // Each user has exactly one wallet per type
+   558→  @@unique([userId, type], map: "uq_wallet_user_type")
+   559→  @@index([userId], map: "idx_wallet_user_id")
+   560→  @@map("wallets")
+   561→}
+   562→
+   563→// ──────────────────────────────────────────────
+   564→// TRANSACTION MODEL (Immutable Financial Ledger)
+   565→// ──────────────────────────────────────────────
+   566→
+   567→model Transaction {
+   568→  id              String           @id @default(uuid()) @db.Uuid
+   569→  walletId        String           @map("wallet_id") @db.Uuid
+   570→  type            TransactionType
+   571→  amount          Decimal          @db.Decimal(19, 4)   // Always positive
+   572→  status          TransactionStatus @default(pending)
+   573→
+   574→  // Human-readable description
+   575→  description     String           @db.VarChar(500)
+   576→
+   577→  // Polymorphic reference to the source entity
+   578→  referenceId     String?          @map("reference_id") @db.Uuid
+   579→  referenceType   String?          @map("reference_type") @db.VarChar(50)
+   580→  // referenceType values: "Deposit", "Withdrawal", "UserInvestment",
+   581→  //                       "ReferralCommission", "PlanPayout", "UserPromo", "Admin"
+   582→
+   583→  // Extensible context (exchange rate, crypto amount, fee breakdown, etc.)
+   584→  metadata        Json?
+   585→
+   586→  createdAt       DateTime         @default(now()) @map("created_at")
+   587→  deletedAt       DateTime?        @map("deleted_at")
+   588→
+   589→  // ── Relations ──
+   590→  wallet          Wallet           @relation(fields: [walletId], references: [id])
+   591→
+   592→  // ── Indexes ──
+   593→  @@index([walletId, createdAt], map: "idx_tx_wallet_created")
+   594→  @@index([type], map: "idx_tx_type")
+   595→  @@index([status], map: "idx_tx_status")
+   596→  @@index([referenceId, referenceType], map: "idx_tx_reference")
+   597→  @@index([createdAt], map: "idx_tx_created_at")
+   598→  @@map("transactions")
+   599→}
+   600→
+   601→// ──────────────────────────────────────────────
+   602→// TRANSACTION LOG MODEL (Detailed log for every
+   603→// financial operation — supplements Transaction)
+   604→// ──────────────────────────────────────────────
+   605→
+   606→model TransactionLog {
+   607→  id              String   @id @default(uuid()) @db.Uuid
+   608→  transactionId   String   @map("transaction_id") @db.Uuid
+   609→  walletId        String   @map("wallet_id") @db.Uuid
+   610→
+   611→  // Balance snapshot before and after
+   612→  balanceBefore   Decimal  @map("balance_before") @db.Decimal(19, 4)
+   613→  balanceAfter    Decimal  @map("balance_after") @db.Decimal(19, 4)
+   614→  availableBefore Decimal  @map("available_before") @db.Decimal(19, 4)
+   615→  availableAfter  Decimal  @map("available_after") @db.Decimal(19, 4)
+   616→  lockedBefore    Decimal  @map("locked_before") @db.Decimal(19, 4)
+   617→  lockedAfter     Decimal  @map("locked_after") @db.Decimal(19, 4)
+   618→
+   619→  // Operation context
+   620→  operation       String   @db.VarChar(100)   // e.g. "credit_deposit", "debit_investment"
+   621→  metadata        Json?
+   622→
+   623→  createdAt       DateTime @default(now()) @map("created_at")
+   624→
+   625→  // ── Relations ──
+   626→  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+   627→  wallet          Wallet      @relation(fields: [walletId], references: [id])
+   628→
+   629→  @@index([transactionId], map: "idx_txlog_tx_id")
+   630→  @@index([walletId, createdAt], map: "idx_txlog_wallet_created")
+   631→  @@map("transaction_logs")
+   632→}
+   633→```
+   634→
+   635→### 3.4 Investment Plan Models
+   636→
+   637→```prisma
+   638→// ──────────────────────────────────────────────
+   639→// INVESTMENT PLAN MODEL (Configuration entity)
+   640→// ──────────────────────────────────────────────
+   641→
+   642→model InvestmentPlan {
+   643→  id              String       @id @default(uuid()) @db.Uuid
+   644→  name            String       @db.VarChar(50)           // "Basic", "Silver", "Gold", "Platinum"
+   645→  slug            String       @unique @db.VarChar(50)    // "basic", "silver", "gold", "platinum"
+   646→  description     String?      @db.Text
+   647→
+   648→  // Deposit range
+   649→  minAmount       Decimal      @map("min_amount") @db.Decimal(19, 4)
+   650→  maxAmount       Decimal      @map("max_amount") @db.Decimal(19, 4)
+   651→
+   652→  // Duration
+   653→  duration        Int          // Numeric value
+   654→  durationUnit    DurationUnit @map("duration_unit")      // "hours" or "days"
+   655→
+   656→  // Returns
+   657→  returnRate      Decimal      @map("return_rate") @db.Decimal(8, 4)  // e.g., 0.50 for 0.5%
+   658→
+   659→  // KYC requirement
+   660→  requiredKycLevel KycLevel   @map("required_kyc_level")
+   661→
+   662→  // Display and ordering
+   663→  features        Json?        // JSON array of feature strings for marketing display
+   664→  sortOrder       Int          @default(0) @map("sort_order")
+   665→  isActive        Boolean      @default(true) @map("is_active")
+   666→
+   667→  // Icon/color for UI
+   668→  icon            String?      @db.VarChar(50)
+   669→  color           String?      @db.VarChar(7)  // Hex color code
+   670→
+   671→  createdAt       DateTime     @default(now()) @map("created_at")
+   672→  updatedAt       DateTime     @updatedAt @map("updated_at")
+   673→
+   674→  // ── Relations ──
+   675→  investments     UserInvestment[]
+   676→  planPayouts     PlanPayout[]
+   677→
+   678→  @@index([isActive], map: "idx_plan_active")
+   679→  @@index([sortOrder], map: "idx_plan_sort")
+   680→  @@map("investment_plans")
+   681→}
+   682→
+   683→// ──────────────────────────────────────────────
+   684→// USER INVESTMENT MODEL
+   685→// ──────────────────────────────────────────────
+   686→
+   687→model UserInvestment {
+   688→  id              String           @id @default(uuid()) @db.Uuid
+   689→  userId          String           @map("user_id") @db.Uuid
+   690→  planId          String           @map("plan_id") @db.Uuid
+   691→  walletId        String           @map("wallet_id") @db.Uuid
+   692→  mode            UserMode         @default(live)
+   693→
+   694→  // Financial details
+   695→  amount          Decimal          @db.Decimal(19, 4)    // Principal invested
+   696→  expectedReturn  Decimal          @map("expected_return") @db.Decimal(19, 4)
+   697→  actualReturn    Decimal?         @map("actual_return") @db.Decimal(19, 4)
+   698→
+   699→  // Return rate locked at time of investment (plan may change later)
+   700→  lockedReturnRate Decimal         @map("locked_return_rate") @db.Decimal(8, 4)
+   701→
+   702→  // Dates
+   703→  startDate       DateTime         @map("start_date")
+   704→  endDate         DateTime         @map("end_date")
+   705→  completedAt     DateTime?        @map("completed_at")
+   706→
+   707→  status          InvestmentStatus @default(active)
+   708→
+   709→  createdAt       DateTime         @default(now()) @map("created_at")
+   710→  updatedAt       DateTime         @updatedAt @map("updated_at")
+   711→  deletedAt       DateTime?        @map("deleted_at")
+   712→
+   713→  // ── Relations ──
+   714→  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+   715→  plan            InvestmentPlan   @relation(fields: [planId], references: [id])
+   716→  wallet          Wallet           @relation(fields: [walletId], references: [id])
+   717→  payouts         PlanPayout[]
+   718→
+   719→  // ── Indexes ──
+   720→  @@index([userId, status], map: "idx_investment_user_status")
+   721→  @@index([status, endDate], map: "idx_investment_status_end_date")
+   722→  @@index([planId], map: "idx_investment_plan")
+   723→  @@index([walletId], map: "idx_investment_wallet")
+   724→  @@index([mode], map: "idx_investment_mode")
+   725→  @@map("user_investments")
+   726→}
+   727→
+   728→// ──────────────────────────────────────────────
+   729→// PLAN PAYOUT MODEL (Records individual payouts
+   730→// when an investment matures)
+   731→// ──────────────────────────────────────────────
+   732→
+   733→model PlanPayout {
+   734→  id              String       @id @default(uuid()) @db.Uuid
+   735→  investmentId    String       @map("investment_id") @db.Uuid
+   736→  planId          String       @map("plan_id") @db.Uuid
+   737→  walletId        String       @map("wallet_id") @db.Uuid
+   738→
+   739→  // Payout amounts
+   740→  principalReturned  Decimal   @map("principal_returned") @db.Decimal(19, 4)
+   741→  profitCredited     Decimal   @map("profit_credited") @db.Decimal(19, 4)
+   742→  totalCredited      Decimal   @map("total_credited") @db.Decimal(19, 4)
+   743→
+   744→  status          PayoutStatus @default(pending)
+   745→  processedAt     DateTime?    @map("processed_at")
+   746→
+   747→  createdAt       DateTime     @default(now()) @map("created_at")
+   748→  updatedAt       DateTime     @updatedAt @map("updated_at")
+   749→
+   750→  // ── Relations ──
+   751→  investment      UserInvestment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+   752→  plan            InvestmentPlan @relation(fields: [planId], references: [id])
+   753→  wallet          Wallet         @relation(fields: [walletId], references: [id])
+   754→
+   755→  @@index([investmentId], map: "idx_payout_investment")
+   756→  @@index([status], map: "idx_payout_status")
+   757→  @@map("plan_payouts")
+   758→}
+   759→```
+   760→
+   761→### 3.5 Deposit Models
+   762→
+   763→```prisma
+   764→// ──────────────────────────────────────────────
+   765→// DEPOSIT MODEL
+   766→// ──────────────────────────────────────────────
+   767→
+   768→model Deposit {
+   769→  id                String        @id @default(uuid()) @db.Uuid
+   770→  userId            String        @map("user_id") @db.Uuid
+   771→  walletId          String        @map("wallet_id") @db.Uuid
+   772→  mode              UserMode      @default(live)
+   773→  method            DepositMethod
+   774→
+   775→  // Amount in USD (after conversion for crypto)
+   776→  amount            Decimal       @db.Decimal(19, 4)
+   777→  currency          String        @db.VarChar(10)  // "BTC", "ETH", "USDT", or "USD"
+   778→
+   779→  // Crypto-specific fields
+   780→  cryptoCurrency    CryptoCurrency? @map("crypto_currency")
+   781→  cryptoAddress     String?       @map("crypto_address") @db.VarChar(100)
+   782→  cryptoTxHash      String?       @map("crypto_tx_hash") @db.VarChar(255)
+   783→  cryptoAmount      Decimal?      @map("crypto_amount") @db.Decimal(28, 8)
+   784→  cryptoConfirmations Int?        @map("crypto_confirmations")
+   785→  cryptoExchangeRate  Decimal?    @map("crypto_exchange_rate") @db.Decimal(28, 8)
+   786→  exchangeRateLockedAt DateTime?   @map("exchange_rate_locked_at")
+   787→
+   788→  // Status and verification
+   789→  status            DepositStatus @default(pending)
+   790→  verifiedById      String?       @map("verified_by_id") @db.Uuid
+   791→  verifiedAt        DateTime?     @map("verified_at")
+   792→  rejectionReason   String?       @map("rejection_reason") @db.Text
+   793→
+   794→  // Extensible metadata
+   795→  metadata          Json?
+   796→
+   797→  createdAt         DateTime      @default(now()) @map("created_at")
+   798→  updatedAt         DateTime      @updatedAt @map("updated_at")
+   799→  deletedAt         DateTime?     @map("deleted_at")
+   800→
+   801→  // ── Relations ──
+   802→  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+   803→  wallet            Wallet        @relation(fields: [walletId], references: [id])
+   804→  verifiedBy        User?         @relation("DepositVerifier", fields: [verifiedById], references: [id])
+   805→  giftCardSubmission GiftCardSubmission?
+   806→
+   807→  // ── Indexes ──
+   808→  @@index([userId, status], map: "idx_deposit_user_status")
+   809→  @@index([status], map: "idx_deposit_status")
+   810→  @@index([method], map: "idx_deposit_method")
+   811→  @@index([cryptoTxHash], map: "idx_deposit_crypto_tx_hash")
+   812→  @@index([createdAt], map: "idx_deposit_created")
+   813→  @@map("deposits")
+   814→}
+   815→
+   816→// ──────────────────────────────────────────────
+   817→// GIFT CARD SUBMISSION MODEL
+   818→// ──────────────────────────────────────────────
+   819→
+   820→model GiftCardSubmission {
+   821→  id                String        @id @default(uuid()) @db.Uuid
+   822→  depositId         String        @unique @map("deposit_id") @db.Uuid
+   823→  userId            String        @map("user_id") @db.Uuid
+   824→
+   825→  // Card details
+   826→  cardBrand         String        @map("card_brand") @db.VarChar(50)   // "Amazon", "Apple", etc.
+   827→  cardNumber        String?       @map("card_number") @db.VarChar(50)  // Last 4 digits for record
+   828→  cardValue         Decimal       @map("card_value") @db.Decimal(19, 4)
+   829→  cardCurrency      String        @default("USD") @map("card_currency") @db.VarChar(3)
+   830→
+   831→  // Screenshot stored in Cloudinary
+   832→  screenshotUrl     String        @map("screenshot_url") @db.VarChar(500)
+   833→  screenshotPublicId String?      @map("screenshot_public_id") @db.VarChar(200)
+   834→
+   835→  // Verification
+   836→  status            GiftCardStatus @default(pending)
+   837→  reviewedById      String?       @map("reviewed_by_id") @db.Uuid
+   838→  reviewedAt        DateTime?     @map("reviewed_at")
+   839→  rejectionReason   String?       @map("rejection_reason") @db.Text
+   840→  reviewNotes       String?       @map("review_notes") @db.Text
+   841→
+   842→  // Fraud tracking
+   843→  fraudFlag         Boolean       @default(false) @map("fraud_flag")
+   844→  fraudFlagReason   String?       @map("fraud_flag_reason") @db.VarChar(500)
+   845→
+   846→  createdAt         DateTime      @default(now()) @map("created_at")
+   847→  updatedAt         DateTime      @updatedAt @map("updated_at")
+   848→
+   849→  // ── Relations ──
+   850→  deposit           Deposit       @relation(fields: [depositId], references: [id], onDelete: Cascade)
+   851→  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+   852→  review            GiftCardReview?
+   853→
+   854→  @@index([userId, status], map: "idx_gc_user_status")
+   855→  @@index([status], map: "idx_gc_status")
+   856→  @@index([cardBrand], map: "idx_gc_brand")
+   857→  @@index([fraudFlag], map: "idx_gc_fraud_flag")
+   858→  @@map("gift_card_submissions")
+   859→}
+   860→
+   861→// ──────────────────────────────────────────────
+   862→// GIFT CARD REVIEW MODEL (Detailed audit of each
+   863→// review action)
+   864→// ──────────────────────────────────────────────
+   865→
+   866→model GiftCardReview {
+   867→  id                String   @id @default(uuid()) @db.Uuid
+   868→  submissionId      String   @map("submission_id") @db.Uuid
+   869→  reviewerId        String   @map("reviewer_id") @db.Uuid
+   870→
+   871→  action            String   @db.VarChar(20)   // "approved", "rejected", "flagged"
+   872→  notes             String?  @db.Text
+   873→
+   874→  // Snapshot of submission state at review time
+   875→  cardBrand         String   @map("card_brand") @db.VarChar(50)
+   876→  cardValue         Decimal  @map("card_value") @db.Decimal(19, 4)
+   877→  decisionReason    String?  @map("decision_reason") @db.Text
+   878→
+   879→  createdAt         DateTime @default(now()) @map("created_at")
+   880→
+   881→  // ── Relations ──
+   882→  submission        GiftCardSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+   883→  reviewer          User              @relation(fields: [reviewerId], references: [id])
+   884→
+   885→  @@index([submissionId], map: "idx_gcr_submission")
+   886→  @@index([reviewerId], map: "idx_gcr_reviewer")
+   887→  @@map("gift_card_reviews")
+   888→}
+   889→```
+   890→
+   891→### 3.6 Withdrawal Models
+   892→
+   893→```prisma
+   894→// ──────────────────────────────────────────────
+   895→// WITHDRAWAL MODEL
+   896→// ──────────────────────────────────────────────
+   897→
+   898→model Withdrawal {
+   899→  id                String                 @id @default(uuid()) @db.Uuid
+   900→  userId            String                 @map("user_id") @db.Uuid
+   901→  walletId          String                 @map("wallet_id") @db.Uuid
+   902→  mode              UserMode               @default(live)
+   903→
+   904→  // Amounts
+   905→  amount            Decimal                @db.Decimal(19, 4)  // Gross requested
+   906→  feeAmount         Decimal                @map("fee_amount") @db.Decimal(19, 4)
+   907→  feeRate           Decimal                @map("fee_rate") @db.Decimal(5, 4)  // e.g., 0.2100
+   908→  netAmount         Decimal                @map("net_amount") @db.Decimal(19, 4)
+   909→
+   910→  // Destination
+   911→  destinationType   WithdrawalDestinationType @map("destination_type")
+   912→  destinationAddress String                @map("destination_address") @db.VarChar(500)
+   913→  cryptoCurrency    CryptoCurrency?         @map("crypto_currency")
+   914→
+   915→  // Status
+   916→  status            WithdrawalStatus       @default(pending)
+   917→  processedById     String?                @map("processed_by_id") @db.Uuid
+   918→  processedAt       DateTime?              @map("processed_at")
+   919→  rejectionReason   String?                @map("rejection_reason") @db.Text
+   920→
+   921→  // Risk and compliance
+   922→  riskScore         Int?                   @map("risk_score")    // 0-100, calculated automatically
+   923→  riskFlags         Json?                  @map("risk_flags")    // Array of flag reasons
+   924→
+   925→  // Extensible
+   926→  metadata          Json?
+   927→
+   928→  createdAt         DateTime               @default(now()) @map("created_at")
+   929→  updatedAt         DateTime               @updatedAt @map("updated_at")
+   930→  deletedAt         DateTime?              @map("deleted_at")
+   931→
+   932→  // ── Relations ──
+   933→  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+   934→  wallet            Wallet                 @relation(fields: [walletId], references: [id])
+   935→  processedBy       User?                  @relation("WithdrawalProcessor", fields: [processedById], references: [id])
+   936→  fees              WithdrawalFee[]
+   937→
+   938→  // ── Indexes ──
+   939→  @@index([userId, status], map: "idx_withdrawal_user_status")
+   940→  @@index([status], map: "idx_withdrawal_status")
+   941→  @@index([createdAt], map: "idx_withdrawal_created")
+   942→  @@index([riskScore], map: "idx_withdrawal_risk")
+   943→  @@map("withdrawals")
+   944→}
+   945→
+   946→// ──────────────────────────────────────────────
+   947→// WITHDRAWAL FEE MODEL (Detailed breakdown of
+   948→// the 21% fee into sub-components)
+   949→// ──────────────────────────────────────────────
+   950→
+   951→model WithdrawalFee {
+   952→  id                String   @id @default(uuid()) @db.Uuid
+   953→  withdrawalId      String   @map("withdrawal_id") @db.Uuid
+   954→
+   955→  // Fee components (all in USD)
+   956→  managementFee     Decimal  @map("management_fee") @db.Decimal(19, 4)
+   957→  signalFee         Decimal  @map("signal_fee") @db.Decimal(19, 4)
+   958→  insuranceFee      Decimal  @map("insurance_fee") @db.Decimal(19, 4)
+   959→  certificateFee    Decimal  @map("certificate_fee") @db.Decimal(19, 4)
+   960→  vatFee            Decimal  @map("vat_fee") @db.Decimal(19, 4)
+   961→
+   962→  // Total must equal Withdrawal.feeAmount
+   963→  totalFee          Decimal  @map("total_fee") @db.Decimal(19, 4)
+   964→
+   965→  createdAt         DateTime @default(now()) @map("created_at")
+   966→
+   967→  // ── Relation ──
+   968→  withdrawal        Withdrawal @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+   969→
+   970→  @@index([withdrawalId], map: "idx_wfee_withdrawal")
+   971→  @@map("withdrawal_fees")
+   972→}
+   973→```
+   974→
+   975→### 3.7 Referral & Binary Models
+   976→
+   977→```prisma
+   978→// ──────────────────────────────────────────────
+   979→// REFERRAL MODEL (Direct referral relationships)
+   980→// ──────────────────────────────────────────────
+   981→
+   982→model Referral {
+   983→  id              String   @id @default(uuid()) @db.Uuid
+   984→  referrerId      String   @map("referrer_id") @db.Uuid
+   985→  referredId      String   @unique @map("referred_id") @db.Uuid
+   986→  code            String   @db.VarChar(12)   // Denormalized from referrer's referralCode
+   987→  level           Int      @default(1)       // 1 = direct, higher = indirect (future)
+   988→  isActive        Boolean  @default(true) @map("is_active")
+   989→
+   990→  createdAt       DateTime @default(now()) @map("created_at")
+   991→
+   992→  // ── Relations ──
+   993→  referrer        User     @relation("ReferralAsReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+   994→  referred        User     @relation("ReferralAsReferred", fields: [referredId], references: [id], onDelete: Cascade)
+   995→
+   996→  @@index([referrerId], map: "idx_referral_referrer")
+   997→  @@index([isActive], map: "idx_referral_active")
+   998→  @@map("referrals")
+   999→}
+  1000→
+  1001→// ──────────────────────────────────────────────
+  1002→// REFERRAL COMMISSION MODEL
+  1003→// ──────────────────────────────────────────────
+  1004→
+  1005→model ReferralCommission {
+  1006→  id              String                 @id @default(uuid()) @db.Uuid
+  1007→  userId          String                 @map("user_id") @db.Uuid           // Commission recipient
+  1008→  sourceUserId    String                 @map("source_user_id") @db.Uuid   // User whose activity generated this
+  1009→  sourceDepositId String?                @map("source_deposit_id") @db.Uuid // Link to the triggering deposit
+  1010→
+  1011→  amount          Decimal                @db.Decimal(19, 4)
+  1012→  rate            Decimal                @db.Decimal(5, 4)  // Rate applied (e.g., 0.1000 for 10%)
+  1013→  type            ReferralCommissionType
+  1014→  weekNumber      Int?                   @map("week_number")  // ISO week, relevant for binary bonuses
+  1015→  weekYear        Int?                   @map("week_year")    // ISO year
+  1016→
+  1017→  status          ReferralCommissionStatus @default(pending)
+  1018→  walletId        String                 @map("wallet_id") @db.Uuid
+  1019→  paidAt          DateTime?              @map("paid_at")
+  1020→
+  1021→  createdAt       DateTime               @default(now()) @map("created_at")
+  1022→
+  1023→  // ── Relations ──
+  1024→  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1025→  sourceUser      User                   @relation("CommissionSource", fields: [sourceUserId], references: [id])
+  1026→  wallet          Wallet                 @relation(fields: [walletId], references: [id])
+  1027→
+  1028→  @@index([userId, createdAt], map: "idx_rc_user_created")
+  1029→  @@index([userId, type], map: "idx_rc_user_type")
+  1030→  @@index([userId, weekNumber, weekYear], map: "idx_rc_user_week")
+  1031→  @@index([sourceUserId], map: "idx_rc_source_user")
+  1032→  @@index([status], map: "idx_rc_status")
+  1033→  @@map("referral_commissions")
+  1034→}
+  1035→
+  1036→// ──────────────────────────────────────────────
+  1037→// BINARY NODE MODEL (Binary tree structure)
+  1038→// ──────────────────────────────────────────────
+  1039→
+  1040→model BinaryNode {
+  1041→  id              String         @id @default(uuid()) @db.Uuid
+  1042→  userId          String         @unique @map("user_id") @db.Uuid
+  1043→
+  1044→  // Tree structure (self-referencing)
+  1045→  parentId        String?        @map("parent_id") @db.Uuid
+  1046→  position        BinaryPosition  // "left" or "right"
+  1047→  leftChildId     String?        @map("left_child_id") @db.Uuid
+  1048→  rightChildId    String?        @map("right_child_id") @db.Uuid
+  1049→
+  1050→  // Depth in the tree (root = 0)
+  1051→  depth           Int            @default(0)
+  1052→
+  1053→  // Denormalized cumulative volume counters
+  1054→  volumeLeft      Decimal        @default(0) @map("volume_left") @db.Decimal(19, 4)
+  1055→  volumeRight     Decimal        @default(0) @map("volume_right") @db.Decimal(19, 4)
+  1056→  totalVolume     Decimal        @default(0) @map("total_volume") @db.Decimal(19, 4)
+  1057→
+  1058→  // Week-specific volume for binary bonus calculation
+  1059→  weeklyVolumeLeft  Decimal      @default(0) @map("weekly_volume_left") @db.Decimal(19, 4)
+  1060→  weeklyVolumeRight Decimal      @default(0) @map("weekly_volume_right") @db.Decimal(19, 4)
+  1061→  currentWeekNumber Int?         @map("current_week_number")
+  1062→  currentWeekYear   Int?         @map("current_week_year")
+  1063→
+  1064→  createdAt       DateTime       @default(now()) @map("created_at")
+  1065→  updatedAt       DateTime       @updatedAt @map("updated_at")
+  1066→
+  1067→  // ── Relations ──
+  1068→  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1069→  parent          User?          @relation("BinaryParent", fields: [parentId], references: [id])
+  1070→  leftChild       User?          @relation("BinaryLeftChild", fields: [leftChildId], references: [id])
+  1071→  rightChild      User?          @relation("BinaryRightChild", fields: [rightChildId], references: [id])
+  1072→
+  1073→  @@index([parentId], map: "idx_binary_parent")
+  1074→  @@index([leftChildId], map: "idx_binary_left_child")
+  1075→  @@index([rightChildId], map: "idx_binary_right_child")
+  1076→  @@index([depth], map: "idx_binary_depth")
+  1077→  @@map("binary_nodes")
+  1078→}
+  1079→
+  1080→// ──────────────────────────────────────────────
+  1081→// BINARY BONUS MODEL (Weekly binary bonus records)
+  1082→// ──────────────────────────────────────────────
+  1083→
+  1084→model BinaryBonus {
+  1085→  id              String   @id @default(uuid()) @db.Uuid
+  1086→  userId          String   @map("user_id") @db.Uuid       // Bonus recipient
+  1087→  weekNumber      Int      @map("week_number")             // ISO week
+  1088→  weekYear        Int      @map("week_year")               // ISO year
+  1089→
+  1090→  // Volume snapshot at time of calculation
+  1091→  volumeLeft      Decimal  @map("volume_left") @db.Decimal(19, 4)
+  1092→  volumeRight     Decimal  @map("volume_right") @db.Decimal(19, 4)
+  1093→  weakerLegVolume Decimal  @map("weaker_leg_volume") @db.Decimal(19, 4)
+  1094→
+  1095→  // Bonus calculation
+  1096→  bonusRate       Decimal  @map("bonus_rate") @db.Decimal(5, 4)
+  1097→  bonusAmount     Decimal  @map("bonus_amount") @db.Decimal(19, 4)
+  1098→
+  1099→  // Qualification
+  1100→  isActiveInvestor Boolean @default(false) @map("is_active_investor")  // $200+ in active investments
+  1101→
+  1102→  // Carry-forward from stronger leg
+  1103→  carriedForward  Decimal  @map("carried_forward") @db.Decimal(19, 4) @default(0)
+  1104→
+  1105→  status          ReferralCommissionStatus @default(pending)
+  1106→  walletId        String   @map("wallet_id") @db.Uuid
+  1107→  commissionId    String?  @map("commission_id") @db.Uuid   // Links to ReferralCommission if paid
+  1108→
+  1109→  createdAt       DateTime @default(now()) @map("created_at")
+  1110→
+  1111→  // ── Relations ──
+  1112→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1113→  wallet          Wallet   @relation(fields: [walletId], references: [id])
+  1114→
+  1115→  @@unique([userId, weekNumber, weekYear], map: "uq_binary_bonus_user_week")
+  1116→  @@index([weekNumber, weekYear], map: "idx_binary_bonus_week")
+  1117→  @@index([status], map: "idx_binary_bonus_status")
+  1118→  @@map("binary_bonuses")
+  1119→}
+  1120→```
+  1121→
+  1122→### 3.8 KYC Verification Models
+  1123→
+  1124→```prisma
+  1125→// ──────────────────────────────────────────────
+  1126→// KYC DOCUMENT MODEL
+  1127→// ──────────────────────────────────────────────
+  1128→
+  1129→model KYCDocument {
+  1130→  id              String           @id @default(uuid()) @db.Uuid
+  1131→  userId          String           @map("user_id") @db.Uuid
+  1132→  type            KycDocumentType
+  1133→
+  1134→  // File stored in Cloudinary
+  1135→  fileUrl         String           @map("file_url") @db.VarChar(500)
+  1136→  filePublicId    String?          @map("file_public_id") @db.VarChar(200)
+  1137→  fileName        String           @map("file_name") @db.VarChar(255)
+  1138→  fileSize        Int              @map("file_size")         // Bytes
+  1139→  mimeType        String           @map("mime_type") @db.VarChar(50)
+  1140→
+  1141→  // Target verification level
+  1142→  targetKycLevel  KycLevel         @map("target_kyc_level")
+  1143→
+  1144→  // Review
+  1145→  status          KycDocumentStatus @default(pending)
+  1146→  reviewedById    String?          @map("reviewed_by_id") @db.Uuid
+  1147→  reviewedAt      DateTime?        @map("reviewed_at")
+  1148→  rejectionReason String?          @map("rejection_reason") @db.Text
+  1149→
+  1150→  // Compliance flags
+  1151→  complianceFlags Json?            @map("compliance_flags")  // e.g. sanctions match, manipulation detected
+  1152→
+  1153→  // Extracted metadata (OCR results, detected name, etc.)
+  1154→  metadata        Json?
+  1155→
+  1156→  // Retention
+  1157→  fileExpiresAt   DateTime?        @map("file_expires_at")  // When Cloudinary file should be purged
+  1158→  fileDeletedAt   DateTime?        @map("file_deleted_at")
+  1159→
+  1160→  createdAt       DateTime         @default(now()) @map("created_at")
+  1161→  updatedAt       DateTime         @updatedAt @map("updated_at")
+  1162→  deletedAt       DateTime?        @map("deleted_at")
+  1163→
+  1164→  // ── Relations ──
+  1165→  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1166→  reviewedBy      User?            @relation("KycDocReviewer", fields: [reviewedById], references: [id])
+  1167→
+  1168→  @@index([userId, type, status], map: "idx_kyc_doc_user_type_status")
+  1169→  @@index([status], map: "idx_kyc_doc_status")
+  1170→  @@index([targetKycLevel], map: "idx_kyc_doc_target_level")
+  1171→  @@index([fileExpiresAt], map: "idx_kyc_doc_file_expires")
+  1172→  @@map("kyc_documents")
+  1173→}
+  1174→
+  1175→// ──────────────────────────────────────────────
+  1176→// KYC VERIFICATION MODEL (Level progression
+  1177→// record — one per level upgrade attempt)
+  1178→// ──────────────────────────────────────────────
+  1179→
+  1180→model KYCVerification {
+  1181→  id              String   @id @default(uuid()) @db.Uuid
+  1182→  userId          String   @map("user_id") @db.Uuid
+  1183→
+  1184→  // Level progression
+  1185→  previousLevel   KycLevel @map("previous_level")
+  1186→  targetLevel     KycLevel @map("target_level")
+  1187→
+  1188→  // Status
+  1189→  status          KycDocumentStatus @default(pending)
+  1190→
+  1191→  // Review
+  1192→  reviewedById    String?  @map("reviewed_by_id") @db.Uuid
+  1193→  reviewedAt      DateTime? @map("reviewed_at")
+  1194→  notes           String?  @db.Text
+  1195→
+  1196→  // Re-verification tracking
+  1197→  isReVerification Boolean  @default(false) @map("is_re_verification")
+  1198→  previousVerificationId String? @map("previous_verification_id") @db.Uuid
+  1199→
+  1200→  // Document IDs submitted for this verification attempt
+  1201→  documentIds     Json?    @map("document_ids")  // Array of KYCDocument UUIDs
+  1202→
+  1203→  // Expiry tracking
+  1204→  expiresAt       DateTime? @map("expires_at")   // When re-verification is due (12 months)
+  1205→
+  1206→  createdAt       DateTime @default(now()) @map("created_at")
+  1207→  updatedAt       DateTime @updatedAt @map("updated_at")
+  1208→
+  1209→  // ── Relations ──
+  1210→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1211→
+  1212→  @@index([userId, status], map: "idx_kyc_ver_user_status")
+  1213→  @@index([targetLevel], map: "idx_kyc_ver_target_level")
+  1214→  @@index([expiresAt], map: "idx_kyc_ver_expires")
+  1215→  @@map("kyc_verifications")
+  1216→}
+  1217→```
+  1218→
+  1219→### 3.9 Admin & RBAC Models
+  1220→
+  1221→```prisma
+  1222→// ──────────────────────────────────────────────
+  1223→// ADMIN MODEL (Links a User to admin-specific
+  1224→// configuration and metadata)
+  1225→// ──────────────────────────────────────────────
+  1226→
+  1227→model Admin {
+  1228→  id              String   @id @default(uuid()) @db.Uuid
+  1229→  userId          String   @unique @map("user_id") @db.Uuid
+  1230→  roleId          String   @map("role_id") @db.Uuid
+  1231→
+  1232→  // Admin-specific metadata
+  1233→  department      String?  @db.VarChar(50)   // "compliance", "support", "operations"
+  1234→  isSuperAdmin    Boolean  @default(false) @map("is_super_admin")
+  1235→  canApproveHighValue Boolean @default(false) @map("can_approve_high_value")  // For >$10k dual-approval
+  1236→
+  1237→  // Status
+  1238→  isActive        Boolean  @default(true) @map("is_active")
+  1239→
+  1240→  createdAt       DateTime @default(now()) @map("created_at")
+  1241→  updatedAt       DateTime @updatedAt @map("updated_at")
+  1242→
+  1243→  // ── Relations ──
+  1244→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1245→  role            AdminRole @relation(fields: [roleId], references: [id])
+  1246→
+  1247→  @@index([roleId], map: "idx_admin_role")
+  1248→  @@index([isActive], map: "idx_admin_active")
+  1249→  @@map("admins")
+  1250→}
+  1251→
+  1252→// ──────────────────────────────────────────────
+  1253→// ADMIN ROLE MODEL
+  1254→// ──────────────────────────────────────────────
+  1255→
+  1256→model AdminRole {
+  1257→  id              String         @id @default(uuid()) @db.Uuid
+  1258→  name            AdminRoleName  @unique
+  1259→  displayName     String         @map("display_name") @db.VarChar(50)
+  1260→  description     String?        @db.Text
+  1261→
+  1262→  // Hierarchy level (higher = more permissions)
+  1263→  hierarchyLevel  Int            @map("hierarchy_level")  // 5=SuperAdmin, 4=Admin, 3=Compliance, 2=Support
+  1264→
+  1265→  isActive        Boolean        @default(true) @map("is_active")
+  1266→
+  1267→  createdAt       DateTime       @default(now()) @map("created_at")
+  1268→  updatedAt       DateTime       @updatedAt @map("updated_at")
+  1269→
+  1270→  // ── Relations ──
+  1271→  admins          Admin[]
+  1272→  permissions     AdminPermission[]
+  1273→
+  1274→  @@index([hierarchyLevel], map: "idx_admin_role_hierarchy")
+  1275→  @@map("admin_roles")
+  1276→}
+  1277→
+  1278→// ──────────────────────────────────────────────
+  1279→// ADMIN PERMISSION MODEL
+  1280→// ──────────────────────────────────────────────
+  1281→
+  1282→model AdminPermission {
+  1283→  id              String           @id @default(uuid()) @db.Uuid
+  1284→  roleId          String           @map("role_id") @db.Uuid
+  1285→  resource        PermissionResource
+  1286→  actions         Json             // Array of PermissionAction values: ["create","read","update","delete"]
+  1287→
+  1288→  // Conditions (optional fine-grained constraints)
+  1289→  conditions      Json?            // e.g. {"maxAmount": 10000, "requires2FA": true}
+  1290→
+  1291→  createdAt       DateTime         @default(now()) @map("created_at")
+  1292→  updatedAt       DateTime         @updatedAt @map("updated_at")
+  1293→
+  1294→  // ── Relations ──
+  1295→  role            AdminRole        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  1296→
+  1297→  // One permission record per role per resource
+  1298→  @@unique([roleId, resource], map: "uq_admin_perm_role_resource")
+  1299→  @@index([resource], map: "idx_admin_perm_resource")
+  1300→  @@map("admin_permissions")
+  1301→}
+  1302→```
+  1303→
+  1304→### 3.10 Notification & Email Models
+  1305→
+  1306→```prisma
+  1307→// ──────────────────────────────────────────────
+  1308→// NOTIFICATION MODEL (In-app notifications)
+  1309→// ──────────────────────────────────────────────
+  1310→
+  1311→model Notification {
+  1312→  id              String           @id @default(uuid()) @db.Uuid
+  1313→  userId          String           @map("user_id") @db.Uuid
+  1314→  type            NotificationType
+  1315→
+  1316→  title           String           @db.VarChar(255)
+  1317→  message         String           @db.Text
+  1318→  actionUrl       String?          @map("action_url") @db.VarChar(500)
+  1319→
+  1320→  isRead          Boolean          @default(false) @map("is_read")
+  1321→  readAt          DateTime?        @map("read_at")
+  1322→
+  1323→  // Categorization for filtering
+  1324→  category        String?          @db.VarChar(50)  // "transaction", "security", "kyc", "system", "marketing"
+  1325→
+  1326→  // Priority for display ordering
+  1327→  priority        Int              @default(0)       // Higher = more prominent
+  1328→
+  1329→  // Expiry (optional — for time-sensitive notifications)
+  1330→  expiresAt       DateTime?        @map("expires_at")
+  1331→
+  1332→  createdAt       DateTime         @default(now()) @map("created_at")
+  1333→  deletedAt       DateTime?        @map("deleted_at")
+  1334→
+  1335→  // ── Relation ──
+  1336→  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1337→
+  1338→  // ── Indexes ──
+  1339→  @@index([userId, isRead, createdAt], map: "idx_notif_user_read_created")
+  1340→  @@index([userId, type], map: "idx_notif_user_type")
+  1341→  @@index([userId, category], map: "idx_notif_user_category")
+  1342→  @@index([expiresAt], map: "idx_notif_expires")
+  1343→  @@map("notifications")
+  1344→}
+  1345→
+  1346→// ──────────────────────────────────────────────
+  1347→// EMAIL LOG MODEL (Record of all emails sent)
+  1348→// ──────────────────────────────────────────────
+  1349→
+  1350→model EmailLog {
+  1351→  id              String       @id @default(uuid()) @db.Uuid
+  1352→  userId          String?      @map("user_id") @db.Uuid  // Nullable for non-user emails
+  1353→
+  1354→  to              String       @db.VarChar(255)
+  1355→  from            String       @db.VarChar(255)
+  1356→  subject         String       @db.VarChar(500)
+  1357→  templateId      String?      @map("template_id") @db.VarChar(100)
+  1358→
+  1359→  // Resend message ID for tracking
+  1360→  resendMessageId String?      @map("resend_message_id") @db.VarChar(255)
+  1361→
+  1362→  status          EmailStatus  @default(sent)
+  1363→  errorMessage    String?      @map("error_message") @db.Text
+  1364→
+  1365→  // Template variables used (for audit)
+  1366→  templateData    Json?        @map("template_data")
+  1367→
+  1368→  // Categorization
+  1369→  category        String?      @db.VarChar(50)  // "transaction", "security", "kyc", "marketing", "system"
+  1370→
+  1371→  createdAt       DateTime     @default(now()) @map("created_at")
+  1372→
+  1373→  // ── Relation ──
+  1374→  user            User?        @relation("EmailRecipient", fields: [userId], references: [id])
+  1375→
+  1376→  @@index([userId], map: "idx_email_log_user")
+  1377→  @@index([status], map: "idx_email_log_status")
+  1378→  @@index([resendMessageId], map: "idx_email_log_resend_id")
+  1379→  @@index([category], map: "idx_email_log_category")
+  1380→  @@index([createdAt], map: "idx_email_log_created")
+  1381→  @@map("email_logs")
+  1382→}
+  1383→```
+  1384→
+  1385→### 3.11 Support Ticket Models
+  1386→
+  1387→```prisma
+  1388→// ──────────────────────────────────────────────
+  1389→// SUPPORT TICKET MODEL
+  1390→// ──────────────────────────────────────────────
+  1391→
+  1392→model SupportTicket {
+  1393→  id              String         @id @default(uuid()) @db.Uuid
+  1394→  userId          String         @map("user_id") @db.Uuid
+  1395→
+  1396→  // Ticket details
+  1397→  ticketNumber    String         @unique @map("ticket_number") @db.VarChar(20)  // e.g. "TKT-000001"
+  1398→  subject         String         @db.VarChar(255)
+  1399→  category        String         @db.VarChar(50)   // "deposits", "withdrawals", "kyc", etc.
+  1400→  status          TicketStatus   @default(open)
+  1401→  priority        TicketPriority @default(medium)
+  1402→
+  1403→  // Assignment
+  1404→  assignedTo      String?        @map("assigned_to_id") @db.Uuid
+  1405→
+  1406→  // SLA tracking
+  1407→  firstResponseAt DateTime?      @map("first_response_at")
+  1408→  resolvedAt      DateTime?      @map("resolved_at")
+  1409→  closedAt        DateTime?      @map("closed_at")
+  1410→
+  1411→  // Satisfaction
+  1412→  satisfactionScore Int?         @map("satisfaction_score")  // 1-5
+  1413→  satisfactionComment String?    @map("satisfaction_comment") @db.Text
+  1414→
+  1415→  createdAt       DateTime       @default(now()) @map("created_at")
+  1416→  updatedAt       DateTime       @updatedAt @map("updated_at")
+  1417→  deletedAt       DateTime?      @map("deleted_at")
+  1418→
+  1419→  // ── Relations ──
+  1420→  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1421→  assignedToUser  User?          @relation("AssignedTickets", fields: [assignedTo], references: [id])
+  1422→  messages        TicketMessage[]
+  1423→
+  1424→  // ── Indexes ──
+  1425→  @@index([userId, status], map: "idx_ticket_user_status")
+  1426→  @@index([assignedTo, status], map: "idx_ticket_assigned_status")
+  1427→  @@index([status, priority, createdAt], map: "idx_ticket_status_priority")
+  1428→  @@index([category], map: "idx_ticket_category")
+  1429→  @@map("support_tickets")
+  1430→}
+  1431→
+  1432→// ──────────────────────────────────────────────
+  1433→// TICKET MESSAGE MODEL
+  1434→// ──────────────────────────────────────────────
+  1435→
+  1436→model TicketMessage {
+  1437→  id              String   @id @default(uuid()) @db.Uuid
+  1438→  ticketId        String   @map("ticket_id") @db.Uuid
+  1439→  senderId        String   @map("sender_id") @db.Uuid
+  1440→  senderRole      String   @map("sender_role") @db.VarChar(20)  // "user" or "admin"
+  1441→
+  1442→  content         String   @db.Text
+  1443→  isInternal      Boolean  @default(false) @map("is_internal")  // Admin-only notes
+  1444→
+  1445→  // Attachments stored in Cloudinary
+  1446→  attachments     Json?    // Array of {url, fileName, fileSize, mimeType}
+  1447→
+  1448→  createdAt       DateTime @default(now()) @map("created_at")
+  1449→
+  1450→  // ── Relations ──
+  1451→  ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  1452→  sender          User          @relation(fields: [senderId], references: [id])
+  1453→
+  1454→  @@index([ticketId, createdAt], map: "idx_ticket_msg_ticket_created")
+  1455→  @@index([senderId], map: "idx_ticket_msg_sender")
+  1456→  @@map("ticket_messages")
+  1457→}
+  1458→```
+  1459→
+  1460→### 3.12 Currency & Exchange Rate Models
+  1461→
+  1462→```prisma
+  1463→// ──────────────────────────────────────────────
+  1464→// CURRENCY MODEL (Supported display currencies)
+  1465→// ──────────────────────────────────────────────
+  1466→
+  1467→model Currency {
+  1468→  id              String   @id @db.VarChar(3)   // ISO 4217 code: "USD", "EUR", "GBP"
+  1469→  name            String   @db.VarChar(50)      // "US Dollar", "Euro", "British Pound"
+  1470→  symbol          String   @db.VarChar(5)       // "$", "€", "£"
+  1471→  isActive        Boolean  @default(true) @map("is_active")
+  1472→
+  1473→  createdAt       DateTime @default(now()) @map("created_at")
+  1474→  updatedAt       DateTime @updatedAt @map("updated_at")
+  1475→
+  1476→  // ── Relation ──
+  1477→  exchangeRates   ExchangeRate[]
+  1478→
+  1479→  @@map("currencies")
+  1480→}
+  1481→
+  1482→// ──────────────────────────────────────────────
+  1483→// EXCHANGE RATE MODEL (Historical rate snapshots)
+  1484→// ──────────────────────────────────────────────
+  1485→
+  1486→model ExchangeRate {
+  1487→  id              String   @id @default(uuid()) @db.Uuid
+  1488→  baseCurrency    String   @map("base_currency") @db.VarChar(3)  // Always "USD"
+  1489→  quoteCurrency   String   @map("quote_currency") @db.VarChar(3) // "EUR", "GBP", "BTC", "ETH", "USDT"
+  1490→  rate            Decimal  @db.Decimal(28, 8)   // 1 USD = rate units of quoteCurrency
+  1491→
+  1492→  // Source tracking
+  1493→  source          String   @db.VarChar(50)       // "coingecko", "openexchangerates", "manual"
+  1494→  sourceTimestamp DateTime @map("source_timestamp")
+  1495→
+  1496→  createdAt       DateTime @default(now()) @map("created_at")
+  1497→
+  1498→  // ── Relation ──
+  1499→  currency        Currency @relation(fields: [quoteCurrency], references: [id])
+  1500→
+  1501→  @@index([baseCurrency, quoteCurrency, createdAt], map: "idx_ex_rate_pair_time")
+  1502→  @@index([quoteCurrency], map: "idx_ex_rate_quote")
+  1503→  @@index([createdAt], map: "idx_ex_rate_created")
+  1504→  @@map("exchange_rates")
+  1505→}
+  1506→```
+  1507→
+  1508→### 3.13 Security & Session Models
+  1509→
+  1510→```prisma
+  1511→// ──────────────────────────────────────────────
+  1512→// SESSION MODEL
+  1513→// ──────────────────────────────────────────────
+  1514→
+  1515→model Session {
+  1516→  id              String   @id @default(uuid()) @db.Uuid
+  1517→  userId          String   @map("user_id") @db.Uuid
+  1518→
+  1519→  // Token
+  1520→  token           String   @unique @db.VarChar(500)
+  1521→
+  1522→  // Device/client info
+  1523→  ipAddress       String   @map("ip_address") @db.VarChar(45)
+  1524→  userAgent       String?  @map("user_agent") @db.VarChar(500)
+  1525→  deviceFingerprint String? @map("device_fingerprint") @db.VarChar(255)
+  1526→
+  1527→  // Lifecycle
+  1528→  expiresAt       DateTime @map("expires_at")
+  1529→  lastActivityAt  DateTime @map("last_activity_at")
+  1530→  isRevoked       Boolean  @default(false) @map("is_revoked")
+  1531→  revokedAt       DateTime? @map("revoked_at")
+  1532→  revokeReason    String?  @map("revoke_reason") @db.VarChar(100)
+  1533→
+  1534→  createdAt       DateTime @default(now()) @map("created_at")
+  1535→
+  1536→  // ── Relation ──
+  1537→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1538→
+  1539→  @@index([userId, isRevoked], map: "idx_session_user_revoked")
+  1540→  @@index([expiresAt], map: "idx_session_expires")
+  1541→  @@map("sessions")
+  1542→}
+  1543→
+  1544→// ──────────────────────────────────────────────
+  1545→// TWO FACTOR AUTH MODEL
+  1546→// ──────────────────────────────────────────────
+  1547→
+  1548→model TwoFactorAuth {
+  1549→  id              String   @id @default(uuid()) @db.Uuid
+  1550→  userId          String   @unique @map("user_id") @db.Uuid
+  1551→
+  1552→  // TOTP secret (encrypted at application level)
+  1553→  secretEncrypted String   @map("secret_encrypted") @db.VarChar(500)
+  1554→  secretIv        String   @map("secret_iv") @db.VarChar(100)
+  1555→
+  1556→  // Backup codes (hashed individually, stored as JSON array)
+  1557→  backupCodesHash Json     @map("backup_codes_hash")  // ["hash1", "hash2", ...]
+  1558→  backupCodesUsed Int      @default(0) @map("backup_codes_used")
+  1559→
+  1560→  // Status
+  1561→  isEnabled       Boolean  @default(false) @map("is_enabled")
+  1562→  enabledAt       DateTime? @map("enabled_at")
+  1563→  disabledAt      DateTime? @map("disabled_at")
+  1564→
+  1565→  createdAt       DateTime @default(now()) @map("created_at")
+  1566→  updatedAt       DateTime @updatedAt @map("updated_at")
+  1567→
+  1568→  // ── Relation ──
+  1569→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1570→
+  1571→  @@map("two_factor_auth")
+  1572→}
+  1573→
+  1574→// ──────────────────────────────────────────────
+  1575→// OTP MODEL (One-Time Passwords)
+  1576→// ──────────────────────────────────────────────
+  1577→
+  1578→model Otp {
+  1579→  id              String   @id @default(uuid()) @db.Uuid
+  1580→  userId          String?  @map("user_id") @db.Uuid  // Nullable for pre-registration OTPs
+  1581→  identifier      String   @db.VarChar(255)  // Email address or user ID
+  1582→  type            OtpType
+  1583→
+  1584→  // Security
+  1585→  codeHash        String   @map("code_hash") @db.VarChar(255)  // argon2id hash
+  1586→  expiresAt       DateTime @map("expires_at")
+  1587→  verified        Boolean  @default(false)
+  1588→  verifiedAt      DateTime? @map("verified_at")
+  1589→  attempts        Int      @default(0)       // Number of verification attempts
+  1590→  maxAttempts     Int      @default(5) @map("max_attempts")
+  1591→
+  1592→  // IP context
+  1593→  ipAddress       String?  @map("ip_address") @db.VarChar(45)
+  1594→
+  1595→  createdAt       DateTime @default(now()) @map("created_at")
+  1596→
+  1597→  // ── Relations ──
+  1598→  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1599→
+  1600→  @@index([identifier, type, verified], map: "idx_otp_identifier_type_verified")
+  1601→  @@index([expiresAt], map: "idx_otp_expires")
+  1602→  @@map("otps")
+  1603→}
+  1604→```
+  1605→
+  1606→### 3.14 Audit & Configuration Models
+  1607→
+  1608→```prisma
+  1609→// ──────────────────────────────────────────────
+  1610→// AUDIT LOG MODEL (Immutable, append-only)
+  1611→// ──────────────────────────────────────────────
+  1612→
+  1613→model AuditLog {
+  1614→  id              String   @id @default(uuid()) @db.Uuid
+  1615→  userId          String?  @map("user_id") @db.Uuid   // Nullable for system-initiated events
+  1616→
+  1617→  // Action classification
+  1618→  action          String   @db.VarChar(100)   // e.g. "user.login", "deposit.create"
+  1619→  entity          String?  @db.VarChar(50)    // e.g. "User", "Withdrawal"
+  1620→  entityId        String?  @map("entity_id") @db.Uuid
+  1621→
+  1622→  // Request context
+  1623→  ipAddress       String?  @map("ip_address") @db.VarChar(45)
+  1624→  userAgent       String?  @map("user_agent") @db.VarChar(500)
+  1625→  requestId       String?  @map("request_id") @db.VarChar(100)  // For tracing
+  1626→
+  1627→  // Event details (old values, new values, request params)
+  1628→  metadata        Json?
+  1629→
+  1630→  // Outcome
+  1631→  status          String?  @db.VarChar(20)    // "success", "failure", "error"
+  1632→  errorMessage    String?  @map("error_message") @db.Text
+  1633→
+  1634→  createdAt       DateTime @default(now()) @map("created_at")
+  1635→
+  1636→  // ── Relation ──
+  1637→  user            User?    @relation(fields: [userId], references: [id])
+  1638→
+  1639→  // ── Indexes ──
+  1640→  @@index([userId, createdAt], map: "idx_audit_user_created")
+  1641→  @@index([action, createdAt], map: "idx_audit_action_created")
+  1642→  @@index([entity, entityId], map: "idx_audit_entity")
+  1643→  @@index([ipAddress], map: "idx_audit_ip")
+  1644→  @@index([createdAt], map: "idx_audit_created")
+  1645→  @@index([status], map: "idx_audit_status")
+  1646→  @@map("audit_logs")
+  1647→}
+  1648→
+  1649→// ──────────────────────────────────────────────
+  1650→// SYSTEM CONFIG MODEL (Key-value platform settings)
+  1651→// ──────────────────────────────────────────────
+  1652→
+  1653→model SystemConfig {
+  1654→  id              String   @id @default(uuid()) @db.Uuid
+  1655→  key             String   @unique @db.VarChar(100)
+  1656→  value           Json                              // Flexible value: string, number, boolean, object
+  1657→  description     String?  @db.Text                  // Human-readable description
+  1658→  category        String?  @db.VarChar(50)           // "fees", "deposits", "withdrawals", "referrals", "kyc", "email", "general"
+  1659→
+  1660→  // Change tracking
+  1661→  updatedById     String?  @map("updated_by_id") @db.Uuid
+  1662→  updatedAt       DateTime @updatedAt @map("updated_at")
+  1663→  createdAt       DateTime @default(now()) @map("created_at")
+  1664→
+  1665→  // ── Relation ──
+  1666→  updatedBy       User?    @relation("ConfigUpdater", fields: [updatedById], references: [id])
+  1667→
+  1668→  @@index([category], map: "idx_sysconfig_category")
+  1669→  @@map("system_configs")
+  1670→}
+  1671→```
+  1672→
+  1673→### 3.15 Promo Code Models
+  1674→
+  1675→```prisma
+  1676→// ──────────────────────────────────────────────
+  1677→// PROMO CODE MODEL
+  1678→// ──────────────────────────────────────────────
+  1679→
+  1680→model PromoCode {
+  1681→  id              String           @id @default(uuid()) @db.Uuid
+  1682→  code            String           @unique @db.VarChar(30)
+  1683→
+  1684→  // Discount
+  1685→  discountType    PromoDiscountType @map("discount_type")
+  1686→  discountValue   Decimal          @map("discount_value") @db.Decimal(10, 4)
+  1687→  maxDiscount     Decimal?         @map("max_discount") @db.Decimal(19, 4)  // Cap for percentage discounts
+  1688→
+  1689→  // Applicability
+  1690→  applicablePlans Json?            @map("applicable_plans")  // Array of plan slugs, null = all plans
+  1691→  minDeposit      Decimal?         @map("min_deposit") @db.Decimal(19, 4)
+  1692→
+  1693→  // Limits
+  1694→  maxUses         Int?             @map("max_uses")          // Total redemptions allowed
+  1695→  maxUsesPerUser  Int              @default(1) @map("max_uses_per_user")
+  1696→  currentUses     Int              @default(0) @map("current_uses")
+  1697→
+  1698→  // Validity window
+  1699→  validFrom       DateTime         @map("valid_from")
+  1700→  validUntil      DateTime?        @map("valid_until")
+  1701→
+  1702→  // Status
+  1703→  status          PromoCodeStatus  @default(active)
+  1704→  createdBy       String?          @map("created_by_id") @db.Uuid
+  1705→
+  1706→  createdAt       DateTime         @default(now()) @map("created_at")
+  1707→  updatedAt       DateTime         @updatedAt @map("updated_at")
+  1708→
+  1709→  // ── Relations ──
+  1710→  userPromos      UserPromo[]
+  1711→  creator         User?            @relation("PromoCreator", fields: [createdBy], references: [id])
+  1712→
+  1713→  @@index([status, validFrom], map: "idx_promo_status_valid")
+  1714→  @@index([code], map: "idx_promo_code")
+  1715→  @@map("promo_codes")
+  1716→}
+  1717→
+  1718→// ──────────────────────────────────────────────
+  1719→// USER PROMO MODEL (Tracks promo code redemptions)
+  1720→// ──────────────────────────────────────────────
+  1721→
+  1722→model UserPromo {
+  1723→  id              String   @id @default(uuid()) @db.Uuid
+  1724→  userId          String   @map("user_id") @db.Uuid
+  1725→  promoCodeId     String   @map("promo_code_id") @db.Uuid
+  1726→  depositId       String?  @map("deposit_id") @db.Uuid  // The deposit that triggered this
+  1727→
+  1728→  // Applied discount
+  1729→  discountType    PromoDiscountType @map("discount_type")
+  1730→  discountValue   Decimal  @map("discount_value") @db.Decimal(19, 4)
+  1731→  bonusCredited   Decimal  @map("bonus_credited") @db.Decimal(19, 4)
+  1732→
+  1733→  // Wallet that received the bonus
+  1734→  walletId        String   @map("wallet_id") @db.Uuid
+  1735→
+  1736→  createdAt       DateTime @default(now()) @map("created_at")
+  1737→
+  1738→  // ── Relations ──
+  1739→  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  1740→  promoCode       PromoCode @relation(fields: [promoCodeId], references: [id])
+  1741→  wallet          Wallet   @relation(fields: [walletId], references: [id])
+  1742→
+  1743→  @@unique([userId, promoCodeId, depositId], map: "uq_user_promo_user_code_deposit")
+  1744→  @@index([userId], map: "idx_user_promo_user")
+  1745→  @@index([promoCodeId], map: "idx_user_promo_code")
+  1746→  @@map("user_promos")
+  1747→}
+  1748→```
+  1749→
+  1750→---
+  1751→
+  1752→## 4. Entity-Relationship Diagram (ERD)
+  1753→
+  1754→```mermaid
+  1755→erDiagram
+  1756→    %% ── Core User ──
+  1757→    User ||--o| Profile : "has one"
+  1758→    User ||--o{ Wallet : "has two (demo + live)"
+  1759→    User ||--o{ Deposit : "makes"
+  1760→    User ||--o{ Withdrawal : "requests"
+  1761→    User ||--o{ UserInvestment : "owns"
+  1762→    User ||--o{ Notification : "receives"
+  1763→    User ||--o{ AuditLog : "generates"
+  1764→    User ||--o{ SupportTicket : "opens"
+  1765→    User ||--o{ KYCDocument : "submits"
+  1766→    User ||--o{ KYCVerification : "undergoes"
+  1767→    User ||--o{ Session : "has active"
+  1768→    User ||--o{ Otp : "receives"
+  1769→    User ||--o{ EmailLog : "is sent"
+  1770→    User ||--o| TwoFactorAuth : "configures"
+  1771→    User ||--o| BinaryNode : "occupies"
+  1772→    User ||--o| Admin : "may be"
+  1773→    User ||--o{ UserPromo : "redeems"
+  1774→    User }o--o{ User : "ReferralTree (referredBy)"
+  1775→
+  1776→    %% ── Wallet & Transactions ──
+  1777→    Wallet ||--o{ Transaction : "records"
+  1778→    Wallet ||--o{ TransactionLog : "logs"
+  1779→    Wallet ||--o{ Deposit : "receives"
+  1780→    Wallet ||--o{ Withdrawal : "funds"
+  1781→    Wallet ||--o{ UserInvestment : "finances"
+  1782→    Wallet ||--o{ ReferralCommission : "credits"
+  1783→    Wallet ||--o{ BinaryBonus : "credits"
+  1784→    Wallet ||--o{ UserPromo : "bonus to"
+  1785→
+  1786→    %% ── Account ──
+  1787→    User ||--o{ Account : "has (demo + live)"
+  1788→    Account ||--o| Wallet : "maps to"
+  1789→
+  1790→    %% ── Investment Plans ──
+  1791→    InvestmentPlan ||--o{ UserInvestment : "selected by"
+  1792→    InvestmentPlan ||--o{ PlanPayout : "generates"
+  1793→    UserInvestment ||--o{ PlanPayout : "produces"
+  1794→    UserInvestment }o--|| Wallet : "funded by"
+  1795→    UserInvestment }o--|| User : "belongs to"
+  1796→    UserInvestment }o--|| InvestmentPlan : "uses"
+  1797→
+  1798→    %% ── Deposits ──
+  1799→    Deposit ||--o| GiftCardSubmission : "may have"
+  1800→    GiftCardSubmission ||--o{ GiftCardReview : "reviewed in"
+  1801→
+  1802→    %% ── Withdrawals ──
+  1803→    Withdrawal ||--o{ WithdrawalFee : "breaks into"
+  1804→
+  1805→    %% ── Referral ──
+  1806→    Referral }o--|| User : "referrer"
+  1807→    Referral }o--|| User : "referred"
+  1808→    ReferralCommission }o--|| User : "recipient"
+  1809→    ReferralCommission }o--|| User : "source"
+  1810→    ReferralCommission }o--|| Wallet : "credits"
+  1811→    BinaryNode }o--|| User : "belongs to"
+  1812→    BinaryNode }o--o| User : "parent"
+  1813→    BinaryNode }o--o| User : "left child"
+  1814→    BinaryNode }o--o| User : "right child"
+  1815→    BinaryBonus }o--|| User : "paid to"
+  1816→    BinaryBonus }o--|| Wallet : "credits"
+  1817→
+  1818→    %% ── Admin RBAC ──
+  1819→    Admin }o--|| User : "is"
+  1820→    Admin }o--|| AdminRole : "has"
+  1821→    AdminRole ||--o{ AdminPermission : "grants"
+  1822→
+  1823→    %% ── Support ──
+  1824→    SupportTicket }o--|| User : "opened by"
+  1825→    SupportTicket }o--o| User : "assigned to"
+  1826→    SupportTicket ||--o{ TicketMessage : "contains"
+  1827→    TicketMessage }o--|| User : "sent by"
+  1828→
+  1829→    %% ── Currency ──
+  1830→    Currency ||--o{ ExchangeRate : "has"
+  1831→    ExchangeRate }o--|| Currency : "for"
+  1832→
+  1833→    %% ── Promo ──
+  1834→    PromoCode ||--o{ UserPromo : "redeemed via"
+  1835→    UserPromo }o--|| User : "by"
+  1836→    UserPromo }o--|| PromoCode : "uses"
+  1837→    UserPromo }o--|| Wallet : "credits"
+  1838→
+  1839→    %% ── System ──
+  1840→    SystemConfig }o--o| User : "updated by"
+  1841→
+  1842→    User {
+  1843→        uuid id PK
+  1844→        varchar email UK
+  1845→        varchar password_hash
+  1846→        boolean email_verified
+  1847→        enum status
+  1848→        enum kyc_level
+  1849→        enum active_mode
+  1850→        varchar referral_code UK
+  1851→        uuid referred_by_id FK
+  1852→        boolean two_factor_enabled
+  1853→        varchar preferred_currency
+  1854→        varchar preferred_language
+  1855→        timestamp created_at
+  1856→        timestamp updated_at
+  1857→        timestamp deleted_at
+  1858→    }
+  1859→
+  1860→    Wallet {
+  1861→        uuid id PK
+  1862→        uuid user_id FK
+  1863→        enum type
+  1864→        decimal balance
+  1865→        decimal available_balance
+  1866→        decimal locked_balance
+  1867→        varchar currency
+  1868→    }
+  1869→
+  1870→    Transaction {
+  1871→        uuid id PK
+  1872→        uuid wallet_id FK
+  1873→        enum type
+  1874→        decimal amount
+  1875→        enum status
+  1876→        varchar description
+  1877→        uuid reference_id
+  1878→        varchar reference_type
+  1879→        jsonb metadata
+  1880→    }
+  1881→
+  1882→    TransactionLog {
+  1883→        uuid id PK
+  1884→        uuid transaction_id FK
+  1885→        uuid wallet_id FK
+  1886→        decimal balance_before
+  1887→        decimal balance_after
+  1888→        varchar operation
+  1889→    }
+  1890→
+  1891→    InvestmentPlan {
+  1892→        uuid id PK
+  1893→        varchar name
+  1894→        varchar slug UK
+  1895→        decimal min_amount
+  1896→        decimal max_amount
+  1897→        int duration
+  1898→        enum duration_unit
+  1899→        decimal return_rate
+  1900→        enum required_kyc_level
+  1901→        boolean is_active
+  1902→    }
+  1903→
+  1904→    UserInvestment {
+  1905→        uuid id PK
+  1906→        uuid user_id FK
+  1907→        uuid plan_id FK
+  1908→        uuid wallet_id FK
+  1909→        enum mode
+  1910→        decimal amount
+  1911→        decimal expected_return
+  1912→        decimal actual_return
+  1913→        timestamp start_date
+  1914→        timestamp end_date
+  1915→        enum status
+  1916→    }
+  1917→
+  1918→    PlanPayout {
+  1919→        uuid id PK
+  1920→        uuid investment_id FK
+  1921→        uuid plan_id FK
+  1922→        uuid wallet_id FK
+  1923→        decimal principal_returned
+  1924→        decimal profit_credited
+  1925→        decimal total_credited
+  1926→        enum status
+  1927→    }
+  1928→
+  1929→    Deposit {
+  1930→        uuid id PK
+  1931→        uuid user_id FK
+  1932→        uuid wallet_id FK
+  1933→        enum mode
+  1934→        enum method
+  1935→        decimal amount
+  1936→        varchar currency
+  1937→        enum crypto_currency
+  1938→        varchar crypto_tx_hash
+  1939→        decimal crypto_amount
+  1940→        enum status
+  1941→        uuid verified_by_id FK
+  1942→    }
+  1943→
+  1944→    GiftCardSubmission {
+  1945→        uuid id PK
+  1946→        uuid deposit_id FK UK
+  1947→        uuid user_id FK
+  1948→        varchar card_brand
+  1949→        decimal card_value
+  1950→        varchar screenshot_url
+  1951→        enum status
+  1952→        uuid reviewed_by_id FK
+  1953→        boolean fraud_flag
+  1954→    }
+  1955→
+  1956→    GiftCardReview {
+  1957→        uuid id PK
+  1958→        uuid submission_id FK
+  1959→        uuid reviewer_id FK
+  1960→        varchar action
+  1961→        varchar notes
+  1962→    }
+  1963→
+  1964→    Withdrawal {
+  1965→        uuid id PK
+  1966→        uuid user_id FK
+  1967→        uuid wallet_id FK
+  1968→        enum mode
+  1969→        decimal amount
+  1970→        decimal fee_amount
+  1971→        decimal fee_rate
+  1972→        decimal net_amount
+  1973→        enum destination_type
+  1974→        varchar destination_address
+  1975→        enum status
+  1976→        uuid processed_by_id FK
+  1977→        int risk_score
+  1978→    }
+  1979→
+  1980→    WithdrawalFee {
+  1981→        uuid id PK
+  1982→        uuid withdrawal_id FK
+  1983→        decimal management_fee
+  1984→        decimal signal_fee
+  1985→        decimal insurance_fee
+  1986→        decimal certificate_fee
+  1987→        decimal vat_fee
+  1988→        decimal total_fee
+  1989→    }
+  1990→
+  1991→    Referral {
+  1992→        uuid id PK
+  1993→        uuid referrer_id FK
+  1994→        uuid referred_id FK UK
+  1995→        varchar code
+  1996→        int level
+  1997→        boolean is_active
+  1998→    }
+  1999→
+  2000→    ReferralCommission {
+
+[showing lines 1-2000 of 2660; use offset=2001 with limit to continue reading]

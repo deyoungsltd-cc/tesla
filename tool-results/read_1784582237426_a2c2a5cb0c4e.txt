@@ -1,0 +1,2002 @@
+     1→# API Design Specification — TeslaPrimeCapital
+     2→
+     3→> **Phase 2 — Technical Architecture**
+     4→> **Version:** 2.0.0
+     5→> **Last Updated:** 2025-06
+     6→> **Status:** Approved
+     7→
+     8→This document is the authoritative API contract for the TeslaPrimeCapital enterprise investment platform. Every endpoint, request schema, response schema, error code, and authorization rule is specified here. Implementations must conform exactly to this contract.
+     9→
+    10→---
+    11→
+    12→## Table of Contents
+    13→
+    14→1. [Design Principles](#1-design-principles)
+    15→2. [Authentication & Authorization](#2-authentication--authorization)
+    16→3. [Standard Response Format](#3-standard-response-format)
+    17→4. [Standard Error Codes](#4-standard-error-codes)
+    18→5. [Rate Limiting Strategy](#5-rate-limiting-strategy)
+    19→6. [Domain: Authentication (`/api/v1/auth`)](#6-domain-authentication)
+    20→7. [Domain: Users (`/api/v1/users`)](#7-domain-users)
+    21→8. [Domain: KYC (`/api/v1/kyc`)](#8-domain-kyc)
+    22→9. [Domain: Plans (`/api/v1/plans`)](#9-domain-plans)
+    23→10. [Domain: Investments (`/api/v1/investments`)](#10-domain-investments)
+    24→11. [Domain: Deposits (`/api/v1/deposits`)](#11-domain-deposits)
+    25→12. [Domain: Withdrawals (`/api/v1/withdrawals`)](#12-domain-withdrawals)
+    26→13. [Domain: Wallet (`/api/v1/wallet`)](#13-domain-wallet)
+    27→14. [Domain: Referral (`/api/v1/referral`)](#14-domain-referral)
+    28→15. [Domain: Notifications (`/api/v1/notifications`)](#15-domain-notifications)
+    29→16. [Domain: Support (`/api/v1/support`)](#16-domain-support)
+    30→17. [Domain: Admin — User Management (`/api/v1/admin/users`)](#17-domain-admin--user-management)
+    31→18. [Domain: Admin — KYC Review (`/api/v1/admin/kyc`)](#18-domain-admin--kyc-review)
+    32→19. [Domain: Admin — Deposits (`/api/v1/admin/deposits`)](#19-domain-admin--deposits)
+    33→20. [Domain: Admin — Withdrawals (`/api/v1/admin/withdrawals`)](#20-domain-admin--withdrawals)
+    34→21. [Domain: Admin — Plans (`/api/v1/admin/plans`)](#21-domain-admin--plans)
+    35→22. [Domain: Admin — Reports (`/api/v1/admin/reports`)](#22-domain-admin--reports)
+    36→23. [Domain: Admin — System Config (`/api/v1/admin/system`)](#23-domain-admin--system-config)
+    37→24. [Domain: Admin — Audit Logs (`/api/v1/admin/audit-logs`)](#24-domain-admin--audit-logs)
+    38→25. [Domain: Utility (`/api/v1/currencies`, `/api/v1/settings`)](#25-domain-utility)
+    39→
+    40→---
+    41→
+    42→## 1. Design Principles
+    43→
+    44→### 1.1 RESTful Conventions
+    45→
+    46→- Resources are modeled as **plural nouns** (`/investments`, not `/investment`).
+    47→- HTTP methods convey intent: `GET` (read), `POST` (create), `PUT` (full update), `PATCH` (partial update), `DELETE` (remove).
+    48→- All request and response bodies use `Content-Type: application/json`. File uploads use `multipart/form-data`.
+    49→- Date/time values use **ISO 8601 UTC** (`2025-01-15T14:30:00.000Z`).
+    50→- Monetary values are **decimal strings in USD** (`"amount": "1500.00"`) to avoid floating-point precision loss.
+    51→- Resource identifiers are **UUIDs** (not auto-incrementing integers) for security and to prevent enumeration.
+    52→
+    53→### 1.2 URL-Based Versioning
+    54→
+    55→All endpoints are prefixed with `/api/v1/`. When breaking changes are required, a new version (`/api/v2/`) is deployed alongside the existing version with a minimum 6-month deprecation period. Deprecated endpoints include `Deprecation: true` and `Sunset: <date>` headers.
+    56→
+    57→Backward-compatible changes (new response fields, new optional request fields, new endpoints) do not require a version increment.
+    58→
+    59→### 1.3 Pagination
+    60→
+    61→Two strategies are used based on data characteristics:
+    62→
+    63→| Strategy | Used For | Params | Navigation |
+    64→|----------|----------|--------|------------|
+    65→| **Offset-based** | Plans, admin user lists, tickets | `?page=1&limit=20` | Direct page access, `meta.total` included |
+    66→| **Cursor-based** | Transactions, notifications, audit logs | `?cursor=<opaque>&limit=20` | Sequential only, `meta.hasMore` provided |
+    67→
+    68→- Default page size: **20** items.
+    69→- Maximum page size: **100** items (requests exceeding this are silently capped, `X-Page-Size-Capped: true` header sent).
+    70→- Cursor format: base64-encoded `{timestamp}_{uuid}` — opaque to clients.
+    71→
+    72→### 1.4 Filtering & Sorting
+    73→
+    74→- **Filtering:** Query parameters prefixed with field names: `?status=active&planId=<uuid>`.
+    75→- **Sorting:** `?sortBy=createdAt&sortOrder=desc`. Default sort is `createdAt` descending.
+    76→- **Date range filtering:** `?startDate=2025-01-01&endDate=2025-06-30` (ISO date strings).
+    77→- **Search:** `?search=john@example.com` — performs partial match on supported fields (documented per endpoint).
+    78→
+    79→### 1.5 Stateless Design
+    80→
+    81→Each request must contain all information needed to process it. The only stateful mechanism is the refresh token (HTTP-only cookie). No server-side session storage.
+    82→
+    83→### 1.6 HATEOAS-Lite Pagination Links
+    84→
+    85→Paginated responses include `meta.prev` and `meta.next` URLs for navigation:
+    86→
+    87→```json
+    88→{
+    89→  "meta": {
+    90→    "page": 1,
+    91→    "limit": 20,
+    92→    "total": 150,
+    93→    "totalPages": 8,
+    94→    "prev": "/api/v1/investments?page=0",
+    95→    "next": "/api/v1/investments?page=2"
+    96→  }
+    97→}
+    98→```
+    99→
+   100→---
+   101→
+   102→## 2. Authentication & Authorization
+   103→
+   104→### 2.1 JWT Access Token
+   105→
+   106→- **Algorithm:** HS256
+   107→- **Expiry:** 15 minutes
+   108→- **Storage:** Frontend JavaScript memory only (module-level variable); never in localStorage, sessionStorage, or cookies.
+   109→- **Header:** `Authorization: Bearer <access_token>`
+   110→- **Payload (claims):**
+   111→
+   112→```typescript
+   113→interface JwtPayload {
+   114→  sub: string;           // User UUID
+   115→  role: Role;            // Current role
+   116→  kycLevel: number;      // 0–3
+   117→  activeMode: 'demo' | 'live';
+   118→  tokenVersion: number;  // Incremented on password reset / forced logout
+   119→  iat: number;           // Issued at (Unix timestamp)
+   120→  exp: number;           // Expiration (Unix timestamp)
+   121→}
+   122→
+   123→type Role = 'SUPER_ADMIN' | 'ADMIN' | 'COMPLIANCE' | 'SUPPORT' | 'USER';
+   124→```
+   125→
+   126→### 2.2 Refresh Token
+   127→
+   128→- **Type:** Opaque random string (not a JWT)
+   129→- **Expiry:** 7 days
+   130→- **Storage:** HTTP-only, `Secure`, `SameSite=Strict` cookie named `__tpc_rt`
+   131→- **Rotation:** Each refresh invalidates the old token and issues a new one (prevents replay attacks).
+   132→- **Family tracking:** All tokens in a rotation chain are stored; if any token in the chain is reused after rotation, the entire family is revoked (theft detection).
+   133→
+   134→### 2.3 Two-Factor Authentication (2FA)
+   135→
+   136→When 2FA is enabled for a user, the login flow is two-step:
+   137→
+   138→1. `POST /api/v1/auth/login` returns `HTTP 200` with `requires2FA: true` and a temporary `twoFactorToken` (short-lived, 5 minutes).
+   139→2. Client submits `POST /api/v1/auth/verify-2fa` with the temporary token and TOTP code.
+   140→3. On success, access + refresh tokens are issued.
+   141→
+   142→**2FA Verification Header:** For endpoints requiring confirmed 2FA (e.g., withdrawals), the client must include `X-2FA-Code: <6-digit TOTP>` to prove possession. This is validated server-side against the user's TOTP secret.
+   143→
+   144→### 2.4 Role Hierarchy & Middleware
+   145→
+   146→```
+   147→SUPER_ADMIN > ADMIN > COMPLIANCE > SUPPORT > USER
+   148→```
+   149→
+   150→Higher roles inherit all permissions from roles below them. Middleware checks are enforced at both the route level and endpoint level (defense in depth). Failed permission checks return `403 Forbidden`.
+   151→
+   152→### 2.5 Public vs. Protected Endpoints
+   153→
+   154→| Category | Endpoints |
+   155→|----------|-----------|
+   156→| **Public** (no auth) | `register`, `login`, `forgot-password`, `reset-password`, `verify-email`, `resend-verification`, plan list, currencies, maintenance status |
+   157→| **Protected** (auth required) | All other endpoints |
+   158→
+   159→### 2.6 Token Versioning
+   160→
+   161→Each user has a `tokenVersion` in the database. Password resets and admin-forced logouts increment this value. Tokens containing a stale `tokenVersion` are rejected — no blacklist needed.
+   162→
+   163→---
+   164→
+   165→## 3. Standard Response Format
+   166→
+   167→### 3.1 Success Envelope
+   168→
+   169→```typescript
+   170→interface ApiResponse<T> {
+   171→  success: true;
+   172→  data: T;
+   173→  message: string;
+   174→}
+   175→```
+   176→
+   177→### 3.2 List Response with Pagination (Offset-based)
+   178→
+   179→```typescript
+   180→interface ApiPaginatedResponse<T> {
+   181→  success: true;
+   182→  data: T[];
+   183→  meta: {
+   184→    page: number;
+   185→    limit: number;
+   186→    total: number;
+   187→    totalPages: number;
+   188→    prev: string | null;    // Full URL or null
+   189→    next: string | null;    // Full URL or null
+   190→  };
+   191→  message: string;
+   192→}
+   193→```
+   194→
+   195→### 3.3 List Response with Cursor Pagination
+   196→
+   197→```typescript
+   198→interface ApiCursorResponse<T> {
+   199→  success: true;
+   200→  data: T[];
+   201→  meta: {
+   202→    cursor: string | null;   // Cursor for next page
+   203→    hasMore: boolean;
+   204→    limit: number;
+   205→  };
+   206→  message: string;
+   207→}
+   208→```
+   209→
+   210→### 3.4 Error Envelope
+   211→
+   212→```typescript
+   213→interface ApiErrorResponse {
+   214→  success: false;
+   215→  message: string;
+   216→  errors?: Array<{
+   217→    field: string;
+   218→    message: string;
+   219→    code?: string;  // Machine-readable error code
+   220→  }>;
+   221→  code?: string;    // Top-level machine-readable error code
+   222→}
+   223→```
+   224→
+   225→### 3.5 Deletion Response
+   226→
+   227→```typescript
+   228→// HTTP 200 or 204
+   229→interface ApiDeleteResponse {
+   230→  success: true;
+   231→  data: null;
+   232→  message: string;
+   233→}
+   234→```
+   235→
+   236→---
+   237→
+   238→## 4. Standard Error Codes
+   239→
+   240→| HTTP Status | Machine Code | Description |
+   241→|-------------|-------------|-------------|
+   242→| `400` | `BAD_REQUEST` | Malformed request, missing required fields, or invalid values |
+   243→| `400` | `INVALID_UUID` | Provided identifier is not a valid UUID |
+   244→| `400` | `INVALID_EMAIL` | Email format is invalid |
+   245→| `400` | `INVALID_PASSWORD` | Password does not meet complexity requirements |
+   246→| `400` | `INVALID_AMOUNT` | Amount is not a positive number or outside allowed range |
+   247→| `400` | `INVALID_FILE_TYPE` | Uploaded file type is not accepted for this category |
+   248→| `400` | `FILE_TOO_LARGE` | Uploaded file exceeds the size limit for this category |
+   249→| `401` | `UNAUTHORIZED` | Missing, expired, or invalid access token |
+   250→| `401` | `TOKEN_EXPIRED` | Access token has expired; use refresh token |
+   251→| `401` | `TOKEN_INVALIDATED` | Token version mismatch; re-authenticate |
+   252→| `401` | `REFRESH_TOKEN_INVALID` | Refresh token is missing, expired, or revoked |
+   253→| `401` | `REFRESH_TOKEN_REUSE` | Reuse of a previously rotated refresh token detected; all sessions revoked |
+   254→| `403` | `FORBIDDEN` | Authenticated but lacks permission for this action |
+   255→| `403` | `KYC_LEVEL_INSUFFICIENT` | User's KYC level does not permit this operation |
+   256→| `403` | `ACCOUNT_LOCKED` | Account is temporarily locked due to failed login attempts |
+   257→| `403` | `ACCOUNT_BANNED` | Account has been banned by an administrator |
+   258→| `403` | `ACCOUNT_SUSPENDED` | Account is suspended pending review |
+   259→| `404` | `NOT_FOUND` | Requested resource does not exist |
+   260→| `404` | `USER_NOT_FOUND` | Specified user does not exist |
+   261→| `404` | `PLAN_NOT_FOUND` | Specified investment plan does not exist or is inactive |
+   262→| `404` | `INVESTMENT_NOT_FOUND` | Specified investment does not exist |
+   263→| `404` | `DEPOSIT_NOT_FOUND` | Specified deposit does not exist |
+   264→| `404` | `WITHDRAWAL_NOT_FOUND` | Specified withdrawal does not exist |
+   265→| `409` | `EMAIL_ALREADY_EXISTS` | Email is already registered |
+   266→| `409` | `REFERRAL_CODE_INVALID` | Referral code does not belong to an active user |
+   267→| `409` | `KYC_ALREADY_SUBMITTED` | KYC verification is already submitted or approved |
+   268→| `409` | `KYC_ALREADY_APPROVED` | KYC is already at the requested level |
+   269→| `409` | `PLAN_NOT_ACCEPTING` | Plan is not currently accepting investments |
+   270→| `409` | `WITHDRAWAL_ALREADY_PENDING` | User already has a pending withdrawal request |
+   271→| `422` | `INSUFFICIENT_BALANCE` | Wallet balance is insufficient for this operation |
+   272→| `422` | `AMOUNT_BELOW_MINIMUM` | Amount is below the plan's minimum deposit |
+   273→| `422` | `AMOUNT_ABOVE_MAXIMUM` | Amount exceeds the plan's maximum deposit or user's KYC limit |
+   274→| `422` | `WITHDRAWAL_LIMIT_EXCEEDED` | Withdrawal amount exceeds daily limit |
+   275→| `422` | `INVALID_2FA_CODE` | TOTP code is incorrect or expired |
+   276→| `422` | `2FA_REQUIRED` | Two-factor authentication is required for this operation |
+   277→| `422` | `2FA_NOT_ENABLED` | 2FA is not enabled on this account |
+   278→| `422` | `BUSINESS_RULE_VIOLATION` | Generic business rule violation (detail in `message`) |
+   279→| `429` | `RATE_LIMIT_EXCEEDED` | Too many requests; retry after the `Retry-After` duration |
+   280→| `500` | `INTERNAL_ERROR` | Unexpected server error |
+   281→| `503` | `SERVICE_UNAVAILABLE` | Service is temporarily unavailable (maintenance, dependency failure) |
+   282→
+   283→---
+   284→
+   285→## 5. Rate Limiting Strategy
+   286→
+   287→Rate limiting is implemented via **Redis sliding-window counters**.
+   288→
+   289→### 5.1 Rate Limit Tiers
+   290→
+   291→| Endpoint Category | Limit | Window | Scope |
+   292→|-------------------|-------|--------|-------|
+   293→| **Auth (login, forgot-password, reset-password, verify-2fa)** | 5 requests | 1 minute | Per IP |
+   294→| **Auth (register, verify-email, resend-verification)** | 3 requests | 1 minute | Per IP |
+   295→| **Auth (refresh-token)** | 30 requests | 1 minute | Per IP |
+   296→| **Write (create deposit, withdrawal, investment)** | 10 requests | 1 minute | Per User |
+   297→| **KYC submit** | 3 requests | 1 hour | Per User |
+   298→| **Support ticket create** | 5 requests | 1 hour | Per User |
+   299→| **Read (list, detail, dashboard)** | 60 requests | 1 minute | Per User |
+   300→| **Admin (all admin endpoints)** | 120 requests | 1 minute | Per User |
+   301→| **File upload (signed URL generation)** | 10 requests | 1 minute | Per User |
+   302→
+   303→### 5.2 Response Headers (Every Request)
+   304→
+   305→| Header | Description |
+   306→|--------|-------------|
+   307→| `X-RateLimit-Limit` | Max requests allowed in the current window |
+   308→| `X-RateLimit-Remaining` | Requests remaining in the current window |
+   309→| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+   310→
+   311→### 5.3 Rate Limit Exceeded Response
+   312→
+   313→```
+   314→HTTP 429 Too Many Requests
+   315→Retry-After: 45
+   316→```
+   317→
+   318→```json
+   319→{
+   320→  "success": false,
+   321→  "message": "Rate limit exceeded. Please retry after 45 seconds.",
+   322→  "code": "RATE_LIMIT_EXCEEDED"
+   323→}
+   324→```
+   325→
+   326→---
+   327→
+   328→## 6. Domain: Authentication
+   329→
+   330→Base path: `/api/v1/auth`
+   331→
+   332→### 6.1 Register
+   333→
+   334→```
+   335→POST /api/v1/auth/register
+   336→```
+   337→
+   338→**Auth:** None (public)
+   339→
+   340→**Description:** Register a new user account. Creates the user in `pending_verification` state, generates an email verification token (24h expiry), sends a verification email, and credits the Demo wallet with the configured starting balance upon email verification.
+   341→
+   342→**Request Body:**
+   343→
+   344→```typescript
+   345→interface RegisterRequest {
+   346→  email: string;           // Valid email, max 254 chars
+   347→  password: string;        // Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+   348→  confirmPassword: string; // Must match password
+   349→  referralCode?: string;   // Optional referral code from existing user
+   350→}
+   351→```
+   352→
+   353→**Response (200):**
+   354→
+   355→```typescript
+   356→interface RegisterResponse {
+   357→  user: {
+   358→    id: string;            // UUID
+   359→    email: string;
+   360→    status: 'pending_verification';
+   361→    createdAt: string;     // ISO 8601
+   362→  };
+   363→  message: string;         // "Verification email sent. Please check your inbox."
+   364→}
+   365→```
+   366→
+   367→**Status Codes:** `200` (success), `400` (validation), `409` (email exists, invalid referral code), `429` (rate limit)
+   368→
+   369→---
+   370→
+   371→### 6.2 Login
+   372→
+   373→```
+   374→POST /api/v1/auth/login
+   375→```
+   376→
+   377→**Auth:** None (public)
+   378→
+   379→**Description:** Authenticate with email and password. If 2FA is enabled, returns `requires2FA: true` and a temporary token instead of access/refresh tokens. After 5 consecutive failed attempts, the account is locked for 15 minutes.
+   380→
+   381→**Request Body:**
+   382→
+   383→```typescript
+   384→interface LoginRequest {
+   385→  email: string;
+   386→  password: string;
+   387→}
+   388→```
+   389→
+   390→**Response (200) — No 2FA:**
+   391→
+   392→```typescript
+   393→interface LoginResponse {
+   394→  user: {
+   395→    id: string;
+   396→    email: string;
+   397→    role: Role;
+   398→    kycLevel: number;
+   399→    activeMode: 'demo' | 'live';
+   400→    twoFactorEnabled: boolean;
+   401→  };
+   402→  accessToken: string;     // JWT, 15min
+   403→  message: string;
+   404→}
+   405→```
+   406→
+   407→**Response (200) — 2FA Required:**
+   408→
+   409→```typescript
+   410→interface Login2FAResponse {
+   411→  requires2FA: true;
+   412→  twoFactorToken: string;  // Temporary token, 5min expiry
+   413→  message: string;         // "Two-factor authentication required."
+   414→}
+   415→```
+   416→
+   417→**Status Codes:** `200` (success), `401` (invalid credentials), `403` (account locked/banned), `429` (rate limit)
+   418→
+   419→---
+   420→
+   421→### 6.3 Logout
+   422→
+   423→```
+   424→POST /api/v1/auth/logout
+   425→```
+   426→
+   427→**Auth:** Required (any authenticated user)
+   428→
+   429→**Description:** Invalidate the current refresh token (clear the `__tpc_rt` cookie) and increment the user's `tokenVersion` to invalidate all existing access tokens.
+   430→
+   431→**Request Body:** None
+   432→
+   433→**Response (200):**
+   434→
+   435→```typescript
+   436→interface LogoutResponse {
+   437→  message: string;  // "Logged out successfully."
+   438→}
+   439→```
+   440→
+   441→**Status Codes:** `200` (success), `401` (unauthorized)
+   442→
+   443→---
+   444→
+   445→### 6.4 Refresh Token
+   446→
+   447→```
+   448→POST /api/v1/auth/refresh-token
+   449→```
+   450→
+   451→**Auth:** Refresh token cookie (`__tpc_rt`) required; no access token needed.
+   452→
+   453→**Description:** Exchange a valid refresh token for a new access token and a rotated refresh token. If the refresh token has been previously used (replay detected), the entire token family is revoked.
+   454→
+   455→**Request Body:** None
+   456→
+   457→**Response (200):**
+   458→
+   459→```typescript
+   460→interface RefreshTokenResponse {
+   461→  accessToken: string;
+   462→  message: string;
+   463→}
+   464→```
+   465→
+   466→**Status Codes:** `200` (success), `401` (invalid/expired/revoked refresh token)
+   467→
+   468→---
+   469→
+   470→### 6.5 Forgot Password
+   471→
+   472→```
+   473→POST /api/v1/auth/forgot-password
+   474→```
+   475→
+   476→**Auth:** None (public)
+   477→
+   478→**Description:** Initiate password reset. Sends a reset email with a time-limited token (1 hour). Always returns 200 to prevent email enumeration.
+   479→
+   480→**Request Body:**
+   481→
+   482→```typescript
+   483→interface ForgotPasswordRequest {
+   484→  email: string;
+   485→}
+   486→```
+   487→
+   488→**Response (200):**
+   489→
+   490→```typescript
+   491→interface ForgotPasswordResponse {
+   492→  message: string;  // "If an account with that email exists, a reset link has been sent."
+   493→}
+   494→```
+   495→
+   496→**Status Codes:** `200` (always, even if email not found), `429` (rate limit)
+   497→
+   498→---
+   499→
+   500→### 6.6 Reset Password
+   501→
+   502→```
+   503→POST /api/v1/auth/reset-password
+   504→```
+   505→
+   506→**Auth:** None (public, requires valid reset token)
+   507→
+   508→**Description:** Set a new password using the token from the reset email. Invalidates all existing sessions (increments `tokenVersion`).
+   509→
+   510→**Request Body:**
+   511→
+   512→```typescript
+   513→interface ResetPasswordRequest {
+   514→  token: string;            // From reset email
+   515→  password: string;         // New password (same complexity rules)
+   516→  confirmPassword: string;  // Must match
+   517→}
+   518→```
+   519→
+   520→**Response (200):**
+   521→
+   522→```typescript
+   523→interface ResetPasswordResponse {
+   524→  message: string;  // "Password has been reset successfully. Please log in."
+   525→}
+   526→```
+   527→
+   528→**Status Codes:** `200` (success), `400` (invalid token, validation), `429` (rate limit)
+   529→
+   530→---
+   531→
+   532→### 6.7 Verify Email
+   533→
+   534→```
+   535→POST /api/v1/auth/verify-email
+   536→```
+   537→
+   538→**Auth:** None (public, requires valid verification token)
+   539→
+   540→**Description:** Activate user account by verifying the email token sent during registration. Transitions the user from `pending_verification` to `active`, sets KYC Level 0, and credits the Demo wallet with the configured starting balance.
+   541→
+   542→**Request Body:**
+   543→
+   544→```typescript
+   545→interface VerifyEmailRequest {
+   546→  token: string;  // From verification email
+   547→}
+   548→```
+   549→
+   550→**Response (200):**
+   551→
+   552→```typescript
+   553→interface VerifyEmailResponse {
+   554→  message: string;  // "Email verified successfully. You may now log in."
+   555→}
+   556→```
+   557→
+   558→**Status Codes:** `200` (success), `400` (invalid/expired token)
+   559→
+   560→---
+   561→
+   562→### 6.8 Resend Verification Email
+   563→
+   564→```
+   565→POST /api/v1/auth/resend-verification
+   566→```
+   567→
+   568→**Auth:** None (public)
+   569→
+   570→**Description:** Resend the email verification link. Only works for accounts still in `pending_verification` state.
+   571→
+   572→**Request Body:**
+   573→
+   574→```typescript
+   575→interface ResendVerificationRequest {
+   576→  email: string;
+   577→}
+   578→```
+   579→
+   580→**Response (200):**
+   581→
+   582→```typescript
+   583→interface ResendVerificationResponse {
+   584→  message: string;  // "Verification email resent. Please check your inbox."
+   585→}
+   586→```
+   587→
+   588→**Status Codes:** `200` (success or email not found — same response to prevent enumeration), `429` (rate limit)
+   589→
+   590→---
+   591→
+   592→### 6.9 Setup 2FA
+   593→
+   594→```
+   595→POST /api/v1/auth/setup-2fa
+   596→```
+   597→
+   598→**Auth:** Required (any authenticated user)
+   599→
+   600→**Description:** Generate a new TOTP secret for the user. Returns the secret (for QR code generation) and a set of backup codes. The 2FA is not active until verified.
+   601→
+   602→**Request Body:** None
+   603→
+   604→**Response (200):**
+   605→
+   606→```typescript
+   607→interface Setup2FAResponse {
+   608→  secret: string;         // Base32-encoded TOTP secret
+   609→  qrCodeUrl: string;      // otpauth:// URI for QR code generation
+   610→  backupCodes: string[];  // Array of 10 recovery codes
+   611→  message: string;        // "Scan the QR code with your authenticator app and verify a code."
+   612→}
+   613→```
+   614→
+   615→**Status Codes:** `200` (success), `401` (unauthorized), `409` (2FA already enabled)
+   616→
+   617→---
+   618→
+   619→### 6.10 Verify 2FA
+   620→
+   621→```
+   622→POST /api/v1/auth/verify-2fa
+   623→```
+   624→
+   625→**Auth:** Context-dependent. If called during login (after `requires2FA`), the `twoFactorToken` from the login response is required. If called during setup, a valid access token is required.
+   626→
+   627→**Description:** Verify a TOTP code. During login, this completes authentication and issues access + refresh tokens. During setup, this activates 2FA on the account.
+   628→
+   629→**Request Body (Login flow):**
+   630→
+   631→```typescript
+   632→interface Verify2FALoginRequest {
+   633→  twoFactorToken: string;  // Temporary token from login response
+   634→  code: string;            // 6-digit TOTP code
+   635→}
+   636→```
+   637→
+   638→**Request Body (Setup flow):**
+   639→
+   640→```typescript
+   641→interface Verify2FASetupRequest {
+   642→  code: string;            // 6-digit TOTP code
+   643→}
+   644→```
+   645→
+   646→**Response (200) — Login flow:**
+   647→
+   648→```typescript
+   649→interface Verify2FALoginResponse {
+   650→  user: {
+   651→    id: string;
+   652→    email: string;
+   653→    role: Role;
+   654→    kycLevel: number;
+   655→    activeMode: 'demo' | 'live';
+   656→    twoFactorEnabled: boolean;
+   657→  };
+   658→  accessToken: string;
+   659→  message: string;
+   660→}
+   661→```
+   662→
+   663→**Response (200) — Setup flow:**
+   664→
+   665→```typescript
+   666→interface Verify2FASetupResponse {
+   667→  message: string;  // "Two-factor authentication has been enabled."
+   668→}
+   669→```
+   670→
+   671→**Status Codes:** `200` (success), `400` (invalid/expired twoFactorToken), `401` (unauthorized — setup flow), `422` (invalid TOTP code)
+   672→
+   673→---
+   674→
+   675→### 6.11 Disable 2FA
+   676→
+   677→```
+   678→POST /api/v1/auth/disable-2fa
+   679→```
+   680→
+   681→**Auth:** Required (access token + `X-2FA-Code` header with valid TOTP code)
+   682→
+   683→**Description:** Disable two-factor authentication on the authenticated user's account. Requires a valid TOTP code to confirm the action.
+   684→
+   685→**Request Body:** None
+   686→
+   687→**Headers:**
+   688→- `X-2FA-Code: <6-digit TOTP>` — required
+   689→
+   690→**Response (200):**
+   691→
+   692→```typescript
+   693→interface Disable2FAResponse {
+   694→  message: string;  // "Two-factor authentication has been disabled."
+   695→}
+   696→```
+   697→
+   698→**Status Codes:** `200` (success), `401` (unauthorized), `422` (invalid 2FA code, 2FA not enabled)
+   699→
+   700→---
+   701→
+   702→## 7. Domain: Users
+   703→
+   704→Base path: `/api/v1/users`
+   705→
+   706→### 7.1 Get Current User
+   707→
+   708→```
+   709→GET /api/v1/users/me
+   710→```
+   711→
+   712→**Auth:** Required (any authenticated user)
+   713→
+   714→**Description:** Retrieve the authenticated user's full account summary including profile, KYC status, wallet overview, and active mode.
+   715→
+   716→**Request Body:** None
+   717→
+   718→**Response (200):**
+   719→
+   720→```typescript
+   721→interface CurrentUserResponse {
+   722→  id: string;
+   723→  email: string;
+   724→  role: Role;
+   725→  kycLevel: number;
+   726→  kycStatus: 'none' | 'pending' | 'approved' | 'rejected';
+   727→  status: 'active' | 'pending_verification' | 'locked' | 'banned' | 'suspended';
+   728→  activeMode: 'demo' | 'live';
+   729→  twoFactorEnabled: boolean;
+   730→  referralCode: string;
+   731→  referredBy: string | null;  // Referrer's user ID
+   732→  profile: {
+   733→    firstName: string | null;
+   734→    lastName: string | null;
+   735→    phone: string | null;
+   736→    country: string | null;
+   737→    avatarUrl: string | null;
+   738→    preferredCurrency: string;
+   739→    createdAt: string;
+   740→    emailVerifiedAt: string | null;
+   741→  };
+   742→  wallet: {
+   743→    demoBalance: string;   // Decimal string
+   744→    liveBalance: string;   // Decimal string
+   745→  };
+   746→}
+   747→```
+   748→
+   749→**Status Codes:** `200` (success), `401` (unauthorized)
+   750→
+   751→---
+   752→
+   753→### 7.2 Get Profile
+   754→
+   755→```
+   756→GET /api/v1/users/me/profile
+   757→```
+   758→
+   759→**Auth:** Required (any authenticated user)
+   760→
+   761→**Description:** Retrieve the authenticated user's profile details.
+   762→
+   763→**Request Body:** None
+   764→
+   765→**Response (200):**
+   766→
+   767→```typescript
+   768→interface UserProfileResponse {
+   769→  firstName: string | null;
+   770→  lastName: string | null;
+   771→  phone: string | null;
+   772→  country: string | null;
+   773→  address: string | null;
+   774→  city: string | null;
+   775→  state: string | null;
+   776→  postalCode: string | null;
+   777→  avatarUrl: string | null;
+   778→  preferredCurrency: string;
+   779→  language: string;
+   780→  notificationPreferences: {
+   781→    email: boolean;
+   782→    inApp: boolean;
+   783→    depositAlerts: boolean;
+   784→    withdrawalAlerts: boolean;
+   785→    investmentAlerts: boolean;
+   786→    referralAlerts: boolean;
+   787→  };
+   788→  createdAt: string;
+   789→  updatedAt: string;
+   790→}
+   791→```
+   792→
+   793→**Status Codes:** `200` (success), `401` (unauthorized)
+   794→
+   795→---
+   796→
+   797→### 7.3 Update Profile
+   798→
+   799→```
+   800→PUT /api/v1/users/me/profile
+   801→```
+   802→
+   803→**Auth:** Required (any authenticated user)
+   804→
+   805→**Description:** Update the authenticated user's profile. Only non-protected fields can be updated. Email and role changes are not allowed through this endpoint.
+   806→
+   807→**Request Body:**
+   808→
+   809→```typescript
+   810→interface UpdateProfileRequest {
+   811→  firstName?: string;
+   812→  lastName?: string;
+   813→  phone?: string;
+   814→  country?: string;
+   815→  address?: string;
+   816→  city?: string;
+   817→  state?: string;
+   818→  postalCode?: string;
+   819→  preferredCurrency?: string;  // ISO 4217 code
+   820→  language?: string;           // ISO 639-1 code
+   821→  notificationPreferences?: {
+   822→    email?: boolean;
+   823→    inApp?: boolean;
+   824→    depositAlerts?: boolean;
+   825→    withdrawalAlerts?: boolean;
+   826→    investmentAlerts?: boolean;
+   827→    referralAlerts?: boolean;
+   828→  };
+   829→}
+   830→```
+   831→
+   832→**Response (200):**
+   833→
+   834→```typescript
+   835→interface UpdateProfileResponse {
+   836→  user: UserProfileResponse;  // Updated profile
+   837→  message: string;
+   838→}
+   839→```
+   840→
+   841→**Status Codes:** `200` (success), `400` (validation), `401` (unauthorized)
+   842→
+   843→---
+   844→
+   845→## 8. Domain: KYC
+   846→
+   847→Base path: `/api/v1/kyc`
+   848→
+   849→### 8.1 Submit KYC
+   850→
+   851→```
+   852→POST /api/v1/kyc/submit
+   853→```
+   854→
+   855→**Auth:** Required (User role, KYC Level 0–2)
+   856→
+   857→**Description:** Submit KYC documents for verification. The user specifies the target level and provides Cloudinary public IDs for the uploaded documents. Level 1 requires ID only. Level 2 requires ID + proof of address. Level 3 requires ID + proof of address + selfie.
+   858→
+   859→**Request Body:**
+   860→
+   861→```typescript
+   862→interface KycSubmitRequest {
+   863→  targetLevel: 1 | 2 | 3;
+   864→  documents: {
+   865→    idFront: string;           // Cloudinary public ID
+   866→    idBack?: string;           // Required for national ID / driver's license; not for passport
+   867→    idType: 'passport' | 'national_id' | 'drivers_license';
+   868→    proofOfAddress?: string;   // Cloudinary public ID (required for Level 2+)
+   869→    selfie?: string;           // Cloudinary public ID (required for Level 3)
+   870→  };
+   871→}
+   872→```
+   873→
+   874→**Response (200):**
+   875→
+   876→```typescript
+   877→interface KycSubmitResponse {
+   878→  submission: {
+   879→    id: string;
+   880→    userId: string;
+   881→    targetLevel: number;
+   882→    status: 'pending';
+   883→    submittedAt: string;
+   884→    documents: Array<{
+   885→      id: string;
+   886→      type: 'id_front' | 'id_back' | 'proof_of_address' | 'selfie';
+   887→      cloudinaryUrl: string;
+   888→    }>;
+   889→  };
+   890→  message: string;  // "KYC documents submitted successfully. Review typically completes within 24-72 hours."
+   891→}
+   892→```
+   893→
+   894→**Status Codes:** `200` (success), `400` (validation, missing required documents), `401` (unauthorized), `409` (already submitted/approved), `422` (KYC level prerequisites not met)
+   895→
+   896→---
+   897→
+   898→### 8.2 Get KYC Status
+   899→
+   900→```
+   901→GET /api/v1/kyc/status
+   902→```
+   903→
+   904→**Auth:** Required (any authenticated user)
+   905→
+   906→**Description:** Retrieve the authenticated user's current KYC level, status, and submission history.
+   907→
+   908→**Request Body:** None
+   909→
+   910→**Response (200):**
+   911→
+   912→```typescript
+   913→interface KycStatusResponse {
+   914→  currentLevel: number;           // 0, 1, 2, or 3
+   915→  status: 'none' | 'pending' | 'approved' | 'rejected';
+   916→  currentSubmission: {
+   917→    id: string;
+   918→    targetLevel: number;
+   919→    status: 'pending' | 'approved' | 'rejected';
+   920→    submittedAt: string;
+   921→    reviewedAt: string | null;
+   922→    rejectionReason: string | null;
+   923→  } | null;
+   924→  depositLimits: {
+   925→    cumulativeMax: string;    // Decimal string (e.g., "2000.00")
+   926→    cumulativeUsed: string;
+   927→    dailyWithdrawalMax: string;
+   928→  };
+   929→  history: Array<{
+   930→    id: string;
+   931→    targetLevel: number;
+   932→    status: 'approved' | 'rejected';
+   933→    submittedAt: string;
+   934→    reviewedAt: string;
+   935→    rejectionReason: string | null;
+   936→  }>;
+   937→}
+   938→```
+   939→
+   940→**Status Codes:** `200` (success), `401` (unauthorized)
+   941→
+   942→---
+   943→
+   944→### 8.3 Get KYC Document
+   945→
+   946→```
+   947→GET /api/v1/kyc/documents/:id
+   948→```
+   949→
+   950→**Auth:** Required (User — own documents only; Compliance, Admin, SuperAdmin — all documents)
+   951→
+   952→**Description:** Retrieve a specific KYC document's metadata and a time-limited signed URL for viewing the document in Cloudinary's private folder.
+   953→
+   954→**Path Parameters:**
+   955→- `id` (UUID) — Document ID
+   956→
+   957→**Response (200):**
+   958→
+   959→```typescript
+   960→interface KycDocumentResponse {
+   961→  id: string;
+   962→  type: 'id_front' | 'id_back' | 'proof_of_address' | 'selfie';
+   963→  status: 'pending' | 'approved' | 'rejected';
+   964→  cloudinaryPublicId: string;
+   965→  signedUrl: string;        // Time-limited Cloudinary signed URL (1 hour)
+   966→  uploadedAt: string;
+   967→  reviewedAt: string | null;
+   968→  reviewedBy: string | null;  // Reviewer user ID
+   969→  rejectionReason: string | null;
+   970→}
+   971→```
+   972→
+   973→**Status Codes:** `200` (success), `401` (unauthorized), `403` (forbidden — not own document), `404` (document not found)
+   974→
+   975→---
+   976→
+   977→## 9. Domain: Plans
+   978→
+   979→Base path: `/api/v1/plans`
+   980→
+   981→### 9.1 List Plans
+   982→
+   983→```
+   984→GET /api/v1/plans
+   985→```
+   986→
+   987→**Auth:** None (public — plan information is publicly browsable)
+   988→
+   989→**Description:** Retrieve all active investment plans with their tier details, return rates, and duration. Inactive plans are excluded unless the user is an Admin or SuperAdmin.
+   990→
+   991→**Query Parameters:**
+   992→- `mode` (optional): `demo` | `live` — filter by mode (default: both)
+   993→
+   994→**Response (200):**
+   995→
+   996→```typescript
+   997→interface PlanListResponse {
+   998→  plans: Array<{
+   999→    id: string;
+  1000→    name: string;              // "Basic", "Silver", "Gold", "Platinum"
+  1001→    slug: string;              // "basic", "silver", "gold", "platinum"
+  1002→    tier: number;              // 1, 2, 3, 4
+  1003→    minDeposit: string;        // Decimal string (e.g., "200.00")
+  1004→    maxDeposit: string;        // Decimal string (e.g., "4999.00")
+  1005→    returnRate: string;        // Decimal string, percentage (e.g., "5.00")
+  1006→    durationHours: number;     // 24, 72, 168, 336
+  1007→    durationLabel: string;     // "24 Hours", "3 Days", "7 Days", "14 Days"
+  1008→    mode: 'demo' | 'live';
+  1009→    isActive: boolean;
+  1010→    requiredKycLevel: number;
+  1011→    features: string[];        // ["Fixed returns", "Principal protection", ...]
+  1012→  }>;
+  1013→}
+  1014→```
+  1015→
+  1016→**Status Codes:** `200` (success)
+  1017→
+  1018→---
+  1019→
+  1020→### 9.2 Get Plan Details
+  1021→
+  1022→```
+  1023→GET /api/v1/plans/:id
+  1024→```
+  1025→
+  1026→**Auth:** None (public)
+  1027→
+  1028→**Description:** Retrieve detailed information about a specific investment plan.
+  1029→
+  1030→**Path Parameters:**
+  1031→- `id` (UUID) — Plan ID
+  1032→
+  1033→**Response (200):**
+  1034→
+  1035→```typescript
+  1036→interface PlanDetailResponse {
+  1037→  id: string;
+  1038→  name: string;
+  1039→  slug: string;
+  1040→  tier: number;
+  1041→  minDeposit: string;
+  1042→  maxDeposit: string;
+  1043→  returnRate: string;
+  1044→  durationHours: number;
+  1045→  durationLabel: string;
+  1046→  mode: 'demo' | 'live';
+  1047→  isActive: boolean;
+  1048→  isAcceptingInvestments: boolean;
+  1049→  requiredKycLevel: number;
+  1050→  description: string;
+  1051→  features: string[];
+  1052→  riskLevel: 'low' | 'medium' | 'high';
+  1053→  createdAt: string;
+  1054→  updatedAt: string;
+  1055→}
+  1056→```
+  1057→
+  1058→**Status Codes:** `200` (success), `404` (plan not found)
+  1059→
+  1060→---
+  1061→
+  1062→## 10. Domain: Investments
+  1063→
+  1064→Base path: `/api/v1/investments`
+  1065→
+  1066→### 10.1 Create Investment
+  1067→
+  1068→```
+  1069→POST /api/v1/investments/create
+  1070→```
+  1071→
+  1072→**Auth:** Required (User role, KYC Level per plan requirement)
+  1073→
+  1074→**Description:** Create a new investment by allocating wallet balance to an investment plan. Deducts the investment amount from the user's live wallet. The plan must be active and accepting investments. The amount must fall within the plan's min/max range and the user's KYC deposit limit.
+  1075→
+  1076→**Request Body:**
+  1077→
+  1078→```typescript
+  1079→interface CreateInvestmentRequest {
+  1080→  planId: string;       // UUID
+  1081→  amount: string;       // Decimal string, positive, within plan range
+  1082→  mode: 'demo' | 'live';
+  1083→}
+  1084→```
+  1085→
+  1086→**Response (201):**
+  1087→
+  1088→```typescript
+  1089→interface CreateInvestmentResponse {
+  1090→  investment: {
+  1091→    id: string;
+  1092→    userId: string;
+  1093→    planId: string;
+  1094→    planName: string;
+  1095→    amount: string;
+  1096→    expectedReturn: string;      // amount * (1 + returnRate/100)
+  1097→    returnRate: string;
+  1098→    status: 'active';
+  1099→    mode: 'demo' | 'live';
+  1100→    startedAt: string;
+  1101→    maturesAt: string;           // startedAt + durationHours
+  1102→    createdAt: string;
+  1103→  };
+  1104→  message: string;
+  1105→}
+  1106→```
+  1107→
+  1108→**Status Codes:** `201` (created), `400` (validation), `401` (unauthorized), `403` (KYC insufficient, plan not available for this KYC level), `422` (insufficient balance, amount out of range, plan not accepting)
+  1109→
+  1110→---
+  1111→
+  1112→### 10.2 List Investments
+  1113→
+  1114→```
+  1115→GET /api/v1/investments
+  1116→```
+  1117→
+  1118→**Auth:** Required (User — own investments only; Admin, SuperAdmin — all with filters)
+  1119→
+  1120→**Description:** Retrieve the authenticated user's investments. Supports filtering by status and mode.
+  1121→
+  1122→**Query Parameters:**
+  1123→- `status` (optional): `active` | `matured` | `completed`
+  1124→- `mode` (optional): `demo` | `live`
+  1125→- `page` (optional): number, default 1
+  1126→- `limit` (optional): number, default 20, max 100
+  1127→
+  1128→**Response (200):**
+  1129→
+  1130→```typescript
+  1131→// Paginated response
+  1132→interface InvestmentListResponse {
+  1133→  data: Array<{
+  1134→    id: string;
+  1135→    planName: string;
+  1136→    planTier: number;
+  1137→    amount: string;
+  1138→    expectedReturn: string;
+  1139→    returnRate: string;
+  1140→    status: 'active' | 'matured' | 'completed';
+  1141→    mode: 'demo' | 'live';
+  1142→    startedAt: string;
+  1143→    maturesAt: string;
+  1144→    completedAt: string | null;
+  1145→    createdAt: string;
+  1146→  }>;
+  1147→  meta: OffsetPaginationMeta;
+  1148→  message: string;
+  1149→}
+  1150→```
+  1151→
+  1152→**Status Codes:** `200` (success), `401` (unauthorized)
+  1153→
+  1154→---
+  1155→
+  1156→### 10.3 Get Investment Details
+  1157→
+  1158→```
+  1159→GET /api/v1/investments/:id
+  1160→```
+  1161→
+  1162→**Auth:** Required (User — own investment only; Admin, SuperAdmin — all)
+  1163→
+  1164→**Description:** Retrieve detailed information about a specific investment including earnings breakdown and transaction history.
+  1165→
+  1166→**Path Parameters:**
+  1167→- `id` (UUID) — Investment ID
+  1168→
+  1169→**Response (200):**
+  1170→
+  1171→```typescript
+  1172→interface InvestmentDetailResponse {
+  1173→  id: string;
+  1174→  userId: string;
+  1175→  planId: string;
+  1176→  planName: string;
+  1177→  planTier: number;
+  1178→  amount: string;
+  1179→  expectedReturn: string;
+  1180→  currentEarnings: string;
+  1181→  returnRate: string;
+  1182→  status: 'active' | 'matured' | 'completed';
+  1183→  mode: 'demo' | 'live';
+  1184→  startedAt: string;
+  1185→  maturesAt: string;
+  1186→  completedAt: string | null;
+  1187→  createdAt: string;
+  1188→  updatedAt: string;
+  1189→  transactions: Array<{
+  1190→    id: string;
+  1191→    type: 'investment' | 'return' | 'completion';
+  1192→    amount: string;
+  1193→    description: string;
+  1194→    createdAt: string;
+  1195→  }>;
+  1196→}
+  1197→```
+  1198→
+  1199→**Status Codes:** `200` (success), `401` (unauthorized), `403` (not own investment), `404` (not found)
+  1200→
+  1201→---
+  1202→
+  1203→## 11. Domain: Deposits
+  1204→
+  1205→Base path: `/api/v1/deposits`
+  1206→
+  1207→### 11.1 Create Crypto Deposit
+  1208→
+  1209→```
+  1210→POST /api/v1/deposits/crypto
+  1211→```
+  1212→
+  1213→**Auth:** Required (User role, KYC Level ≥ 1)
+  1214→
+  1215→**Description:** Request a crypto deposit. Generates a unique deposit address and returns it along with the deposit reference. The deposit is created in `pending` status and transitions to `confirming` once blockchain transactions are detected.
+  1216→
+  1217→**Request Body:**
+  1218→
+  1219→```typescript
+  1220→interface CreateCryptoDepositRequest {
+  1221→  amount: string;             // Decimal string, must be > 0
+  1222→  currency: 'BTC' | 'ETH' | 'USDT';
+  1223→  network?: string;           // e.g., "ERC-20", "TRC-20", "BTC" (default per currency)
+  1224→}
+  1225→```
+  1226→
+  1227→**Response (201):**
+  1228→
+  1229→```typescript
+  1230→interface CreateCryptoDepositResponse {
+  1231→  deposit: {
+  1232→    id: string;
+  1233→    userId: string;
+  1234→    type: 'crypto';
+  1235→    amount: string;
+  1236→    currency: 'BTC' | 'ETH' | 'USDT';
+  1237→    network: string;
+  1238→    depositAddress: string;       // Generated unique address
+  1239→    status: 'pending';
+  1240→    mode: 'live';
+  1241→    expiresAt: string;            // Address expires after configurable duration
+  1242→    createdAt: string;
+  1243→  };
+  1244→  message: string;  // "Send exactly <amount> <currency> to the address below."
+  1245→}
+  1246→```
+  1247→
+  1248→**Status Codes:** `201` (created), `400` (validation), `401` (unauthorized), `403` (KYC insufficient), `422` (unsupported currency)
+  1249→
+  1250→---
+  1251→
+  1252→### 11.2 Create Gift Card Deposit
+  1253→
+  1254→```
+  1255→POST /api/v1/deposits/gift-card
+  1256→```
+  1257→
+  1258→**Auth:** Required (User role, KYC Level ≥ 1)
+  1259→
+  1260→**Description:** Submit a gift card deposit with a screenshot. The gift card image must be pre-uploaded to Cloudinary. The deposit enters `pending` status and requires admin verification.
+  1261→
+  1262→**Request Body:**
+  1263→
+  1264→```typescript
+  1265→interface CreateGiftCardDepositRequest {
+  1266→  amount: string;           // Decimal string, claimed card value
+  1267→  cardBrand: string;        // e.g., "Amazon", "Apple", "Google Play", "Visa"
+  1268→  cardNumber: string;       // Gift card number
+  1269→  pin?: string;             // PIN if applicable
+  1270→  screenshotCloudinaryId: string;  // Pre-uploaded image in Cloudinary
+  1271→  countryCode: string;      // ISO 3166-1 alpha-2
+  1272→}
+  1273→```
+  1274→
+  1275→**Response (201):**
+  1276→
+  1277→```typescript
+  1278→interface CreateGiftCardDepositResponse {
+  1279→  deposit: {
+  1280→    id: string;
+  1281→    userId: string;
+  1282→    type: 'gift_card';
+  1283→    amount: string;
+  1284→    cardBrand: string;
+  1285→    status: 'pending';
+  1286→    mode: 'live';
+  1287→    createdAt: string;
+  1288→  };
+  1289→  message: string;  // "Gift card deposit submitted. Verification typically takes 1-4 hours."
+  1290→}
+  1291→```
+  1292→
+  1293→**Status Codes:** `201` (created), `400` (validation), `401` (unauthorized), `403` (KYC insufficient)
+  1294→
+  1295→---
+  1296→
+  1297→### 11.3 List Deposits
+  1298→
+  1299→```
+  1300→GET /api/v1/deposits
+  1301→```
+  1302→
+  1303→**Auth:** Required (User — own deposits only; Admin, SuperAdmin — all with filters)
+  1304→
+  1305→**Description:** List deposits for the authenticated user. Supports filtering by status, type, and mode.
+  1306→
+  1307→**Query Parameters:**
+  1308→- `status` (optional): `pending` | `confirming` | `verified` | `completed` | `failed` | `rejected`
+  1309→- `type` (optional): `crypto` | `gift_card`
+  1310→- `mode` (optional): `demo` | `live`
+  1311→- `page` (optional): number, default 1
+  1312→- `limit` (optional): number, default 20, max 100
+  1313→
+  1314→**Response (200):**
+  1315→
+  1316→```typescript
+  1317→interface DepositListResponse {
+  1318→  data: Array<{
+  1319→    id: string;
+  1320→    type: 'crypto' | 'gift_card';
+  1321→    amount: string;
+  1322→    currency: string;
+  1323→    status: DepositStatus;
+  1324→    mode: 'demo' | 'live';
+  1325→    createdAt: string;
+  1326→    completedAt: string | null;
+  1327→  }>;
+  1328→  meta: OffsetPaginationMeta;
+  1329→  message: string;
+  1330→}
+  1331→
+  1332→type DepositStatus = 'pending' | 'confirming' | 'verified' | 'completed' | 'failed' | 'rejected';
+  1333→```
+  1334→
+  1335→**Status Codes:** `200` (success), `401` (unauthorized)
+  1336→
+  1337→---
+  1338→
+  1339→### 11.4 Get Deposit Details
+  1340→
+  1341→```
+  1342→GET /api/v1/deposits/:id
+  1343→```
+  1344→
+  1345→**Auth:** Required (User — own deposit only; Admin, SuperAdmin — all)
+  1346→
+  1347→**Description:** Retrieve detailed information about a specific deposit.
+  1348→
+  1349→**Path Parameters:**
+  1350→- `id` (UUID) — Deposit ID
+  1351→
+  1352→**Response (200):**
+  1353→
+  1354→```typescript
+  1355→interface DepositDetailResponse {
+  1356→  id: string;
+  1357→  userId: string;
+  1358→  type: 'crypto' | 'gift_card';
+  1359→  amount: string;
+  1360→  currency: string;
+  1361→  network: string | null;
+  1362→  depositAddress: string | null;
+  1363→  txHash: string | null;
+  1364→  status: DepositStatus;
+  1365→  mode: 'demo' | 'live';
+  1366→  rejectionReason: string | null;
+  1367→  reviewedBy: string | null;
+  1368→  reviewedAt: string | null;
+  1369→  screenshotUrl: string | null;   // Signed URL for gift card screenshot
+  1370→  createdAt: string;
+  1371→  completedAt: string | null;
+  1372→}
+  1373→```
+  1374→
+  1375→**Status Codes:** `200` (success), `401` (unauthorized), `403` (not own deposit), `404` (not found)
+  1376→
+  1377→---
+  1378→
+  1379→## 12. Domain: Withdrawals
+  1380→
+  1381→Base path: `/api/v1/withdrawals`
+  1382→
+  1383→### 12.1 Create Withdrawal
+  1384→
+  1385→```
+  1386→POST /api/v1/withdrawals/create
+  1387→```
+  1388→
+  1389→**Auth:** Required (User role, KYC Level ≥ 1, `X-2FA-Code` header required)
+  1390→
+  1391→**Description:** Request a withdrawal from the user's live wallet. A 21% withdrawal fee is applied. The net amount (amount minus fee) is what the user receives. The user must have sufficient balance and must not exceed daily withdrawal limits for their KYC level.
+  1392→
+  1393→**Headers:**
+  1394→- `X-2FA-Code: <6-digit TOTP>` — required
+  1395→
+  1396→**Request Body:**
+  1397→
+  1398→```typescript
+  1399→interface CreateWithdrawalRequest {
+  1400→  amount: string;              // Gross amount to withdraw (before fee)
+  1401→  currency: 'BTC' | 'ETH' | 'USDT';
+  1402→  network?: string;            // e.g., "ERC-20", "TRC-20", "BTC"
+  1403→  walletAddress: string;       // Destination wallet address
+  1404→}
+  1405→```
+  1406→
+  1407→**Response (201):**
+  1408→
+  1409→```typescript
+  1410→interface CreateWithdrawalResponse {
+  1411→  withdrawal: {
+  1412→    id: string;
+  1413→    userId: string;
+  1414→    grossAmount: string;        // Requested amount
+  1415→    feePercentage: string;      // "21.00"
+  1416→    feeAmount: string;          // grossAmount * 0.21
+  1417→    netAmount: string;          // grossAmount - feeAmount
+  1418→    currency: 'BTC' | 'ETH' | 'USDT';
+  1419→    network: string;
+  1420→    walletAddress: string;
+  1421→    status: 'pending';
+  1422→    mode: 'live';
+  1423→    createdAt: string;
+  1424→  };
+  1425→  message: string;
+  1426→}
+  1427→```
+  1428→
+  1429→**Status Codes:** `201` (created), `400` (validation), `401` (unauthorized), `403` (KYC insufficient, 2FA required), `422` (insufficient balance, daily limit exceeded, invalid wallet address)
+  1430→
+  1431→---
+  1432→
+  1433→### 12.2 List Withdrawals
+  1434→
+  1435→```
+  1436→GET /api/v1/withdrawals
+  1437→```
+  1438→
+  1439→**Auth:** Required (User — own withdrawals only; Admin, SuperAdmin — all with filters)
+  1440→
+  1441→**Description:** List withdrawal history for the authenticated user.
+  1442→
+  1443→**Query Parameters:**
+  1444→- `status` (optional): `pending` | `processing` | `approved` | `completed` | `rejected` | `failed`
+  1445→- `page` (optional): number, default 1
+  1446→- `limit` (optional): number, default 20, max 100
+  1447→
+  1448→**Response (200):**
+  1449→
+  1450→```typescript
+  1451→interface WithdrawalListResponse {
+  1452→  data: Array<{
+  1453→    id: string;
+  1454→    grossAmount: string;
+  1455→    feeAmount: string;
+  1456→    netAmount: string;
+  1457→    currency: string;
+  1458→    status: WithdrawalStatus;
+  1459→    walletAddress: string;
+  1460→    createdAt: string;
+  1461→    completedAt: string | null;
+  1462→  }>;
+  1463→  meta: OffsetPaginationMeta;
+  1464→  message: string;
+  1465→}
+  1466→
+  1467→type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'completed' | 'rejected' | 'failed';
+  1468→```
+  1469→
+  1470→**Status Codes:** `200` (success), `401` (unauthorized)
+  1471→
+  1472→---
+  1473→
+  1474→### 12.3 Get Withdrawal Details
+  1475→
+  1476→```
+  1477→GET /api/v1/withdrawals/:id
+  1478→```
+  1479→
+  1480→**Auth:** Required (User — own withdrawal only; Admin, SuperAdmin — all)
+  1481→
+  1482→**Description:** Retrieve detailed information about a specific withdrawal.
+  1483→
+  1484→**Path Parameters:**
+  1485→- `id` (UUID) — Withdrawal ID
+  1486→
+  1487→**Response (200):**
+  1488→
+  1489→```typescript
+  1490→interface WithdrawalDetailResponse {
+  1491→  id: string;
+  1492→  userId: string;
+  1493→  grossAmount: string;
+  1494→  feePercentage: string;
+  1495→  feeAmount: string;
+  1496→  netAmount: string;
+  1497→  currency: string;
+  1498→  network: string;
+  1499→  walletAddress: string;
+  1500→  txHash: string | null;
+  1501→  status: WithdrawalStatus;
+  1502→  mode: 'live';
+  1503→  rejectionReason: string | null;
+  1504→  reviewedBy: string | null;
+  1505→  reviewedAt: string | null;
+  1506→  createdAt: string;
+  1507→  completedAt: string | null;
+  1508→}
+  1509→```
+  1510→
+  1511→**Status Codes:** `200` (success), `401` (unauthorized), `403` (not own withdrawal), `404` (not found)
+  1512→
+  1513→---
+  1514→
+  1515→## 13. Domain: Wallet
+  1516→
+  1517→Base path: `/api/v1/wallet`
+  1518→
+  1519→### 13.1 Get Wallet
+  1520→
+  1521→```
+  1522→GET /api/v1/wallet
+  1523→```
+  1524→
+  1525→**Auth:** Required (any authenticated user — own wallet only)
+  1526→
+  1527→**Description:** Retrieve the authenticated user's wallet balances across both demo and live modes, including available balance and locked (invested) balance.
+  1528→
+  1529→**Request Body:** None
+  1530→
+  1531→**Response (200):**
+  1532→
+  1533→```typescript
+  1534→interface WalletResponse {
+  1535→  demo: {
+  1536→    availableBalance: string;    // Decimal string
+  1537→    investedBalance: string;
+  1538→    totalBalance: string;
+  1539→    currency: string;            // "USD"
+  1540→  };
+  1541→  live: {
+  1542→    availableBalance: string;
+  1543→    investedBalance: string;
+  1544→    totalBalance: string;
+  1545→    currency: string;            // "USD"
+  1546→  };
+  1547→}
+  1548→```
+  1549→
+  1550→**Status Codes:** `200` (success), `401` (unauthorized)
+  1551→
+  1552→---
+  1553→
+  1554→### 13.2 Get Wallet Transactions
+  1555→
+  1556→```
+  1557→GET /api/v1/wallet/transactions
+  1558→```
+  1559→
+  1560→**Auth:** Required (any authenticated user — own transactions only)
+  1561→
+  1562→**Description:** Retrieve the authenticated user's wallet transaction history using cursor-based pagination. Supports filtering by type and mode.
+  1563→
+  1564→**Query Parameters:**
+  1565→- `type` (optional): `deposit` | `withdrawal` | `investment` | `return` | `commission` | `fee` | `adjustment`
+  1566→- `mode` (optional): `demo` | `live`
+  1567→- `cursor` (optional): opaque cursor string from previous response
+  1568→- `limit` (optional): number, default 20, max 100
+  1569→- `startDate` (optional): ISO date string
+  1570→- `endDate` (optional): ISO date string
+  1571→
+  1572→**Response (200):**
+  1573→
+  1574→```typescript
+  1575→interface WalletTransactionListResponse {
+  1576→  data: Array<{
+  1577→    id: string;
+  1578→    type: 'deposit' | 'withdrawal' | 'investment' | 'return' | 'commission' | 'fee' | 'adjustment';
+  1579→    amount: string;           // Positive for credits, negative for debits
+  1580→    balanceAfter: string;     // Balance after this transaction
+  1581→    currency: string;
+  1582→    mode: 'demo' | 'live';
+  1583→    description: string;
+  1584→    referenceId: string | null;   // Related entity ID (deposit, withdrawal, investment, etc.)
+  1585→    referenceType: string | null;
+  1586→    createdAt: string;
+  1587→  }>;
+  1588→  meta: {
+  1589→    cursor: string | null;
+  1590→    hasMore: boolean;
+  1591→    limit: number;
+  1592→  };
+  1593→  message: string;
+  1594→}
+  1595→```
+  1596→
+  1597→**Status Codes:** `200` (success), `401` (unauthorized)
+  1598→
+  1599→---
+  1600→
+  1601→### 13.3 Get Wallet Transaction Details
+  1602→
+  1603→```
+  1604→GET /api/v1/wallet/transactions/:id
+  1605→```
+  1606→
+  1607→**Auth:** Required (any authenticated user — own transaction only)
+  1608→
+  1609→**Description:** Retrieve detailed information about a specific wallet transaction.
+  1610→
+  1611→**Path Parameters:**
+  1612→- `id` (UUID) — Transaction ID
+  1613→
+  1614→**Response (200):**
+  1615→
+  1616→```typescript
+  1617→interface WalletTransactionDetailResponse {
+  1618→  id: string;
+  1619→  type: 'deposit' | 'withdrawal' | 'investment' | 'return' | 'commission' | 'fee' | 'adjustment';
+  1620→  amount: string;
+  1621→  balanceBefore: string;
+  1622→  balanceAfter: string;
+  1623→  currency: string;
+  1624→  mode: 'demo' | 'live';
+  1625→  description: string;
+  1626→  referenceId: string | null;
+  1627→  referenceType: string | null;
+  1628→  metadata: Record<string, unknown>;  // Additional context (e.g., plan name, commission source)
+  1629→  createdAt: string;
+  1630→}
+  1631→```
+  1632→
+  1633→**Status Codes:** `200` (success), `401` (unauthorized), `403` (not own transaction), `404` (not found)
+  1634→
+  1635→---
+  1636→
+  1637→## 14. Domain: Referral
+  1638→
+  1639→Base path: `/api/v1/referral`
+  1640→
+  1641→### 14.1 Generate Referral Link
+  1642→
+  1643→```
+  1644→POST /api/v1/referral/generate-link
+  1645→```
+  1646→
+  1647→**Auth:** Required (User role)
+  1648→
+  1649→**Description:** Generate or retrieve the authenticated user's unique referral link and code.
+  1650→
+  1651→**Request Body:** None
+  1652→
+  1653→**Response (200):**
+  1654→
+  1655→```typescript
+  1656→interface ReferralLinkResponse {
+  1657→  referralCode: string;
+  1658→  referralLink: string;       // e.g., "https://teslaprimecapital.com/register?ref=ABC123"
+  1659→  totalReferrals: number;
+  1660→  activeReferrals: number;
+  1661→  message: string;
+  1662→}
+  1663→```
+  1664→
+  1665→**Status Codes:** `200` (success), `401` (unauthorized)
+  1666→
+  1667→---
+  1668→
+  1669→### 14.2 Get Referral Team
+  1670→
+  1671→```
+  1672→GET /api/v1/referral/team
+  1673→```
+  1674→
+  1675→**Auth:** Required (User — own team only; Admin, SuperAdmin — any user's team via query param)
+  1676→
+  1677→**Description:** Retrieve the authenticated user's direct referral team members and their statuses.
+  1678→
+  1679→**Query Parameters:**
+  1680→- `page` (optional): number, default 1
+  1681→- `limit` (optional): number, default 20, max 100
+  1682→- `status` (optional): `active` | `inactive`
+  1683→
+  1684→**Response (200):**
+  1685→
+  1686→```typescript
+  1687→interface ReferralTeamResponse {
+  1688→  data: Array<{
+  1689→    id: string;
+  1690→    userId: string;
+  1691→    email: string;
+  1692→    status: 'active' | 'inactive' | 'banned';
+  1693→    kycLevel: number;
+  1694→    totalDeposits: string;
+  1695→    joinedAt: string;
+  1696→    level: number;            // 1 = direct referral, 2 = referral of referral, etc.
+  1697→  }>;
+  1698→  meta: OffsetPaginationMeta;
+  1699→  message: string;
+  1700→}
+  1701→```
+  1702→
+  1703→**Status Codes:** `200` (success), `401` (unauthorized)
+  1704→
+  1705→---
+  1706→
+  1707→### 14.3 Get Referral Commissions
+  1708→
+  1709→```
+  1710→GET /api/v1/referral/commissions
+  1711→```
+  1712→
+  1713→**Auth:** Required (User — own commissions only; Admin, SuperAdmin — all with filters)
+  1714→
+  1715→**Description:** Retrieve the authenticated user's referral commission history. Commissions are 10% of the referred user's deposit/investment amounts, plus binary bonus payouts.
+  1716→
+  1717→**Query Parameters:**
+  1718→- `type` (optional): `direct` | `binary` | `all`
+  1719→- `page` (optional): number, default 1
+  1720→- `limit` (optional): number, default 20, max 100
+  1721→- `startDate` (optional): ISO date string
+  1722→- `endDate` (optional): ISO date string
+  1723→
+  1724→**Response (200):**
+  1725→
+  1726→```typescript
+  1727→interface ReferralCommissionListResponse {
+  1728→  data: Array<{
+  1729→    id: string;
+  1730→    type: 'direct' | 'binary';
+  1731→    amount: string;
+  1732→    sourceUserId: string;
+  1733→    sourceUserEmail: string;
+  1734→    sourceTransactionType: 'deposit' | 'investment';
+  1735→    sourceTransactionId: string;
+  1736→    percentage: string;        // "10.00"
+  1737→    status: 'paid' | 'pending';
+  1738→    paidAt: string | null;
+  1739→    createdAt: string;
+  1740→  }>;
+  1741→  meta: OffsetPaginationMeta;
+  1742→  summary: {
+  1743→    totalEarned: string;
+  1744→    totalPending: string;
+  1745→    thisMonth: string;
+  1746→  };
+  1747→  message: string;
+  1748→}
+  1749→```
+  1750→
+  1751→**Status Codes:** `200` (success), `401` (unauthorized)
+  1752→
+  1753→---
+  1754→
+  1755→### 14.4 Get Binary Tree
+  1756→
+  1757→```
+  1758→GET /api/v1/referral/binary-tree
+  1759→```
+  1760→
+  1761→**Auth:** Required (User — own tree only; Admin, SuperAdmin — any user's tree via query param)
+  1762→
+  1763→**Description:** Retrieve the user's binary referral tree structure. The binary tree places each referral on the left or right subtree. Returns a hierarchical structure up to a configurable depth limit.
+  1764→
+  1765→**Query Parameters:**
+  1766→- `depth` (optional): number, default 3, max 10
+  1767→- `userId` (optional, Admin/SuperAdmin only): UUID of target user
+  1768→
+  1769→**Response (200):**
+  1770→
+  1771→```typescript
+  1772→interface BinaryTreeResponse {
+  1773→  root: BinaryTreeNode;
+  1774→  summary: {
+  1775→    totalLeft: number;
+  1776→    totalRight: number;
+  1777→    leftVolume: string;       // Total deposit/investment volume on left
+  1778→    rightVolume: string;      // Total deposit/investment volume on right
+  1779→    weakerLegVolume: string;  // min(leftVolume, rightVolume) — used for binary bonus calc
+  1780→  };
+  1781→  message: string;
+  1782→}
+  1783→
+  1784→interface BinaryTreeNode {
+  1785→  userId: string;
+  1786→  email: string;
+  1787→  status: 'active' | 'inactive' | 'banned';
+  1788→  totalVolume: string;
+  1789→  leftChild: BinaryTreeNode | null;
+  1790→  rightChild: BinaryTreeNode | null;
+  1791→  directReferrals: number;
+  1792→  level: number;
+  1793→}
+  1794→```
+  1795→
+  1796→**Status Codes:** `200` (success), `401` (unauthorized), `403` (forbidden — cannot view another user's tree without admin role)
+  1797→
+  1798→---
+  1799→
+  1800→## 15. Domain: Notifications
+  1801→
+  1802→Base path: `/api/v1/notifications`
+  1803→
+  1804→### 15.1 List Notifications
+  1805→
+  1806→```
+  1807→GET /api/v1/notifications
+  1808→```
+  1809→
+  1810→**Auth:** Required (any authenticated user — own notifications only)
+  1811→
+  1812→**Description:** Retrieve the authenticated user's notifications using cursor-based pagination, ordered by most recent first. Supports filtering by read status.
+  1813→
+  1814→**Query Parameters:**
+  1815→- `unreadOnly` (optional): boolean
+  1816→- `type` (optional): `deposit` | `withdrawal` | `investment` | `kyc` | `referral` | `security` | `system`
+  1817→- `cursor` (optional): opaque cursor string
+  1818→- `limit` (optional): number, default 20, max 100
+  1819→
+  1820→**Response (200):**
+  1821→
+  1822→```typescript
+  1823→interface NotificationListResponse {
+  1824→  data: Array<{
+  1825→    id: string;
+  1826→    type: 'deposit' | 'withdrawal' | 'investment' | 'kyc' | 'referral' | 'security' | 'system';
+  1827→    title: string;
+  1828→    message: string;
+  1829→    isRead: boolean;
+  1830→    actionUrl: string | null;    // Deep link to relevant page
+  1831→    metadata: Record<string, unknown>;
+  1832→    createdAt: string;
+  1833→    readAt: string | null;
+  1834→  }>;
+  1835→  meta: {
+  1836→    cursor: string | null;
+  1837→    hasMore: boolean;
+  1838→    limit: number;
+  1839→    unreadCount: number;          // Total unread count for badge
+  1840→  };
+  1841→  message: string;
+  1842→}
+  1843→```
+  1844→
+  1845→**Status Codes:** `200` (success), `401` (unauthorized)
+  1846→
+  1847→---
+  1848→
+  1849→### 15.2 Mark Notification as Read
+  1850→
+  1851→```
+  1852→PUT /api/v1/notifications/:id/read
+  1853→```
+  1854→
+  1855→**Auth:** Required (any authenticated user — own notification only)
+  1856→
+  1857→**Description:** Mark a single notification as read.
+  1858→
+  1859→**Path Parameters:**
+  1860→- `id` (UUID) — Notification ID
+  1861→
+  1862→**Request Body:** None
+  1863→
+  1864→**Response (200):**
+  1865→
+  1866→```typescript
+  1867→interface MarkReadResponse {
+  1868→  id: string;
+  1869→  isRead: true;
+  1870→  readAt: string;
+  1871→  message: string;
+  1872→}
+  1873→```
+  1874→
+  1875→**Status Codes:** `200` (success), `401` (unauthorized), `403` (not own notification), `404` (not found)
+  1876→
+  1877→---
+  1878→
+  1879→### 15.3 Mark All Notifications as Read
+  1880→
+  1881→```
+  1882→PUT /api/v1/notifications/read-all
+  1883→```
+  1884→
+  1885→**Auth:** Required (any authenticated user)
+  1886→
+  1887→**Description:** Mark all of the authenticated user's unread notifications as read.
+  1888→
+  1889→**Request Body:** None
+  1890→
+  1891→**Response (200):**
+  1892→
+  1893→```typescript
+  1894→interface MarkAllReadResponse {
+  1895→  markedCount: number;
+  1896→  message: string;  // "All notifications marked as read."
+  1897→}
+  1898→```
+  1899→
+  1900→**Status Codes:** `200` (success), `401` (unauthorized)
+  1901→
+  1902→---
+  1903→
+  1904→## 16. Domain: Support
+  1905→
+  1906→Base path: `/api/v1/support`
+  1907→
+  1908→### 16.1 Create Support Ticket
+  1909→
+  1910→```
+  1911→POST /api/v1/support/tickets
+  1912→```
+  1913→
+  1914→**Auth:** Required (any authenticated user)
+  1915→
+  1916→**Description:** Create a new support ticket with an initial message. The ticket is created in `open` status.
+  1917→
+  1918→**Request Body:**
+  1919→
+  1920→```typescript
+  1921→interface CreateTicketRequest {
+  1922→  subject: string;             // Max 200 characters
+  1923→  category: 'general' | 'deposit' | 'withdrawal' | 'investment' | 'kyc' | 'referral' | 'technical' | 'other';
+  1924→  priority: 'low' | 'medium' | 'high';
+  1925→  message: string;             // Initial message body, max 5000 characters
+  1926→  attachments?: string[];      // Cloudinary public IDs of attached files (max 5)
+  1927→}
+  1928→```
+  1929→
+  1930→**Response (201):**
+  1931→
+  1932→```typescript
+  1933→interface CreateTicketResponse {
+  1934→  ticket: {
+  1935→    id: string;
+  1936→    userId: string;
+  1937→    subject: string;
+  1938→    category: string;
+  1939→    priority: string;
+  1940→    status: 'open';
+  1941→    assignedTo: string | null;
+  1942→    createdAt: string;
+  1943→    updatedAt: string;
+  1944→    messages: Array<{
+  1945→      id: string;
+  1946→      senderId: string;
+  1947→      senderRole: Role;
+  1948→      message: string;
+  1949→      isInternal: boolean;     // true = only visible to staff
+  1950→      attachments: string[];
+  1951→      createdAt: string;
+  1952→    }>;
+  1953→  };
+  1954→  message: string;
+  1955→}
+  1956→```
+  1957→
+  1958→**Status Codes:** `201` (created), `400` (validation), `401` (unauthorized), `429` (rate limit)
+  1959→
+  1960→---
+  1961→
+  1962→### 16.2 List Support Tickets
+  1963→
+  1964→```
+  1965→GET /api/v1/support/tickets
+  1966→```
+  1967→
+  1968→**Auth:** Required (User — own tickets only; Support, Compliance, Admin, SuperAdmin — all/filtered)
+  1969→
+  1970→**Description:** List support tickets. Users see only their own tickets. Staff see tickets based on role permissions.
+  1971→
+  1972→**Query Parameters:**
+  1973→- `status` (optional): `open` | `in_progress` | `resolved` | `closed`
+  1974→- `category` (optional): filter by category
+  1975→- `page` (optional): number, default 1
+  1976→- `limit` (optional): number, default 20, max 100
+  1977→- `assignedTo` (optional, staff only): filter by assigned agent
+  1978→- `sortBy` (optional): `createdAt` | `updatedAt` | `priority`, default `updatedAt`
+  1979→
+  1980→**Response (200):**
+  1981→
+  1982→```typescript
+  1983→interface TicketListResponse {
+  1984→  data: Array<{
+  1985→    id: string;
+  1986→    subject: string;
+  1987→    category: string;
+  1988→    priority: 'low' | 'medium' | 'high';
+  1989→    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  1990→    lastMessageAt: string;
+  1991→    unreadCount: number;
+  1992→    assignedTo: string | null;
+  1993→    createdAt: string;
+  1994→    updatedAt: string;
+  1995→  }>;
+  1996→  meta: OffsetPaginationMeta;
+  1997→  message: string;
+  1998→}
+  1999→```
+  2000→
+
+[showing lines 1-2000 of 3432; use offset=2001 with limit to continue reading]

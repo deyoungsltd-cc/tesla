@@ -1,0 +1,1147 @@
+     1→# TeslaPrimeCapital — Phase 2 Design System
+     2→
+     3→> **Version:** 2.0.0-draft
+     4→> **Last Updated:** 2025-01
+     5→> **Status:** Production Specification
+     6→> **Audience:** Frontend Engineers, UI Engineers, Design System Maintainers
+     7→
+     8→---
+     9→
+    10→## Table of Contents
+    11→
+    12→1. [Design Philosophy](#1-design-philosophy)
+    13→2. [Color System](#2-color-system)
+    14→3. [Typography System](#3-typography-system)
+    15→4. [Spacing System](#4-spacing-system)
+    16→5. [Border & Radius System](#5-border--radius-system)
+    17→6. [Component Tokens](#6-component-tokens)
+    18→7. [Layout System](#7-layout-system)
+    19→8. [Animation & Motion](#8-animation--motion)
+    20→9. [Icon System](#9-icon-system)
+    21→10. [Responsive Breakpoints](#10-responsive-breakpoints)
+    22→11. [Dark Theme Specification](#11-dark-theme-specification)
+    23→12. [Tailwind Configuration](#12-tailwind-configuration)
+    24→13. [Accessibility Requirements](#13-accessibility-requirements)
+    25→
+    26→---
+    27→
+    28→## 1. Design Philosophy
+    29→
+    30→### 1.1 Dark Premium Aesthetic
+    31→
+    32→TeslaPrimeCapital's visual identity is rooted in a dark, premium aesthetic directly inspired by the Tesla automotive brand. Every surface, card, and interactive element is designed to communicate institutional-grade financial management. The dark palette is not a secondary or alternate theme — it is the singular, canonical visual expression of the platform. This choice eliminates theme-switching complexity and ensures pixel-perfect consistency across every viewport and device. The near-black backgrounds create a cinematic canvas that allows the red accent color to function as a powerful focal point, drawing the user's eye to calls-to-action, critical data points, and navigational indicators. The design language borrows from Tesla's own digital properties: expansive negative space, razor-sharp typography, and an unwavering commitment to minimal ornamentation. Every decorative element must earn its place; if it does not serve an informational or interactive purpose, it is removed.
+    33→
+    34→### 1.2 Trust-Signaling Through Professional Design
+    35→
+    36→As a managed investment plan platform, TeslaPrimeCapital must immediately establish credibility and trust with every visitor. The design system achieves this through several deliberate strategies. First, typographic hierarchy is strictly enforced — headings carry authoritative weight through the Poppins family at 600–700 weight, while body content remains highly legible via Rubik at 400–500 weight. Second, data presentation follows financial industry conventions: monospaced numerals for financial figures, consistent decimal alignment, and color-coded performance indicators (green for gains, red for losses, amber for warnings). Third, interactive elements provide immediate and unambiguous feedback — buttons respond to hover and press states, form fields validate inline with clear error messaging, and navigation elements maintain persistent active states. Fourth, generous whitespace and structured grid layouts convey a sense of order and meticulous organization, reinforcing the perception that the platform itself is as disciplined as the investment strategies it manages.
+    37→
+    38→### 1.3 Mobile-First Approach
+    39→
+    40→All layout and component decisions begin at the smallest viewport (320px) and progressively enhance upward. This methodology ensures that the core experience — viewing investment plans, checking portfolio performance, initiating transactions — is fully functional on mobile devices without reliance on desktop-specific patterns. Responsive behavior is not an afterthought applied via media query overrides; it is the foundational design methodology. Components are designed in their mobile configuration first, then adapted for tablet and desktop contexts. Navigation collapses into a hamburger menu on mobile, cards stack vertically, data tables transform into card-based layouts, and modals become full-screen overlays. The mobile-first approach also enforces strict touch target sizing (minimum 44×44px) and thumb-friendly placement of primary actions within the lower half of the viewport.
+    41→
+    42→### 1.4 Accessibility Standards (WCAG 2.1 AA)
+    43→
+    44→TeslaPrimeCapital targets WCAG 2.1 Level AA compliance as a minimum baseline. All text meets or exceeds the 4.5:1 contrast ratio requirement for normal text and 3:1 for large text (18px+ or 14px+ bold) against their respective backgrounds. Interactive elements provide visible focus indicators using a 2px solid ring with a 2px offset in the primary red color, ensuring keyboard navigability is not only functional but discoverable. Color is never used as the sole means of conveying information — status indicators always include accompanying icons or text labels. All images and icons carry appropriate ARIA attributes, and dynamic content updates (toasts, live portfolio values) leverage ARIA live regions. The `prefers-reduced-motion` media query is respected throughout, replacing animations with instant state changes for users who have enabled this setting at the OS level.
+    45→
+    46→---
+    47→
+    48→## 2. Color System
+    49→
+    50→### 2.1 Core Brand Palette
+    51→
+    52→The TeslaPrimeCapital color system is anchored in a red-and-black palette that directly references Tesla's brand identity. Black serves as the dominant visual weight, establishing gravitas and sophistication. Red functions as the singular accent color, used sparingly to mark interactivity, urgency, and brand presence.
+    53→
+    54→| Token Name | Hex | HSL | RGB | Tailwind Class | Usage |
+    55→|---|---|---|---|---|---|
+    56→| `--color-primary` | `#DC2626` | `0 84% 50%` | `220, 38, 38` | `red-600` | Primary actions, CTAs, active states |
+    57→| `--color-primary-dark` | `#B91C1C` | `0 79% 42%` | `185, 28, 28` | `red-700` | Primary hover, pressed states |
+    58→| `--color-primary-darker` | `#991B1B` | `0 72% 35%` | `153, 27, 27` | `red-800` | Primary active, deep emphasis |
+    59→| `--color-primary-light` | `#EF4444` | `0 84% 60%` | `239, 68, 68` | `red-500` | Error states, destructive actions |
+    60→| `--color-primary-50` | `#FEF2F2` | `0 100% 98%` | `254, 242, 242` | `red-50` | Subtle red tint backgrounds (rare) |
+    61→| `--color-primary-100` | `#FEE2E2` | `0 100% 95%` | `254, 226, 226` | `red-100` | Error background tint |
+    62→| `--color-primary-200` | `#FECACA` | `0 100% 91%` | `254, 202, 202` | `red-200` | Error border tint |
+    63→
+    64→### 2.2 Background & Surface Palette
+    65→
+    66→| Token Name | Hex | HSL | RGB | Tailwind Class | Usage |
+    67→|---|---|---|---|---|---|
+    68→| `--color-bg-base` | `#000000` | `0 0% 0%` | `0, 0, 0` | `black` | Page-level base background |
+    69→| `--color-bg-elevated` | `#0A0A0A` | `0 0% 4%` | `10, 10, 10` | Custom `neutral-950` | Slightly elevated surfaces |
+    70→| `--color-bg-surface` | `#111827` | `220 39% 11%` | `17, 24, 39` | `gray-900` | Card backgrounds, panels |
+    71→| `--color-bg-surface-raised` | `#1F2937` | `220 26% 18%` | `31, 41, 55` | `gray-800` | Raised cards, input backgrounds |
+    72→| `--color-bg-overlay` | `#374151` | `218 19% 27%` | `55, 65, 81` | `gray-700` | Dropdowns, overlays, hover fills |
+    73→| `--color-bg-muted` | `#111827` at 80% opacity | — | — | `gray-900/80` | Backdrop overlays, modal dimming |
+    74→
+    75→### 2.3 Text Color Palette
+    76→
+    77→| Token Name | Hex | RGB | Tailwind Class | Usage |
+    78→|---|---|---|---|---|
+    79→| `--color-text-primary` | `#FFFFFF` | `255, 255, 255` | `white` | Headings, primary body text, high-emphasis content |
+    80→| `--color-text-secondary` | `#9CA3AF` | `156, 163, 175` | `gray-400` | Descriptions, labels, secondary body text |
+    81→| `--color-text-muted` | `#6B7280` | `107, 114, 128` | `gray-500` | Placeholders, disabled text, timestamps |
+    82→| `--color-text-accent` | `#DC2626` | `220, 38, 38` | `red-600` | Links, accent text, brand references |
+    83→| `--color-text-inverse` | `#000000` | `0, 0, 0` | `black` | Text on red/colored backgrounds |
+    84→
+    85→### 2.4 Semantic Color Mapping
+    86→
+    87→| Semantic Role | Token | Hex | Tailwind Class | Context |
+    88→|---|---|---|---|---|
+    89→| Success | `--color-success` | `#10B981` | `emerald-500` | Positive returns, completed transactions, verified status |
+    90→| Success Muted | `--color-success-muted` | `#065F46` | `emerald-800` | Success backgrounds, subtle positive indicators |
+    91→| Success Border | `--color-success-border` | `#34D399` | `emerald-400` | Success state input borders |
+    92→| Warning | `--color-warning` | `#F59E0B` | `amber-500` | Pending states, risk alerts, expiring soon |
+    93→| Warning Muted | `--color-warning-muted` | `#92400E` | `amber-800` | Warning backgrounds |
+    94→| Error | `--color-error` | `#EF4444` | `red-500` | Validation errors, failed transactions, critical alerts |
+    95→| Error Muted | `--color-error-muted` | `#991B1B` | `red-800` | Error backgrounds |
+    96→| Info | `--color-info` | `#3B82F6` | `blue-500` | Informational toasts, tooltips, help text |
+    97→| Info Muted | `--color-info-muted` | `#1E3A5F` | `blue-900` | Info backgrounds |
+    98→
+    99→### 2.5 Border Color Tokens
+   100→
+   101→| Token Name | Value | Tailwind Class | Usage |
+   102→|---|---|---|---|
+   103→| `--border-subtle` | `rgba(255, 255, 255, 0.1)` | `border-white/10` | Card borders, dividers, subtle separators |
+   104→| `--border-medium` | `rgba(255, 255, 255, 0.2)` | `border-white/20` | Input borders, prominent dividers |
+   105→| `--border-strong` | `rgba(255, 255, 255, 0.3)` | `border-white/30` | Focused inputs, active elements |
+   106→| `--border-accent` | `#DC2626` | `border-red-600` | Accent borders, selected items |
+   107→| `--border-error` | `#EF4444` | `border-red-500` | Error state borders |
+   108→
+   109→### 2.6 Gradient Specifications
+   110→
+   111→| Gradient Name | CSS Value | Usage |
+   112→|---|---|---|
+   113→| `--gradient-primary` | `linear-gradient(135deg, #DC2626 0%, #991B1B 100%)` | Primary buttons, hero accents |
+   114→| `--gradient-subtle` | `linear-gradient(180deg, #111827 0%, #0A0A0A 100%)` | Section backgrounds, page transitions |
+   115→| `--gradient-surface` | `linear-gradient(135deg, #1F2937 0%, #111827 100%)` | Elevated card backgrounds |
+   116→| `--gradient-overlay` | `linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)` | Image overlays |
+   117→| `--gradient-glow` | `radial-gradient(ellipse at center, rgba(220,38,38,0.15) 0%, transparent 70%)` | Ambient red glow behind featured elements |
+   118→
+   119→### 2.7 Opacity Scale
+   120→
+   121→The design system uses a consistent opacity scale for layered and translucent elements. All opacity values derive from Tailwind's default scale:
+   122→
+   123→| Step | Value | Typical Usage |
+   124→|---|---|---|
+   125→| 0 | `0%` | Fully hidden |
+   126→| 5 | `5%` | Barely perceptible tints |
+   127→| 10 | `10%` | Subtle borders, disabled overlays |
+   128→| 20 | `20%` | Medium borders, hover backgrounds |
+   129→| 30 | `30%` | Strong borders, active states |
+   130→| 40 | `40%` | Medium overlays |
+   131→| 50 | `50%` | Half-overlay, dimmed content |
+   132→| 60 | `60%` | Prominent overlays |
+   133→| 70 | `70%` | Strong overlays |
+   134→| 80 | `80%` | Modal backdrop dimming |
+   135→| 90 | `90%` | Near-opaque overlays |
+   136→| 95 | `95%` | Almost opaque, subtle translucency |
+   137→| 100 | `100%` | Fully opaque |
+   138→
+   139→---
+   140→
+   141→## 3. Typography System
+   142→
+   143→### 3.1 Font Family Declarations
+   144→
+   145→The typography system employs three distinct font families, each serving a specific communicative role. All fonts are loaded from Google Fonts with `display=swap` to prevent layout shift.
+   146→
+   147→```css
+   148→/* Headings — Poppins */
+   149→--font-heading: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+   150→
+   151→/* Body Text — Rubik */
+   152→--font-body: 'Rubik', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+   153→
+   154→/* Editorial/Accent — Merriweather */
+   155→--font-editorial: 'Merriweather', ui-serif, Georgia, 'Times New Roman', serif;
+   156→
+   157→/* Monospace/Code — JetBrains Mono (supplemental) */
+   158→--font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+   159→```
+   160→
+   161→### 3.2 Type Scale
+   162→
+   163→All type sizes follow Tailwind's default scale with exact pixel values and recommended line-heights. Letter-spacing values are calibrated for readability against dark backgrounds.
+   164→
+   165→| Token | Tailwind Class | Size (px) | Line Height | Letter Spacing | Font Weight | Usage |
+   166→|---|---|---|---|---|---|---|
+   167→| `--text-3xs` | `text-[10px]` | 10px | 14px (1.4) | 0.05em | 400 | Legal disclaimers, micro-labels |
+   168→| `--text-2xs` | `text-[11px]` | 11px | 16px (1.45) | 0.02em | 500 | Captions, timestamps, badges |
+   169→| `--text-xs` | `text-xs` | 12px | 16px (1.33) | 0.02em | 400-500 | Small labels, helper text |
+   170→| `--text-sm` | `text-sm` | 14px | 20px (1.43) | 0.01em | 400-500 | Default body text, descriptions |
+   171→| `--text-base` | `text-base` | 16px | 24px (1.5) | 0em | 400-500 | Standard body, form inputs |
+   172→| `--text-lg` | `text-lg` | 18px | 28px (1.56) | -0.01em | 500 | Subheadings, emphasized body |
+   173→| `--text-xl` | `text-xl` | 20px | 28px (1.4) | -0.01em | 600 | Section titles (h3) |
+   174→| `--text-2xl` | `text-2xl` | 24px | 32px (1.33) | -0.02em | 600-700 | Page subtitles (h2) |
+   175→| `--text-3xl` | `text-3xl` | 30px | 36px (1.2) | -0.02em | 700 | Page titles (h1 on mobile) |
+   176→| `--text-4xl` | `text-4xl` | 36px | 40px (1.1) | -0.025em | 700 | Hero headings (h1 on desktop) |
+   177→| `--text-5xl` | `text-5xl` | 48px | 48px (1.0) | -0.03em | 700 | Display headings (rare) |
+   178→| `--text-6xl` | `text-6xl` | 60px | 60px (1.0) | -0.03em | 700 | Marketing hero (rare) |
+   179→
+   180→### 3.3 Heading Hierarchy
+   181→
+   182→Every heading level has a precisely defined style. Headings use the Poppins font family exclusively and carry progressively tighter letter-spacing as size increases.
+   183→
+   184→| Element | Mobile Style | Desktop Style | Font Family | Weight |
+   185→|---|---|---|---|---|
+   186→| `h1` | `text-3xl` (30px), leading-tight, tracking-tighter | `text-4xl` (36px), leading-none, tracking-tighter | Poppins | 700 |
+   187→| `h2` | `text-2xl` (24px), leading-8, tracking-tight | `text-3xl` (30px), leading-9, tracking-tight | Poppins | 600 |
+   188→| `h3` | `text-xl` (20px), leading-7, tracking-tight | `text-2xl` (24px), leading-8, tracking-tight | Poppins | 600 |
+   189→| `h4` | `text-lg` (18px), leading-7 | `text-xl` (20px), leading-7 | Poppins | 600 |
+   190→| `h5` | `text-base` (16px), leading-6, font-medium | `text-lg` (18px), leading-7 | Poppins | 500 |
+   191→| `h6` | `text-sm` (14px), leading-5, font-medium | `text-base` (16px), leading-6 | Poppins | 500 |
+   192→
+   193→### 3.4 Body Text Variants
+   194→
+   195→| Variant | Tailwind Classes | Description |
+   196→|---|---|---|
+   197→| Body Default | `text-sm text-gray-400 font-normal leading-relaxed font-rubik` | Standard paragraph text for descriptions, summaries |
+   198→| Body Large | `text-base text-gray-400 font-normal leading-relaxed font-rubik` | Primary reading content, longer-form text |
+   199→| Body Small | `text-xs text-gray-400 font-normal leading-relaxed font-rubik` | Helper text, footnotes, secondary descriptions |
+   200→| Body Strong | `text-sm text-white font-medium leading-relaxed font-rubik` | Emphasized body text, key data labels |
+   201→| Label | `text-xs text-gray-500 font-medium uppercase tracking-wider font-poppins` | Form labels, section labels, table headers |
+   202→| Caption | `text-[11px] text-gray-500 font-medium font-rubik` | Timestamps, metadata, micro-copy |
+   203→| Editorial | `text-lg text-gray-300 font-normal leading-relaxed font-merriweather` | Testimonials, featured quotes, marketing copy |
+   204→| Numerical | `text-base text-white font-mono tabular-nums` | Financial figures, percentages, portfolio values |
+   205→| Numerical Large | `text-2xl text-white font-mono tabular-nums font-semibold` | Hero portfolio value, prominent metrics |
+   206→
+   207→### 3.5 Monospace / Code Font Specifications
+   208→
+   209→Monospace text uses JetBrains Mono (supplemented by system monospace fallbacks). It is reserved for financial figures, transaction IDs, code snippets, and any content requiring character-level alignment. All numerical displays use `font-variant-numeric: tabular-nums` to ensure consistent digit widths. The default size for inline code is `text-sm` with a background of `rgba(255,255,255,0.05)` and `rounded px-1.5 py-0.5` padding. Block code uses `text-sm` with `rounded-lg p-4 bg-gray-900` and `overflow-x-auto`.
+   210→
+   211→---
+   212→
+   213→## 4. Spacing System
+   214→
+   215→### 4.1 Base Unit
+   216→
+   217→The spacing system is built on a **4px base unit**. All spacing values are multiples of this base unit, ensuring visual rhythm and consistency. Tailwind CSS's default spacing scale maps directly to this system, where `1` = 4px, `2` = 8px, `3` = 12px, and so on.
+   218→
+   219→### 4.2 Spacing Scale
+   220→
+   221→| Tailwind Token | Value (px/rem) | Common Usage |
+   222→|---|---|---|
+   223→| `space-0.5` / `p-0.5` / `m-0.5` | 2px | Tight icon-label gaps |
+   224→| `space-1` / `p-1` / `m-1` | 4px | Inline spacing, icon padding |
+   225→| `space-1.5` / `p-1.5` / `m-1.5` | 6px | Badge padding, small gaps |
+   226→| `space-2` / `p-2` / `m-2` | 8px | Input inner padding, button padding (sm), list item gaps |
+   227→| `space-2.5` | 10px | Tight form layouts |
+   228→| `space-3` / `p-3` / `m-3` | 12px | Card padding (compact), group spacing |
+   229→| `space-4` / `p-4` / `m-4` | 16px | Default card padding, form field gaps, section inner padding |
+   230→| `space-5` | 20px | Comfortable form spacing |
+   231→| `space-6` / `p-6` / `m-6` | 24px | Card padding (default), section gaps, modal padding |
+   232→| `space-8` / `p-8` / `m-8` | 32px | Section vertical padding (mobile), large card padding |
+   233→| `space-10` | 40px | Section gaps (desktop) |
+   234→| `space-12` / `p-12` | 48px | Section vertical padding (desktop) |
+   235→| `space-16` | 64px | Major section separators |
+   236→| `space-20` | 80px | Page-level top/bottom padding |
+   237→| `space-24` | 96px | Hero section padding |
+   238→
+   239→### 4.3 Component-Specific Spacing Rules
+   240→
+   241→**Cards:**
+   242→- Default padding: `p-6` (24px) on all sides
+   243→- Compact variant: `p-4` (16px)
+   244→- Large/featured variant: `p-8` (32px)
+   245→- Internal content gap: `space-y-4` (16px) between child elements
+   246→- Card-to-card gap in grids: `gap-6` (24px)
+   247→
+   248→**Sections:**
+   249→- Mobile vertical padding: `py-8` to `py-12` (32px–48px)
+   250→- Desktop vertical padding: `py-12` to `py-20` (48px–80px)
+   251→- Section title to content gap: `mt-6` (24px)
+   252→- Between sections: `space-y-16` (64px) or `space-y-20` (80px) at page level
+   253→
+   254→**Form Fields:**
+   255→- Label to input gap: `mt-1.5` (6px)
+   256→- Input to input vertical gap: `space-y-4` (16px)
+   257→- Input horizontal padding: `px-4` (16px)
+   258→- Input vertical padding: `py-2.5` to `py-3` (10px–12px)
+   259→- Error message to input gap: `mt-1.5` (6px)
+   260→- Helper text to input gap: `mt-1` (4px)
+   261→- Form group to form group: `space-y-6` (24px)
+   262→- Submit button top margin: `mt-8` (32px)
+   263→
+   264→**Buttons:**
+   265→- Small: `px-3 py-1.5` (12px horizontal, 6px vertical)
+   266→- Default: `px-5 py-2.5` (20px horizontal, 10px vertical)
+   267→- Large: `px-8 py-3.5` (32px horizontal, 14px vertical)
+   268→- Icon-only (square): `p-2.5` (10px) for 24px icons, `p-2` (8px) for 20px icons
+   269→- Button group gap: `gap-3` (12px)
+   270→
+   271→### 4.4 Margin Conventions
+   272→
+   273→- **Page-level margins:** Handled by container max-width; no horizontal margin on the body.
+   274→- **Component margins:** Components should NOT export horizontal margins. Spacing between sibling components is the parent's responsibility via flex/grid gap utilities.
+   275→- **Section margins:** Sections use vertical padding (`py-*`) rather than margins to maintain consistent background color coverage.
+   276→- **Auto margins:** `mx-auto` is used exclusively for centering fixed-width containers and elements. It is not used for alignment within flex or grid contexts (prefer `justify-center`, `items-center`, or `text-center`).
+   277→
+   278→---
+   279→
+   280→## 5. Border & Radius System
+   281→
+   282→### 5.1 Border Radius Scale
+   283→
+   284→| Token | Tailwind Class | Value (px) | Usage |
+   285→|---|---|---|---|
+   286→| `--radius-none` | `rounded-none` | 0px | Full-bleed elements, dividers |
+   287→| `--radius-sm` | `rounded-sm` | 2px | Subtle rounding on small elements |
+   288→| `--radius-md` | `rounded-md` | 6px | Buttons, inputs, small cards |
+   289→| `--radius-lg` | `rounded-lg` | 8px | Cards, modals, dropdowns |
+   290→| `--radius-xl` | `rounded-xl` | 12px | Feature cards, large panels |
+   291→| `--radius-2xl` | `rounded-2xl` | 16px | Hero cards, prominent containers |
+   292→| `--radius-3xl` | `rounded-3xl` | 24px | Pill-shaped containers, large CTAs |
+   293→| `--radius-full` | `rounded-full` | 9999px | Avatars, badges, pills, circular buttons |
+   294→
+   295→### 5.2 Border Width Specifications
+   296→
+   297→| Token | Tailwind Class | Value | Usage |
+   298→|---|---|---|---|
+   299→| `--border-none` | `border-0` | 0px | Borderless elements |
+   300→| `--border-thin` | `border` | 1px | Default card borders, input borders |
+   301→| `--border-medium` | `border-2` | 2px | Emphasized borders, focus rings (outer) |
+   302→| `--border-thick` | `border-4` | 4px | Rare, decorative use only |
+   303→
+   304→### 5.3 Border Color Rules
+   305→
+   306→All borders on the platform use white with reduced opacity as their base color. This approach ensures borders feel integrated with the dark background rather than appearing as stark, visible lines. The default border color is `border-white/10` (subtle). When an element requires more visual separation, `border-white/20` (medium) is applied. Active or focused elements use `border-white/30` (strong). Accent borders (selected tabs, highlighted cards) use `border-red-600`. Error states use `border-red-500`. Success states use `border-emerald-400`.
+   307→
+   308→### 5.4 Box Shadow Definitions
+   309→
+   310→| Token | Tailwind Class | Value | Usage |
+   311→|---|---|---|---|
+   312→| `--shadow-sm` | `shadow-sm` | `0 1px 2px 0 rgba(0,0,0,0.3)` | Subtle elevation, input focus |
+   313→| `--shadow-md` | `shadow-md` | `0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3)` | Cards at rest, dropdowns |
+   314→| `--shadow-lg` | `shadow-lg` | `0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.4)` | Modals, elevated cards |
+   315→| `--shadow-xl` | `shadow-xl` | `0 20px 25px -5px rgba(0,0,0,0.6), 0 8px 10px -6px rgba(0,0,0,0.4)` | Floating elements, popovers |
+   316→| `--shadow-2xl` | `shadow-2xl` | `0 25px 50px -12px rgba(0,0,0,0.7)` | Modals, highest elevation |
+   317→| `--shadow-inner` | `shadow-inner` | `inset 0 2px 4px 0 rgba(0,0,0,0.3)` | Inset fields, pressed states |
+   318→
+   319→### 5.5 Glow Effects
+   320→
+   321→Glow effects use box-shadow with colored spread to create an ambient halo around accent elements. These are used sparingly — only on featured cards, active navigation items, and primary CTAs.
+   322→
+   323→| Effect | CSS Value | Usage |
+   324→|---|---|---|
+   325→| Red Glow (Subtle) | `0 0 20px rgba(220, 38, 38, 0.15)` | Featured card hover, active nav item |
+   326→| Red Glow (Medium) | `0 0 40px rgba(220, 38, 38, 0.25)` | Hero CTA hover, highlighted portfolio card |
+   327→| Red Glow (Strong) | `0 0 60px rgba(220, 38, 38, 0.35)` | Rare, marketing hero elements only |
+   328→| Success Glow | `0 0 20px rgba(16, 185, 129, 0.2)` | Success toast, completed milestone |
+   329→| Warning Glow | `0 0 20px rgba(245, 158, 11, 0.2)` | Warning alert emphasis |
+   330→| White Glow (Subtle) | `0 0 30px rgba(255, 255, 255, 0.05)` | Elevated surface ambient glow |
+   331→
+   332→---
+   333→
+   334→## 6. Component Tokens
+   335→
+   336→### 6.1 Buttons
+   337→
+   338→Buttons are the primary interactive element and carry the heaviest design token burden. Every button variant must define styles for default, hover, focus-visible, active/pressed, loading, and disabled states.
+   339→
+   340→**Primary Button:**
+   341→- Default: `bg-red-600 text-white font-medium rounded-lg px-5 py-2.5 text-sm`
+   342→- Hover: `bg-red-700 hover:shadow-[0_0_20px_rgba(220,38,38,0.25)]`
+   343→- Focus-visible: `ring-2 ring-red-500 ring-offset-2 ring-offset-gray-900`
+   344→- Active/Pressed: `bg-red-800 scale-[0.98]`
+   345→- Loading: `opacity-70 cursor-wait` + spinner icon replacing text
+   346→- Disabled: `opacity-50 cursor-not-allowed bg-red-600`
+   347→
+   348→**Secondary Button:**
+   349→- Default: `bg-transparent text-white border border-white/20 rounded-lg px-5 py-2.5 text-sm font-medium`
+   350→- Hover: `border-white/40 bg-white/5`
+   351→- Focus-visible: `ring-2 ring-red-500 ring-offset-2 ring-offset-gray-900`
+   352→- Active: `bg-white/10 scale-[0.98]`
+   353→- Disabled: `opacity-40 cursor-not-allowed`
+   354→
+   355→**Ghost Button:**
+   356→- Default: `bg-transparent text-gray-400 rounded-lg px-4 py-2 text-sm font-medium`
+   357→- Hover: `text-white bg-white/5`
+   358→- Focus-visible: `ring-2 ring-red-500 ring-offset-2 ring-offset-gray-900`
+   359→- Active: `bg-white/10`
+   360→- Disabled: `opacity-40 cursor-not-allowed`
+   361→
+   362→**Danger Button:**
+   363→- Default: `bg-red-500 text-white rounded-lg px-5 py-2.5 text-sm font-medium`
+   364→- Hover: `bg-red-600`
+   365→- Focus-visible: `ring-2 ring-red-400 ring-offset-2 ring-offset-gray-900`
+   366→- Active: `bg-red-700 scale-[0.98]`
+   367→- Disabled: `opacity-50 cursor-not-allowed`
+   368→
+   369→### 6.2 Cards
+   370→
+   371→Cards are the foundational container for content grouping. They provide visual boundary definition through background color, borders, and optional shadows.
+   372→
+   373→- **Background:** `bg-gray-800` (standard), `bg-gray-900` (subtle/recessed)
+   374→- **Border:** `border border-white/10` (default), `border-white/20` (elevated)
+   375→- **Radius:** `rounded-lg` (8px, default), `rounded-xl` (12px, featured)
+   376→- **Padding:** `p-6` (default), `p-4` (compact), `p-8` (large)
+   377→- **Shadow:** `shadow-md` (resting), `shadow-lg` (hover on interactive cards)
+   378→- **Hover (interactive):** `hover:border-white/20 hover:shadow-lg transition-all duration-200`
+   379→- **Hover (featured):** `hover:shadow-[0_0_40px_rgba(220,38,38,0.25)] hover:border-red-600/30`
+   380→- **Internal gap:** `space-y-4` between child elements
+   381→
+   382→### 6.3 Form Inputs
+   383→
+   384→Form inputs include text inputs, textareas, selects, and custom components like date pickers.
+   385→
+   386→- **Background:** `bg-gray-800` (resting), `bg-gray-700` (focus)
+   387→- **Border:** `border border-white/10` (resting), `border-white/30` (focus)
+   388→- **Focus Ring:** `focus:ring-2 focus:ring-red-500 focus:ring-offset-1 focus:ring-offset-gray-900`
+   389→- **Text:** `text-white placeholder-gray-500 text-sm`
+   390→- **Padding:** `px-4 py-2.5` (default), `px-3 py-2` (compact)
+   391→- **Radius:** `rounded-lg` (8px)
+   392→- **Error State:** `border-red-500 focus:ring-red-500` + error message in `text-red-500 text-xs mt-1.5`
+   393→- **Disabled State:** `opacity-50 cursor-not-allowed bg-gray-900`
+   394→- **Label:** `text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block font-poppins`
+   395→
+   396→### 6.4 Tables
+   397→
+   398→Data tables are used for portfolio holdings, transaction history, and plan comparisons.
+   399→
+   400→- **Container:** `overflow-x-auto rounded-lg border border-white/10`
+   401→- **Header Row:** `bg-gray-900` background, `text-xs font-medium text-gray-500 uppercase tracking-wider` for header cells, `px-4 py-3` padding
+   402→- **Body Row:** `border-t border-white/5`, `px-4 py-3` padding, `text-sm text-gray-400` default
+   403→- **Row Hover:** `hover:bg-white/5` subtle highlight
+   404→- **Row Active/Selected:** `bg-red-600/10 border-l-2 border-l-red-600`
+   405→- **Numeric Columns:** `text-right font-mono tabular-nums`
+   406→- **Status Cells:** Use colored dot + text (e.g., green dot + "Active")
+   407→
+   408→### 6.5 Badges / Pills
+   409→
+   410→Badges provide compact status indicators and category labels.
+   411→
+   412→- **Default (Neutral):** `bg-white/10 text-gray-400 text-xs font-medium px-2.5 py-0.5 rounded-full`
+   413→- **Success:** `bg-emerald-500/15 text-emerald-400 border border-emerald-500/20`
+   414→- **Warning:** `bg-amber-500/15 text-amber-400 border border-amber-500/20`
+   415→- **Error/Danger:** `bg-red-500/15 text-red-400 border border-red-500/20`
+   416→- **Info:** `bg-blue-500/15 text-blue-400 border border-blue-500/20`
+   417→- **Primary (Brand):** `bg-red-600/15 text-red-400 border border-red-600/20`
+   418→- **Size Variants:** `text-[11px] px-2 py-0.5` (small), `text-xs px-2.5 py-0.5` (default), `text-sm px-3 py-1` (large)
+   419→
+   420→### 6.6 Modals / Dialogs
+   421→
+   422→- **Overlay:** `fixed inset-0 bg-black/80 backdrop-blur-sm z-50`
+   423→- **Container:** `bg-gray-800 rounded-2xl border border-white/10 shadow-2xl max-w-lg w-full mx-4`
+   424→- **Padding:** `p-6` (default), `p-8` (large content)
+   425→- **Header:** `flex items-center justify-between mb-6`, title `text-lg font-semibold text-white font-poppins`
+   426→- **Close Button:** Ghost button with X icon, `text-gray-400 hover:text-white`
+   427→- **Footer:** `flex justify-end gap-3 mt-6 pt-6 border-t border-white/10`
+   428→- **Animation:** `animate-in fade-in zoom-in-95 duration-200` (open), `animate-out fade-out zoom-out-95 duration-150` (close)
+   429→- **Mobile:** Full-width (`max-w-full mx-0 rounded-none min-h-screen` or bottom sheet)
+   430→
+   431→### 6.7 Toasts / Notifications
+   432→
+   433→- **Container:** Fixed position, `bottom-4 right-4` (desktop), `bottom-0 left-0 right-0` (mobile, stacked)
+   434→- **Card:** `bg-gray-800 border border-white/10 rounded-lg shadow-xl p-4 max-w-sm`
+   435→- **Icon:** 20px, color matches semantic role (success=emerald, error=red, warning=amber, info=blue)
+   436→- **Title:** `text-sm font-medium text-white`
+   437→- **Message:** `text-xs text-gray-400 mt-1`
+   438→- **Close:** 16px X icon, `text-gray-500 hover:text-white ml-3`
+   439→- **Progress Bar (auto-dismiss):** `h-0.5 bg-white/20` at bottom, fills with semantic color
+   440→- **Animation:** `slide-in-from-right duration-300` (enter), `slide-out-to-right duration-200` (exit)
+   441→
+   442→### 6.8 Navigation Items
+   443→
+   444→- **Desktop Nav Links:** `text-sm font-medium text-gray-400 hover:text-white transition-colors duration-150 px-3 py-2 rounded-md`
+   445→- **Active Nav Link:** `text-white bg-white/5` or `text-red-400` with bottom border indicator
+   446→- **Mobile Nav Links:** Full-width, `text-base text-gray-400 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg`
+   447→- **Active Mobile:** `text-white bg-white/5 border-l-2 border-red-600`
+   448→- **Sidebar Nav (Dashboard):** Icon + label, `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors`
+   449→- **Active Sidebar:** `text-white bg-red-600/10 text-red-400`
+   450→
+   451→---
+   452→
+   453→## 7. Layout System
+   454→
+   455→### 7.1 Container Widths
+   456→
+   457→The layout system uses Tailwind's responsive container utilities with specific max-width constraints.
+   458→
+   459→| Context | Tailwind Classes | Max Width | Description |
+   460→|---|---|---|---|
+   461→| Content Container | `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` | 1280px | Standard page content area |
+   462→| Narrow Container | `max-w-3xl mx-auto px-4 sm:px-6` | 768px | Blog posts, single-column forms |
+   463→| Wide Container | `max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8` | 1440px | Dashboard layouts, data-heavy pages |
+   464→| Full-Width | No container, `w-full` | 100vw | Hero sections, dark atmospheric sections, footer |
+   465→
+   466→The `px-4 sm:px-6 lg:px-8` responsive horizontal padding pattern is the standard across all containers, ensuring content never touches the viewport edge on any device.
+   467→
+   468→### 7.2 Grid Specifications
+   469→
+   470→The layout grid is a **12-column grid** that adapts across breakpoints. Column spans are defined using Tailwind's `col-span-*` utilities.
+   471→
+   472→- **Grid Declaration:** `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6`
+   473→- **Gap Values:** `gap-4` (16px, compact), `gap-6` (24px, default), `gap-8` (32px, spacious)
+   474→- **Common Layouts:**
+   475→  - Two-column: `lg:col-span-6` each
+   476→  - Three-column: `lg:col-span-4` each
+   477→  - Sidebar + Content: Sidebar `lg:col-span-3`, Content `lg:col-span-9`
+   478→  - Sidebar + Content (wide): Sidebar `lg:col-span-4`, Content `lg:col-span-8`
+   479→  - Featured + Side panel: Featured `lg:col-span-8`, Side `lg:col-span-4`
+   480→
+   481→### 7.3 Sidebar Layout Specifications (Dashboard)
+   482→
+   483→The dashboard employs a fixed sidebar navigation pattern on desktop that transforms into a slide-out drawer on mobile.
+   484→
+   485→- **Desktop Sidebar Width:** `w-64` (256px)
+   486→- **Desktop Sidebar Collapsed Width:** `w-20` (80px, icon-only mode)
+   487→- **Sidebar Background:** `bg-gray-900 border-r border-white/10`
+   488→- **Sidebar Padding:** `p-4` vertical padding, nav items stacked with `space-y-1`
+   489→- **Main Content Offset:** `lg:ml-64` (expanded) or `lg:ml-20` (collapsed)
+   490→- **Sidebar Logo Area:** `h-16 flex items-center px-4 border-b border-white/10`
+   491→- **Mobile Behavior:** Sidebar is off-screen by default (`-translate-x-full`), triggered via hamburger button. Uses `fixed inset-y-0 left-0 z-40` positioning with `transform transition-transform duration-300 ease-in-out`.
+   492→- **Mobile Overlay:** `fixed inset-0 bg-black/60 z-30` when sidebar is open
+   493→- **Sidebar Footer:** User avatar + name + role at bottom, separated by `border-t border-white/10`
+   494→
+   495→### 7.4 Stack and Cluster Utilities
+   496→
+   497→The design system provides composable layout primitives for common spacing patterns.
+   498→
+   499→- **Vertical Stack:** `flex flex-col gap-*` — items stacked with consistent vertical gaps. Default gap: `gap-4`.
+   500→- **Horizontal Cluster:** `flex flex-wrap gap-*` — items arranged horizontally, wrapping to new lines. Default gap: `gap-3`.
+   501→- **Center Stack:** `flex flex-col items-center gap-*` — vertically centered stack.
+   502→- **Space Between:** `flex items-center justify-between` — for header bars, card headers with action buttons.
+   503→- **Inline Group:** `inline-flex items-center gap-2` — for icon + text pairs, button groups.
+   504→
+   505→---
+   506→
+   507→## 8. Animation & Motion
+   508→
+   509→### 8.1 Design Principles for Motion
+   510→
+   511→Animations on TeslaPrimeCapital serve functional purposes: they provide feedback, indicate state changes, and guide attention. Decorative animation is kept to an absolute minimum. All motion must feel deliberate and fast — the platform should feel responsive and immediate. Animation duration never exceeds 300ms for interactive state changes. Page transitions and complex animations may extend to 500ms but should feel smooth and purposeful.
+   512→
+   513→### 8.2 Transition Durations
+   514→
+   515→| Token | Tailwind Class | Duration | Usage |
+   516→|---|---|---|---|
+   517→| `--duration-instant` | `duration-75` | 75ms | Micro-interactions, color changes |
+   518→| `--duration-fast` | `duration-100` | 100ms | Ripple effects, small state changes |
+   519→| `--duration-normal` | `duration-150` | 150ms | Hover transitions, color shifts |
+   520→| `--duration-moderate` | `duration-200` | 200ms | Card hover, button press, dropdown open |
+   521→| `--duration-slow` | `duration-300` | 300ms | Modal open/close, sidebar slide, page fade |
+   522→| `--duration-slower` | Custom `duration-500` | 500ms | Complex page transitions, hero animations |
+   523→
+   524→### 8.3 Easing Functions
+   525→
+   526→| Token | CSS Value | Usage |
+   527→|---|---|---|
+   528→| `--ease-default` | `ease-in-out` | Standard transitions (color, opacity, background) |
+   529→| `--ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Scale transforms (button press, card lift) |
+   530→| `--ease-out` | `cubic-bezier(0, 0, 0.2, 1)` | Enter animations (fade in, slide in) |
+   531→| `--ease-in` | `cubic-bezier(0.4, 0, 1, 1)` | Exit animations (fade out, slide out) |
+   532→| `--ease-bounce` | `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Rare, only for playful micro-interactions |
+   533→
+   534→### 8.4 Hover and Focus Transitions
+   535→
+   536→All interactive elements include transition declarations for the properties they animate. Standard pattern:
+   537→
+   538→- **Buttons:** `transition-all duration-200 ease-in-out` — animates background-color, border-color, box-shadow, and transform
+   539→- **Links and Nav Items:** `transition-colors duration-150` — animates color only
+   540→- **Cards (interactive):** `transition-all duration-200 ease-out` — animates border-color, box-shadow, and transform
+   541→- **Inputs:** `transition-colors duration-150, transition-shadow duration-150` — animates border-color and box-shadow independently
+   542→- **Toggles and Switches:** `transition-colors duration-200` for track, `transition-transform duration-200` for thumb
+   543→
+   544→### 8.5 Loading Animations
+   545→
+   546→**Skeleton Shimmer:**
+   547→Used for content loading placeholders. Applied to `div` elements shaped like the expected content.
+   548→
+   549→```css
+   550→@keyframes shimmer {
+   551→  0% { background-position: -200% 0; }
+   552→  100% { background-position: 200% 0; }
+   553→}
+   554→
+   555→.skeleton {
+   556→  background: linear-gradient(
+   557→    90deg,
+   558→    #1F2937 25%,
+   559→    #374151 37%,
+   560→    #1F2937 63%
+   561→  );
+   562→  background-size: 200% 100%;
+   563→  animation: shimmer 1.5s ease-in-out infinite;
+   564→  border-radius: 8px;
+   565→}
+   566→```
+   567→
+   568→Tailwind utility: `animate-pulse bg-gray-700 rounded-lg` as a simpler alternative.
+   569→
+   570→**Spinner:**
+   571→- **Small (16px):** Used inline within buttons or text. `border-2 border-white/20 border-t-white rounded-full w-4 h-4 animate-spin`
+   572→- **Default (24px):** Used for page-level loading, card loading. `border-2 border-white/20 border-t-white rounded-full w-6 h-6 animate-spin`
+   573→- **Large (40px):** Used for full-page loading states. `border-3 border-white/10 border-t-red-600 rounded-full w-10 h-10 animate-spin`
+   574→
+   575→**Progress Bar:**
+   576→- Container: `h-1 bg-gray-700 rounded-full overflow-hidden`
+   577→- Fill: `h-full bg-red-600 rounded-full transition-all duration-300 ease-out`
+   578→
+   579→### 8.6 Page Transition Approach
+   580→
+   581→Page transitions in Next.js use a subtle fade effect. On route change, the outgoing page fades to `opacity-0` over 150ms while the incoming page fades in from `opacity-0` to `opacity-1` over 200ms. No sliding or scaling is applied to page transitions — the content simply cross-fades, maintaining spatial stability and reducing motion sickness risk. The transition is achieved via Next.js middleware or a layout-level transition wrapper using CSS transitions on opacity with `pointer-events-none` during the transition period.
+   582→
+   583→---
+   584→
+   585→## 9. Icon System
+   586→
+   587→### 9.1 Icon Library
+   588→
+   589→TeslaPrimeCapital uses **Lucide React** as its icon library. Lucide provides a comprehensive set of clean, consistent, and optically balanced icons that align well with the platform's minimal aesthetic. All icons are delivered as React components with full TypeScript support. Lucide icons use a 24×24 viewBox with a 2px default stroke, which is customizable per instance.
+   590→
+   591→Alternative considerations: Heroicons (very similar, also acceptable as a drop-in), Phosphor Icons (more stylistic variety). The decision for Lucide is based on its lightweight tree-shaking, consistent 2px stroke weight, and comprehensive financial/business icon coverage (trending-up, wallet, credit-card, shield, etc.).
+   592→
+   593→### 9.2 Icon Sizing Scale
+   594→
+   595→| Token | Tailwind Class | Size (px) | Usage |
+   596→|---|---|---|---|
+   597→| `--icon-xs` | `w-4 h-4` | 16px | Inline icons within text, badge icons, close buttons |
+   598→| `--icon-sm` | `w-5 h-5` | 20px | Navigation icons (mobile), small action buttons, table action icons |
+   599→| `--icon-md` | `w-6 h-6` | 24px | Default size — navigation (desktop), form field icons, card header icons |
+   600→| `--icon-lg` | `w-8 h-8` | 32px | Feature icons, empty state illustrations, large action buttons |
+   601→
+   602→### 9.3 Stroke Width
+   603→
+   604→- **Default:** `strokeWidth={1.5}` — used for the majority of icons to maintain a refined, lightweight appearance
+   605→- **Emphasis:** `strokeWidth={2}` — used for icons that need stronger visual weight, such as warning indicators, status icons in empty states, or icons displayed at small sizes (16px) where thinner strokes lose legibility
+   606→- **Delicate:** `strokeWidth={1}` — rarely used, reserved for decorative icons in marketing contexts at large sizes (32px+)
+   607→
+   608→### 9.4 Color Inheritance Rules
+   609→
+   610→Icons inherit their color from the parent element's `color` CSS property via `currentColor`. This means:
+   611→
+   612→- Icons inside `text-white` containers render as white
+   613→- Icons inside `text-gray-400` containers render as gray-400
+   614→- Icons inside `text-red-500` containers render as red-500
+   615→- Explicit color overrides: Apply `text-*` classes directly to the icon element when it needs a different color from its parent
+   616→
+   617→Icons should **never** use hardcoded `fill` or `stroke` color attributes. All coloring is handled through CSS `color` and the Lucide component's default behavior of applying `currentColor` to the stroke.
+   618→
+   619→### 9.5 Icon Usage Patterns
+   620→
+   621→- **Icon + Label:** `inline-flex items-center gap-2` with icon at `w-4 h-4` or `w-5 h-5` and text at `text-sm`
+   622→- **Icon Button:** `p-2 rounded-lg hover:bg-white/5 transition-colors duration-150` with icon at `w-5 h-5`
+   623→- **Feature Icon:** Centered in a circular or rounded-square container, `w-12 h-12 rounded-xl bg-red-600/10 flex items-center justify-center` with icon at `w-6 h-6 text-red-400`
+   624→- **Empty State Icon:** Large centered icon (`w-12 h-12` or `w-16 h-16`) in `text-gray-600` with descriptive text below
+   625→
+   626→---
+   627→
+   628→## 10. Responsive Breakpoints
+   629→
+   630→### 10.1 Breakpoint Definitions
+   631→
+   632→TeslaPrimeCapital uses Tailwind CSS's default breakpoint system. All responsive design begins at the base (mobile) and progressively enhances at each breakpoint.
+   633→
+   634→| Breakpoint | Tailwind Prefix | Min Width | Typical Device | Primary Layout Strategy |
+   635→|---|---|---|---|---|
+   636→| Base | (none) | 0px | Mobile phones (portrait) | Single column, stacked, full-width |
+   637→| `sm` | `sm:` | 640px | Mobile phones (landscape), small tablets | Two-column grids begin, side-by-side pairs |
+   638→| `md` | `md:` | 768px | Tablets (portrait), large phones | Standard tablet layout, sidebar consideration |
+   639→| `lg` | `lg:` | 1024px | Tablets (landscape), small laptops | Desktop layouts activate, sidebar appears |
+   640→| `xl` | `xl:` | 1280px | Laptops, desktops | Full desktop experience, multi-column |
+   641→| `2xl` | `2xl:` | 1536px | Large desktops, external monitors | Max container width reached, wider spacing |
+   642→
+   643→### 10.2 Mobile-Specific Layout Rules
+   644→
+   645→- **Navigation:** Top bar with hamburger menu icon (`<` icon). Sidebar drawer slides in from the left with overlay.
+   646→- **Cards:** Single column, full-width with `px-4` page padding. Internal card padding reduces to `p-4` (16px).
+   647→- **Form Inputs:** Full-width (`w-full`), stacked vertically with `space-y-4`.
+   648→- **Data Tables:** Hidden by default on mobile. Replaced by card-based list layout where each row becomes a card showing key fields. Alternatively, table is placed in horizontal scroll container with sticky first column.
+   649→- **Buttons:** Full-width primary CTAs (`w-full`) for single-action forms. Inline buttons remain auto-width.
+   650→- **Modals:** Full-screen overlay approach. Modal takes `min-h-screen w-full` with close button at top-right. Bottom sheet pattern is preferred for action sheets.
+   651→- **Toasts:** Stacked at bottom of screen, full-width with `mx-4` margin.
+   652→- **Typography:** h1 scales to `text-3xl`, h2 to `text-2xl`. No reduction below `text-sm` for body text to maintain readability.
+   653→- **Hero Sections:** Full-width images/gradients, stacked content (heading → subtitle → CTA buttons stacked vertically), `py-12` vertical padding.
+   654→
+   655→### 10.3 Tablet Adjustments (md: 768px+)
+   656→
+   657→- **Navigation:** Horizontal top navigation bar may appear for simpler pages. Dashboard sidebar remains as drawer.
+   658→- **Cards:** Two-column grid (`grid-cols-2`) for card collections. Card padding returns to `p-6` (24px).
+   659→- **Form Layouts:** Two-column form grid for non-sequential fields (e.g., first name + last name side by side).
+   660→- **Data Tables:** Horizontal scroll container with all columns visible. Sticky first column if table is wide.
+   661→- **Modals:** Centered dialog with `max-w-lg` and rounded corners, no longer full-screen.
+   662→- **Typography:** h1 scales to `text-4xl`, h2 to `text-3xl`.
+   663→
+   664→### 10.4 Desktop Multi-Column Layouts (lg: 1024px+)
+   665→
+   666→- **Navigation:** Horizontal top nav for marketing pages. Persistent sidebar for dashboard/app pages.
+   667→- **Cards:** Three-column grid (`grid-cols-3`) for standard cards. Feature cards may use asymmetric layouts (8+4, 4+8).
+   668→- **Form Layouts:** Sidebar form pattern — form fields on left (9 cols), summary/preview panel on right (3 cols).
+   669→- **Data Tables:** Full table with all columns, hover rows, sortable headers. No horizontal scroll needed for standard tables.
+   670→- **Modals:** Centered dialog, `max-w-lg` default, `max-w-2xl` for complex content.
+   671→- **Spacing:** Section padding increases to `py-16` or `py-20`. Card-to-card gaps increase to `gap-6` or `gap-8`.
+   672→
+   673→---
+   674→
+   675→## 11. Dark Theme Specification
+   676→
+   677→### 11.1 Dark-Only Architecture
+   678→
+   679→TeslaPrimeCapital uses a **dark-only** design approach. There is no light theme toggle, no `prefers-color-scheme` conditional, and no theme-switching mechanism. The dark aesthetic is the definitive visual identity of the platform. This architectural decision simplifies the codebase significantly — no CSS custom property theming layer, no flash-of-unstyled-content (FOUC) prevention, no theme context provider in React, and no theme persistence logic.
+   680→
+   681→All color values defined in this document are the final, production values applied globally. Tailwind's `darkMode` configuration is set to `'class'` as a safety mechanism, but the `dark` class is applied permanently at the root `<html>` element and never removed.
+   682→
+   683→### 11.2 Surface Elevation Hierarchy
+   684→
+   685→In a dark theme, elevation is communicated through **lightness** — higher-elevation surfaces are slightly lighter than their parent surfaces. This creates a visual stacking order without relying solely on shadows (which are less perceptible against dark backgrounds).
+   686→
+   687→| Elevation Level | Background Token | Tailwind Class | Lightness | Usage |
+   688→|---|---|---|---|---|
+   689→| Level 0 (Base) | `#000000` | `bg-black` | 0% | Page background, `<body>` |
+   690→| Level 1 (Sunken) | `#0A0A0A` | `bg-[#0A0A0A]` | 4% | Subtle inset areas, footer background |
+   691→| Level 2 (Default Surface) | `#111827` | `bg-gray-900` | 11% | Standard panels, sidebar, table header |
+   692→| Level 3 (Raised) | `#1F2937` | `bg-gray-800` | 18% | Cards, inputs, dropdowns |
+   693→| Level 4 (Overlay) | `#374151` | `bg-gray-700` | 27% | Hover states, pressed buttons, tooltips |
+   694→| Level 5 (Modal) | `#1F2937` + `shadow-2xl` | `bg-gray-800 shadow-2xl` | 18% + shadow | Modals, popovers (shadow adds perceived elevation) |
+   695→
+   696→### 11.3 Text Contrast Ratios
+   697→
+   698→All text-surface color combinations have been verified against WCAG 2.1 AA contrast requirements.
+   699→
+   700→| Text Color | On Surface | Contrast Ratio | Passes AA Normal (4.5:1) | Passes AA Large (3:1) |
+   701→|---|---|---|---|---|
+   702→| `#FFFFFF` (white) | `#000000` (black) | 21:1 | Yes | Yes |
+   703→| `#FFFFFF` (white) | `#0A0A0A` | 19.93:1 | Yes | Yes |
+   704→| `#FFFFFF` (white) | `#111827` (gray-900) | 17.4:1 | Yes | Yes |
+   705→| `#FFFFFF` (white) | `#1F2937` (gray-800) | 13.6:1 | Yes | Yes |
+   706→| `#9CA3AF` (gray-400) | `#000000` (black) | 7.1:1 | Yes | Yes |
+   707→| `#9CA3AF` (gray-400) | `#111827` (gray-900) | 5.9:1 | Yes | Yes |
+   708→| `#9CA3AF` (gray-400) | `#1F2937` (gray-800) | 4.6:1 | Yes (barely) | Yes |
+   709→| `#6B7280` (gray-500) | `#000000` (black) | 4.6:1 | Yes (barely) | Yes |
+   710→| `#6B7280` (gray-500) | `#111827` (gray-900) | 3.8:1 | No | Yes |
+   711→| `#6B7280` (gray-500) | `#1F2937` (gray-800) | 3.0:1 | No | Yes (barely) |
+   712→| `#DC2626` (red-600) | `#000000` (black) | 5.5:1 | Yes | Yes |
+   713→| `#DC2626` (red-600) | `#111827` (gray-900) | 4.6:1 | Yes (barely) | Yes |
+   714→| `#10B981` (emerald-500) | `#000000` (black) | 8.8:1 | Yes | Yes |
+   715→| `#F59E0B` (amber-500) | `#000000` (black) | 10.3:1 | Yes | Yes |
+   716→
+   717→**Critical Note:** `#6B7280` (gray-500) on `#1F2937` (gray-800) yields only a 3.0:1 contrast ratio. This combination is acceptable ONLY for large text (18px+ or 14px+ bold) or decorative/non-essential text. It must NOT be used for body text, labels, or any information-critical content on `gray-800` surfaces. For small text on `gray-800`, use `#9CA3AF` (gray-400) minimum.
+   718→
+   719→### 11.4 Visual Depth Techniques
+   720→
+   721→Beyond surface lightness, the dark theme employs additional techniques to communicate depth:
+   722→
+   723→- **Shadows:** All shadow definitions use black-based values (`rgba(0,0,0,*)`) with higher opacity than light themes (0.3–0.7 range). Shadows are more visible on dark surfaces when the shadow is darker than the surface.
+   724→- **Borders:** Subtle white borders (`rgba(255,255,255,0.1)`) define edges where background lightness differences are insufficient.
+   725→- **Glow Effects:** Red glow on accent elements creates a sense of energy and interactivity that pure elevation cannot convey.
+   726→- **Backdrop Blur:** `backdrop-blur-sm` (4px) or `backdrop-blur` (8px) on overlay elements (modals, mobile nav) creates frosted-glass depth that reinforces z-axis layering.
+   727→
+   728→---
+   729→
+   730→## 12. Tailwind Configuration
+   731→
+   732→### 12.1 tailwind.config.ts Structure
+   733→
+   734→The following is the complete `tailwind.config.ts` structure for TeslaPrimeCapital Phase 2. This configuration extends Tailwind's default theme with project-specific design tokens and defines custom animations and utilities.
+   735→
+   736→```typescript
+   737→import type { Config } from "tailwindcss";
+   738→
+   739→const config: Config = {
+   740→  content: [
+   741→    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+   742→    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+   743→    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+   744→  ],
+   745→  darkMode: "class",
+   746→  theme: {
+   747→    extend: {
+   748→      colors: {
+   749→        brand: {
+   750→          50: "#FEF2F2",
+   751→          100: "#FEE2E2",
+   752→          200: "#FECACA",
+   753→          300: "#FCA5A5",
+   754→          400: "#F87171",
+   755→          500: "#EF4444",
+   756→          600: "#DC2626",
+   757→          700: "#B91C1C",
+   758→          800: "#991B1B",
+   759→          900: "#7F1D1D",
+   760→          950: "#450A0A",
+   761→        },
+   762→        surface: {
+   763→          base: "#000000",
+   764→          sunken: "#0A0A0A",
+   765→          DEFAULT: "#111827",
+   766→          raised: "#1F2937",
+   767→          overlay: "#374151",
+   768→        },
+   769→        border: {
+   770→          subtle: "rgba(255, 255, 255, 0.1)",
+   771→          medium: "rgba(255, 255, 255, 0.2)",
+   772→          strong: "rgba(255, 255, 255, 0.3)",
+   773→        },
+   774→      },
+   775→      fontFamily: {
+   776→        heading: [
+   777→          "'Poppins'",
+   778→          "ui-sans-serif",
+   779→          "system-ui",
+   780→          "-apple-system",
+   781→          "'Segoe UI'",
+   782→          "sans-serif",
+   783→        ],
+   784→        body: [
+   785→          "'Rubik'",
+   786→          "ui-sans-serif",
+   787→          "system-ui",
+   788→          "-apple-system",
+   789→          "'Segoe UI'",
+   790→          "sans-serif",
+   791→        ],
+   792→        editorial: [
+   793→          "'Merriweather'",
+   794→          "ui-serif",
+   795→          "Georgia",
+   796→          "'Times New Roman'",
+   797→          "serif",
+   798→        ],
+   799→        mono: [
+   800→          "'JetBrains Mono'",
+   801→          "ui-monospace",
+   802→          "'Cascadia Code'",
+   803→          "'Fira Code'",
+   804→          "monospace",
+   805→        ],
+   806→      },
+   807→      fontSize: {
+   808→        "3xs": ["10px", { lineHeight: "14px", letterSpacing: "0.05em" }],
+   809→        "2xs": ["11px", { lineHeight: "16px", letterSpacing: "0.02em" }],
+   810→      },
+   811→      spacing: {
+   812→        18: "4.5rem",
+   813→        88: "22rem",
+   814→        112: "28rem",
+   815→        128: "32rem",
+   816→      },
+   817→      borderRadius: {
+   818→        4: "1rem",
+   819→      },
+   820→      boxShadow: {
+   821→        glow: "0 0 20px rgba(220, 38, 38, 0.15)",
+   822→        "glow-md": "0 0 40px rgba(220, 38, 38, 0.25)",
+   823→        "glow-lg": "0 0 60px rgba(220, 38, 38, 0.35)",
+   824→        "glow-success": "0 0 20px rgba(16, 185, 129, 0.2)",
+   825→        "glow-warning": "0 0 20px rgba(245, 158, 11, 0.2)",
+   826→        "glow-white": "0 0 30px rgba(255, 255, 255, 0.05)",
+   827→      },
+   828→      backgroundImage: {
+   829→        "gradient-primary": "linear-gradient(135deg, #DC2626 0%, #991B1B 100%)",
+   830→        "gradient-subtle": "linear-gradient(180deg, #111827 0%, #0A0A0A 100%)",
+   831→        "gradient-surface": "linear-gradient(135deg, #1F2937 0%, #111827 100%)",
+   832→        "gradient-overlay":
+   833→          "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%)",
+   834→        "gradient-glow":
+   835→          "radial-gradient(ellipse at center, rgba(220,38,38,0.15) 0%, transparent 70%)",
+   836→      },
+   837→      keyframes: {
+   838→        shimmer: {
+   839→          "0%": { backgroundPosition: "-200% 0" },
+   840→          "100%": { backgroundPosition: "200% 0" },
+   841→        },
+   842→        "slide-in-right": {
+   843→          "0%": { transform: "translateX(100%)", opacity: "0" },
+   844→          "100%": { transform: "translateX(0)", opacity: "1" },
+   845→        },
+   846→        "slide-out-right": {
+   847→          "0%": { transform: "translateX(0)", opacity: "1" },
+   848→          "100%": { transform: "translateX(100%)", opacity: "0" },
+   849→        },
+   850→        "fade-in": {
+   851→          "0%": { opacity: "0" },
+   852→          "100%": { opacity: "1" },
+   853→        },
+   854→        "fade-out": {
+   855→          "0%": { opacity: "1" },
+   856→          "100%": { opacity: "0" },
+   857→        },
+   858→        "scale-in": {
+   859→          "0%": { transform: "scale(0.95)", opacity: "0" },
+   860→          "100%": { transform: "scale(1)", opacity: "1" },
+   861→        },
+   862→        "scale-out": {
+   863→          "0%": { transform: "scale(1)", opacity: "1" },
+   864→          "100%": { transform: "scale(0.95)", opacity: "0" },
+   865→        },
+   866→        "slide-in-left": {
+   867→          "0%": { transform: "translateX(-100%)" },
+   868→          "100%": { transform: "translateX(0)" },
+   869→        },
+   870→        "slide-out-left": {
+   871→          "0%": { transform: "translateX(0)" },
+   872→          "100%": { transform: "translateX(-100%)" },
+   873→        },
+   874→        "pulse-glow": {
+   875→          "0%, 100%": { boxShadow: "0 0 20px rgba(220, 38, 38, 0.15)" },
+   876→          "50%": { boxShadow: "0 0 40px rgba(220, 38, 38, 0.3)" },
+   877→        },
+   878→      },
+   879→      animation: {
+   880→        shimmer: "shimmer 1.5s ease-in-out infinite",
+   881→        "slide-in-right": "slide-in-right 0.3s ease-out",
+   882→        "slide-out-right": "slide-out-right 0.2s ease-in",
+   883→        "fade-in": "fade-in 0.2s ease-out",
+   884→        "fade-out": "fade-out 0.15s ease-in",
+   885→        "scale-in": "scale-in 0.2s ease-out",
+   886→        "scale-out": "scale-out 0.15s ease-in",
+   887→        "slide-in-left": "slide-in-left 0.3s ease-out",
+   888→        "slide-out-left": "slide-out-left 0.3s ease-in",
+   889→        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+   890→      },
+   891→      transitionTimingFunction: {
+   892→        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+   893→      },
+   894→    },
+   895→  },
+   896→  plugins: [],
+   897→};
+   898→
+   899→export default config;
+   900→```
+   901→
+   902→### 12.2 Global CSS (app/globals.css)
+   903→
+   904→The global stylesheet establishes CSS custom properties, base dark theme styles, font loading, and utility classes that complement Tailwind:
+   905→
+   906→```css
+   907→@tailwind base;
+   908→@tailwind components;
+   909→@tailwind utilities;
+   910→
+   911→@layer base {
+   912→  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Rubik:wght@400;500&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap');
+   913→
+   914→  html {
+   915→    @apply scroll-smooth antialiased;
+   916→    color-scheme: dark;
+   917→  }
+   918→
+   919→  body {
+   920→    @apply bg-black text-gray-400 font-body;
+   921→    -webkit-font-smoothing: antialiased;
+   922→    -moz-osx-font-smoothing: grayscale;
+   923→  }
+   924→
+   925→  h1, h2, h3, h4, h5, h6 {
+   926→    @apply font-heading text-white;
+   927→  }
+   928→
+   929→  ::selection {
+   930→    @apply bg-red-600/30 text-white;
+   931→  }
+   932→
+   933→  :focus-visible {
+   934→    @apply outline-none ring-2 ring-red-500 ring-offset-2 ring-offset-gray-900;
+   935→  }
+   936→
+   937→  @media (prefers-reduced-motion: reduce) {
+   938→    *, *::before, *::after {
+   939→      animation-duration: 0.01ms !important;
+   940→      animation-iteration-count: 1 !important;
+   941→      transition-duration: 0.01ms !important;
+   942→      scroll-behavior: auto !important;
+   943→    }
+   944→  }
+   945→}
+   946→```
+   947→
+   948→### 12.3 Custom Utility Classes
+   949→
+   950→Beyond the standard Tailwind utilities, the following custom utility classes are defined in the `@layer utilities` block:
+   951→
+   952→```css
+   953→@layer utilities {
+   954→  .text-balance {
+   955→    text-wrap: balance;
+   956→  }
+   957→
+   958→  .scrollbar-thin {
+   959→    scrollbar-width: thin;
+   960→    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+   961→  }
+   962→
+   963→  .scrollbar-thin::-webkit-scrollbar {
+   964→    width: 6px;
+   965→  }
+   966→
+   967→  .scrollbar-thin::-webkit-scrollbar-track {
+   968→    background: transparent;
+   969→  }
+   970→
+   971→  .scrollbar-thin::-webkit-scrollbar-thumb {
+   972→    background-color: rgba(255, 255, 255, 0.1);
+   973→    border-radius: 3px;
+   974→  }
+   975→
+   976→  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+   977→    background-color: rgba(255, 255, 255, 0.2);
+   978→  }
+   979→
+   980→  .tabular-nums {
+   981→    font-variant-numeric: tabular-nums;
+   982→  }
+   983→
+   984→  .no-scrollbar {
+   985→    -ms-overflow-style: none;
+   986→    scrollbar-width: none;
+   987→  }
+   988→
+   989→  .no-scrollbar::-webkit-scrollbar {
+   990→    display: none;
+   991→  }
+   992→}
+   993→```
+   994→
+   995→---
+   996→
+   997→## 13. Accessibility Requirements
+   998→
+   999→### 13.1 Contrast Ratio Standards
+  1000→
+  1001→All text must meet WCAG 2.1 Level AA contrast requirements against its immediate background:
+  1002→
+  1003→- **Normal text (below 18px, or below 14px bold):** Minimum contrast ratio of **4.5:1**
+  1004→- **Large text (18px+ or 14px+ bold):** Minimum contrast ratio of **3:1**
+  1005→- **UI components and graphical objects:** Minimum contrast ratio of **3:1** against adjacent colors
+  1006→- **Non-text contrast:** Borders, form field outlines, and icon separators must maintain at least 3:1 contrast against their background
+  1007→
+  1008→The contrast ratios for all text-surface combinations used in this design system are documented in Section 11.3 (Dark Theme Specification). Any new color combination introduced during implementation must be manually verified using a contrast checker tool before merging.
+  1009→
+  1010→### 13.2 Focus Indicators
+  1011→
+  1012→Focus indicators are critical for keyboard navigation. The design system enforces a consistent, highly visible focus ring:
+  1013→
+  1014→- **Style:** 2px solid ring in red-500 (`#EF4444`)
+  1015→- **Offset:** 2px ring-offset in gray-900 (`#111827`) to ensure visibility against any background
+  1016→- **Border-radius:** Inherits from the focused element's border-radius
+  1017→- **CSS:** `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`
+  1018→- **Global Default:** Applied in the `@layer base` stylesheet so all focusable elements inherit this behavior unless explicitly overridden
+  1019→- **Custom Components:** Custom components (buttons, links, inputs) may apply their own focus styles, but must maintain the same ring color and offset pattern for consistency
+  1020→
+  1021→The `focus-visible` pseudo-class is used instead of `:focus` to ensure focus indicators appear only during keyboard navigation, not on mouse clicks. This prevents visual noise for mouse users while preserving full accessibility for keyboard users.
+  1022→
+  1023→### 13.3 Touch Target Sizes
+  1024→
+  1025→All interactive elements must meet minimum touch target dimensions to ensure usability on touch devices:
+  1026→
+  1027→- **Minimum size:** 44×44 pixels (WCAG 2.5.5)
+  1028→- **Measured size:** The touch target includes any visible padding around the clickable area. A 24px icon inside a 44px padded button meets the requirement.
+  1029→- **Minimum spacing:** 8px between adjacent touch targets to prevent accidental activation
+  1030→- **Inline links:** Text links within paragraphs are exempt from the 44px height requirement but should have generous line-height (`leading-relaxed` or `leading-7`) and surrounding whitespace
+  1031→- **Form controls:** Checkboxes and radio buttons should have a minimum 44×44px tap area, which may be achieved via invisible padding on a wrapping `<label>` element
+  1032→- **Implementation pattern:** Use `min-h-[44px] min-w-[44px]` Tailwind utilities on interactive elements, or ensure that `px-4 py-2.5` (which yields ~40px height for 16px text with 14px line-height, rounded up by the browser) is the minimum button padding
+  1033→
+  1034→### 13.4 Screen Reader Considerations
+  1035→
+  1036→- **Language:** The `<html>` element must declare `lang="en"` for proper screen reader pronunciation
+  1037→- **Page titles:** Every page must have a unique, descriptive `<title>` tag following the pattern "Page Name | TeslaPrimeCapital"
+  1038→- **Heading hierarchy:** Headings must follow a logical nesting order (h1 → h2 → h3, never skipping levels). Each page should have exactly one `<h1>`
+  1039→- **ARIA landmarks:** The layout uses semantic HTML landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`, `<aside>`, `<section>`) to provide navigation structure. Explicit `role` attributes are unnecessary when using semantic elements
+  1040→- **ARIA labels:** Icon-only buttons must have `aria-label` describing their action (e.g., `aria-label="Close modal"`, `aria-label="Open navigation menu"`)
+  1041→- **Live regions:** Dynamic content updates use `aria-live="polite"` for non-urgent updates (portfolio value changes) and `aria-live="assertive"` for critical notifications (error messages, transaction confirmations)
+  1042→- **Form accessibility:** All form inputs must have associated `<label>` elements (using `htmlFor`/`id` pairing). Error messages must be associated via `aria-describedby`. Required fields must use `aria-required="true"`
+  1043→- **Skip navigation:** A "Skip to main content" link must be present at the top of every page, visually hidden but accessible via keyboard (`Tab` key)
+  1044→- **Modal focus trapping:** When a modal is open, focus must be trapped within the modal container. Tabbing must cycle through focusable elements inside the modal only. On close, focus must return to the element that triggered the modal
+  1045→- **Image alt text:** Decorative images use `alt=""`. Informational images have descriptive alt text. Complex charts and graphs have extended descriptions via `aria-describedby` or adjacent visually-hidden text
+  1046→
+  1047→### 13.5 Reduced Motion Support
+  1048→
+  1049→The design system fully supports the `prefers-reduced-motion: reduce` media query. This setting is commonly enabled by users with vestibular disorders, motion sensitivity, or those who simply prefer less animation.
+  1050→
+  1051→- **Global rule:** When `prefers-reduced-motion: reduce` is active, all `animation-duration` and `transition-duration` values are set to `0.01ms`, and `animation-iteration-count` is set to `1`
+  1052→- **Scroll behavior:** `scroll-behavior: auto` replaces `scroll-smooth` to prevent smooth scrolling animations
+  1053→- **Skeleton loaders:** Replace shimmer animation with static `bg-gray-700` placeholder blocks
+  1054→- **Spinners:** Replace `animate-spin` with a static progress indicator or text label ("Loading...")
+  1055→- **Hover effects:** `transform` changes on hover (scale, translate) are disabled. Color and background transitions may remain at `duration-0` (instant)
+  1056→- **Page transitions:** Disabled entirely; pages swap instantly
+  1057→- **Implementation:** The global CSS in `app/globals.css` includes a `@media (prefers-reduced-motion: reduce)` block that handles the majority of cases. Component-level animations should also check this preference via `useReducedMotion()` hook (from `framer-motion` or custom implementation) when framework-level control is needed
+  1058→
+  1059→### 13.6 Keyboard Navigation
+  1060→
+  1061→- **Tab order:** Interactive elements must follow a logical left-to-right, top-to-bottom tab order that matches the visual layout
+  1062→- **Focus management:** Modal dialogs must implement focus trapping. Dropdown menus must return focus to the trigger element on close. After page navigation, focus should move to the page's main heading or a skip-link target
+  1063→- **Keyboard shortcuts:** If keyboard shortcuts are implemented, they must be documented in an accessible help panel. All keyboard shortcuts must use modifier keys (Ctrl/Cmd) to avoid conflicts with screen reader commands
+  1064→- **Custom widgets:** Any custom interactive component (tabs, accordions, carousels) must follow WAI-ARIA Authoring Practices Guide (APG) patterns for the respective widget role
+  1065→
+  1066→---
+  1067→
+  1068→## Appendix A: Design Token Quick Reference
+  1069→
+  1070→### Color Tokens (CSS Custom Properties)
+  1071→
+  1072→```
+  1073→--color-primary: #DC2626
+  1074→--color-primary-dark: #B91C1C
+  1075→--color-primary-darker: #991B1B
+  1076→--color-primary-light: #EF4444
+  1077→--color-success: #10B981
+  1078→--color-warning: #F59E0B
+  1079→--color-error: #EF4444
+  1080→--color-info: #3B82F6
+  1081→--color-bg-base: #000000
+  1082→--color-bg-elevated: #0A0A0A
+  1083→--color-bg-surface: #111827
+  1084→--color-bg-raised: #1F2937
+  1085→--color-bg-overlay: #374151
+  1086→--color-text-primary: #FFFFFF
+  1087→--color-text-secondary: #9CA3AF
+  1088→--color-text-muted: #6B7280
+  1089→--border-subtle: rgba(255, 255, 255, 0.1)
+  1090→--border-medium: rgba(255, 255, 255, 0.2)
+  1091→--border-strong: rgba(255, 255, 255, 0.3)
+  1092→```
+  1093→
+  1094→### Typography Tokens (CSS Custom Properties)
+  1095→
+  1096→```
+  1097→--font-heading: 'Poppins', ui-sans-serif, system-ui, sans-serif
+  1098→--font-body: 'Rubik', ui-sans-serif, system-ui, sans-serif
+  1099→--font-editorial: 'Merriweather', ui-serif, Georgia, serif
+  1100→--font-mono: 'JetBrains Mono', ui-monospace, monospace
+  1101→```
+  1102→
+  1103→### Spacing Tokens
+  1104→
+  1105→```
+  1106→--space-base: 4px
+  1107→--space-xs: 4px
+  1108→--space-sm: 8px
+  1109→--space-md: 16px
+  1110→--space-lg: 24px
+  1111→--space-xl: 32px
+  1112→--space-2xl: 48px
+  1113→--space-3xl: 64px
+  1114→```
+  1115→
+  1116→---
+  1117→
+  1118→## Appendix B: File Structure Reference
+  1119→
+  1120→```
+  1121→design-system/
+  1122→├── tokens/
+  1123→│   ├── colors.ts          # Color token definitions
+  1124→│   ├── typography.ts      # Font & type scale tokens
+  1125→│   ├── spacing.ts         # Spacing scale tokens
+  1126→│   └── shadows.ts         # Shadow & glow definitions
+  1127→├── components/
+  1128→│   ├── Button.tsx          # Button component with all variants
+  1129→│   ├── Card.tsx            # Card component with variants
+  1130→│   ├── Input.tsx           # Form input component
+  1131→│   ├── Badge.tsx           # Badge/pill component
+  1132→│   ├── Modal.tsx           # Modal/dialog component
+  1133→│   ├── Toast.tsx           # Toast notification component
+  1134→│   ├── Table.tsx           # Data table component
+  1135→│   └── Skeleton.tsx        # Loading skeleton component
+  1136→├── layouts/
+  1137→│   ├── Container.tsx       # Responsive container
+  1138→│   ├── Sidebar.tsx         # Dashboard sidebar
+  1139→│   └── PageHeader.tsx      # Consistent page header
+  1140→└── utils/
+  1141→    ├── cn.ts               # Tailwind class merge utility (clsx + twMerge)
+  1142→    └── focus-ring.ts       # Focus ring style constants
+  1143→```
+  1144→
+  1145→---
+  1146→
+  1147→*This design system document serves as the single source of truth for all visual and interaction decisions in TeslaPrimeCapital Phase 2. Any deviation from these specifications requires explicit approval from the design system maintainers. All component implementations must be validated against these tokens before merging to the main branch.*
