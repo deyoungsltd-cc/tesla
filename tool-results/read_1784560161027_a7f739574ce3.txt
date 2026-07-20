@@ -1,0 +1,654 @@
+   501→   501→   501→| Field | Value |
+   502→   502→   502→|-------|-------|
+   503→   503→   503→| **Path** | `components/ui/EmptyState.tsx` |
+   504→   504→   504→| **Type** | Server Component |
+   505→   505→   505→| **Props** | `icon?: ReactNode`, `title: string`, `description?: string`, `action?: { label: string; onClick: () => void }` |
+   506→   506→   506→
+   507→   507→   507→**Elements:**
+   508→   508→   508→- Centered layout
+   509→   509→   509→- Illustration or icon (large, muted)
+   510→   510→   510→- Title text
+   511→   511→   511→- Description text (muted)
+   512→   512→   512→- Optional CTA button
+   513→   513→   513→
+   514→   514→   514→---
+   515→   515→   515→
+   516→   516→   516→### Skeleton
+   517→   517→   517→
+   518→   518→   518→| Field | Value |
+   519→   519→   519→|-------|-------|
+   520→   520→   520→| **Path** | `components/ui/Skeleton.tsx` |
+   521→   521→   521→| **Type** | Server Component |
+   522→   522→   522→| **Props** | `variant?: 'text' | 'circle' | 'card' | 'table' | 'chart'`, `width?: string`, `height?: string`, `count?: number` |
+   523→   523→   523→
+   524→   524→   524→**Elements:**
+   525→   525→   525→- Animated pulse/ shimmer effect
+   526→   526→   526→- Shape variants that match real component dimensions
+   527→   527→   527→- `table` variant renders a full table skeleton with header and rows
+   528→   528→   528→- `card` variant renders a card-shaped placeholder
+   529→   529→   529→
+   530→   530→   530→---
+   531→   531→   531→
+   532→   532→   532→## 6. Feedback Components
+   533→   533→   533→
+   534→   534→   534→### Toast
+   535→   535→   535→
+   536→   536→   536→| Field | Value |
+   537→   537→   537→|-------|-------|
+   538→   538→   538→| **Path** | `components/feedback/Toast.tsx` |
+   539→   539→   539→| **Type** | Client Component (`'use client'` — auto-dismiss timer) |
+   540→   540→   540→| **Props** | `type: 'success' | 'error' | 'warning' | 'info'`, `title: string`, `message?: string`, `duration?: number` (default 5000ms) |
+   541→   541→   541→
+   542→   542→   542→**Elements:**
+   543→   543→   543→- Positioned at top-right of viewport
+   544→   544→   544→- Icon based on type (check, X, alert, info)
+   545→   545→   545→- Title and optional message
+   546→   546→   546→- Close button
+   547→   547→   547→- Auto-dismiss after duration
+   548→   548→   548→- Stack multiple toasts vertically
+   549→   549→   549→- Enter/exit animations
+   550→   550→   550→- Managed via toast context/hook (`useToast()`)
+   551→   551→   551→
+   552→   552→   552→---
+   553→   553→   553→
+   554→   554→   554→### Modal
+   555→   555→   555→
+   556→   556→   556→| Field | Value |
+   557→   557→   557→|-------|-------|
+   558→   558→   558→| **Path** | `components/ui/Modal.tsx` |
+   559→   559→   559→| **Type** | Client Component (`'use client'` — open/close, focus trap, escape key) |
+   560→   560→   560→| **Props** | `isOpen: boolean`, `onClose: () => void`, `title?: string`, `footer?: ReactNode`, `size?: 'sm' | 'md' | 'lg' | 'xl'`, `children: ReactNode` |
+   561→   561→   561→
+   562→   562→   562→**Elements:**
+   563→   563→   563→- Backdrop overlay (dark, click to close)
+   564→   564→   564→- Centered dialog box
+   565→   565→   565→- Header (title + close button)
+   566→   566→   566→- Body (scrollable content)
+   567→   567→   567→- Optional footer (buttons)
+   568→   568→   568→- Focus trap within modal
+   569→   569→   569→- Close on Escape key
+   570→   570→   570→- Body scroll lock when open
+   571→   571→   571→- Enter/exit animations (fade + scale)
+   572→   572→   572→
+   573→   573→   573→---
+   574→   574→   574→
+   575→   575→   575→### ConfirmDialog
+   576→   576→   576→
+   577→   577→   577→| Field | Value |
+   578→   578→   578→|-------|-------|
+   579→   579→   579→| **Path** | `components/feedback/ConfirmDialog.tsx` |
+   580→   580→   580→| **Type** | Client Component (`'use client'`) |
+   581→   581→   581→| **Props** | `isOpen: boolean`, `onClose: () => void`, `onConfirm: () => void`, `title: string`, `message: string`, `confirmLabel?: string`, `cancelLabel?: string`, `variant?: 'danger' | 'warning' | 'default'` |
+   582→   582→   582→
+   583→   583→   583→**Elements:**
+   584→   584→   584→- Built on top of `<Modal />`
+   585→   585→   585→- Warning/danger icon
+   586→   586→   586→- Message text
+   587→   587→   587→- Cancel and Confirm buttons (confirm styled per variant)
+   588→   588→   588→
+   589→   589→   589→---
+   590→   590→   590→
+   591→   591→   591→### Alert
+   592→   592→   592→
+   593→   593→   593→| Field | Value |
+   594→   594→   594→|-------|-------|
+   595→   595→   595→| **Path** | `components/ui/Alert.tsx` |
+   596→   596→   596→| **Type** | Server Component |
+   597→   597→   597→| **Props** | `variant: 'info' | 'success' | 'warning' | 'error'`, `title?: string`, `children: ReactNode`, `dismissible?: boolean` |
+   598→   598→   598→
+   599→   599→   599→**Elements:**
+   600→   600→   600→- Inline banner with colored left border and background tint
+   601→   601→   601→- Icon based on variant
+   602→   602→   602→- Title (bold) and content
+   603→   603→   603→- Optional dismiss button
+   604→   604→   604→
+   605→   605→   605→---
+   606→   606→   606→
+   607→   607→   607→### Tooltip
+   608→   608→   608→
+   609→   609→   609→| Field | Value |
+   610→   610→   610→|-------|-------|
+   611→   611→   611→| **Path** | `components/ui/Tooltip.tsx` |
+   612→   612→   612→| **Type** | Client Component (`'use client'` — hover/focus state) |
+   613→   613→   613→| **Props** | `content: string | ReactNode`, `side?: 'top' | 'right' | 'bottom' | 'left'`, `children: ReactNode` |
+   614→   614→   614→
+   615→   615→   615→**Elements:**
+   616→   616→   616→- Trigger element (children)
+   617→   617→   617→- Floating tooltip on hover/focus
+   618→   618→   618→- Arrow pointing to trigger
+   619→   619→   619→- Small delay before showing (100ms)
+   620→   620→   620→
+   621→   621→   621→---
+   622→   622→   622→
+   623→   623→   623→### Dropdown
+   624→   624→   624→
+   625→   625→   625→| Field | Value |
+   626→   626→   626→|-------|-------|
+   627→   627→   627→| **Path** | `components/ui/Dropdown.tsx` |
+   628→   628→   628→| **Type** | Client Component (`'use client'` — open/close, keyboard nav) |
+   629→   629→   629→| **Props** | `trigger: ReactNode`, `items: Array<{ label: string; icon?: ReactNode; onClick?: () => void; href?: string; danger?: boolean; divider?: boolean }>` |
+   630→   630→   630→
+   631→   631→   631→**Elements:**
+   632→   632→   632→- Trigger element (click to toggle)
+   633→   633→   633→- Floating menu with items
+   634→   634→   634→- Item hover highlight
+   635→   635→   635→- Optional dividers between groups
+   636→   636→   636→- Close on outside click
+   637→   637→   637→- Keyboard navigation
+   638→   638→   638→
+   639→   639→   639→---
+   640→   640→   640→
+   641→   641→   641→## 7. Chart Components
+   642→   642→   642→
+   643→   643→   643→### LineChart
+   644→   644→   644→
+   645→   645→   645→| Field | Value |
+   646→   646→   646→|-------|-------|
+   647→   647→   647→| **Path** | `components/charts/LineChart.tsx` |
+   648→   648→   648→| **Type** | Client Component (`'use client'` — chart rendering) |
+   649→   649→   649→| **Props** | `data: Array<{ x: string | Date; y: number }>`, `xLabel?: string`, `yLabel?: string`, `color?: string` (default: red), `height?: number` |
+   650→   650→   650→
+   651→   651→   651→**Description:** Portfolio performance over time, deposit/withdrawal trends. Uses a charting library (e.g., Recharts, ECharts, or Chart.js). Dark theme styled with red primary color.
+   652→   652→   652→
+   653→   653→   653→---
+   654→   654→   654→
+   655→   655→   655→### BarChart
+   656→   656→   656→
+   657→   657→   657→| Field | Value |
+   658→   658→   658→|-------|-------|
+   659→   659→   659→| **Path** | `components/charts/BarChart.tsx` |
+   660→   660→   660→| **Type** | Client Component (`'use client'`) |
+   661→   661→   661→| **Props** | `data: Array<{ label: string; value: number; color?: string }>`, `xLabel?: string`, `yLabel?: string`, `height?: number` |
+   662→   662→   662→
+   663→   663→   663→**Description:** Monthly earnings comparison, user registrations over time. Dark theme styled.
+   664→   664→   664→
+   665→   665→   665→---
+   666→   666→   666→
+   667→   667→   667→### PieChart
+   668→   668→   668→
+   669→   669→   669→| Field | Value |
+   670→   670→   670→|-------|-------|
+   671→   671→   671→| **Path** | `components/charts/PieChart.tsx` |
+   672→   672→   672→| **Type** | Client Component (`'use client'`) |
+   673→   673→   673→| **Props** | `data: Array<{ label: string; value: number; color: string }>`, `height?: number` |
+   674→   674→   674→
+   675→   675→   675→**Description:** Investment distribution by plan, deposit type breakdown. Dark theme styled with a complementary color palette.
+   676→   676→   676→
+   677→   677→   677→---
+   678→   678→   678→
+   679→   679→   679→### BinaryTreeChart
+   680→   680→   680→
+   681→   681→   681→| Field | Value |
+   682→   682→   682→|-------|-------|
+   683→   683→   683→| **Path** | `components/charts/BinaryTreeChart.tsx` |
+   684→   684→   684→| **Type** | Client Component (`'use client'` — zoom, pan, expand/collapse) |
+   685→   685→   685→| **Props** | `data: BinaryTreeNode`, `onNodeClick?: (node: BinaryTreeNode) => void`, `highlightWeakestLeg?: boolean` |
+   686→   686→   686→
+   687→   687→   687→**Description:** Visual referral binary tree with left/right legs. Interactive: zoom, pan, click to expand/collapse branches. Weakest leg highlighted in a distinct color. Each node shows name and volume.
+   688→   688→   688→
+   689→   689→   689→---
+   690→   690→   690→
+   691→   691→   691→## 8. Notification Components
+   692→   692→   692→
+   693→   693→   693→### NotificationBell
+   694→   694→   694→
+   695→   695→   695→| Field | Value |
+   696→   696→   696→|-------|-------|
+   697→   697→   697→| **Path** | `components/notifications/NotificationBell.tsx` |
+   698→   698→   698→| **Type** | Client Component (`'use client'` — dropdown state, polling/WebSocket) |
+   699→   699→   699→| **Props** | None (self-contained, fetches from API) |
+   700→   700→   700→
+   701→   701→   701→**Elements:**
+   702→   702→   702→- Bell icon button
+   703→   703→   703→- Unread count badge (red circle with number, hidden when 0)
+   704→   704→   704→- Click toggles `<NotificationDropdown />`
+   705→   705→   705→- Polls for new notifications (or WebSocket push)
+   706→   706→   706→
+   707→   707→   707→---
+   708→   708→   708→
+   709→   709→   709→### NotificationDropdown
+   710→   710→   710→
+   711→   711→   711→| Field | Value |
+   712→   712→   712→|-------|-------|
+   713→   713→   713→| **Path** | `components/notifications/NotificationDropdown.tsx` |
+   714→   714→   714→| **Type** | Client Component (`'use client'`) |
+   715→   715→   715→| **Props** | `isOpen: boolean`, `onClose: () => void` |
+   716→   716→   716→
+   717→   717→   717→**Elements:**
+   718→   718→   718→- Dropdown panel from bell icon
+   719→   719→   719→- "Notifications" header with "Mark all as read" link
+   720→   720→   720→- List of 5 most recent `<NotificationItem />` components
+   721→   721→   721→- "View All Notifications" link at bottom (navigates to `/dashboard/notifications`)
+   722→   722→   722→
+   723→   723→   723→---
+   724→   724→   724→
+   725→   725→   725→### NotificationItem
+   726→   726→   726→
+   727→   727→   727→| Field | Value |
+   728→   728→   728→|-------|-------|
+   729→   729→   729→| **Path** | `components/notifications/NotificationItem.tsx` |
+   730→   730→   730→| **Type** | Client Component (`'use client'` — mark as read on click) |
+   731→   731→   731→| **Props** | `notification: { id: string; type: string; title: string; message: string; read: boolean; createdAt: string; actionUrl?: string }` |
+   732→   732→   732→
+   733→   733→   733→**Elements:**
+   734→   734→   734→- Category icon (wallet, shield, users, bell, etc.)
+   735→   735→   735→- Title (bold if unread)
+   736→   736→   736→- Message preview (truncated)
+   737→   737→   737→- Relative timestamp ("2 hours ago")
+   738→   738→   738→- Unread indicator (blue dot)
+   739→   739→   739→- Click marks as read and optionally navigates to `actionUrl`
+   740→   740→   740→
+   741→   741→   741→---
+   742→   742→   742→
+   743→   743→   743→### NotificationPreferences
+   744→   744→   744→
+   745→   745→   745→| Field | Value |
+   746→   746→   746→|-------|-------|
+   747→   747→   747→| **Path** | `components/notifications/NotificationPreferences.tsx` |
+   748→   748→   748→| **Type** | Client Component (`'use client'` — toggle state, save) |
+   749→   749→   749→| **Props** | `preferences: NotificationPreferences`, `onSave: (prefs: NotificationPreferences) => Promise<void>` |
+   750→   750→   750→
+   751→   751→   751→**Elements:**
+   752→   752→   752→- Category rows:
+   753→   753→   753→  - Financial (deposit, withdrawal, investment) — in-app toggle, email toggle
+   754→   754→   754→  - Security (login, 2FA, password) — in-app toggle, email toggle
+   755→   755→   755→  - Account (KYC, profile) — in-app toggle, email toggle
+   756→   756→   756→  - Referral (new referral, commission) — in-app toggle, email toggle
+   757→   757→   757→  - System (maintenance, announcements) — in-app toggle, email toggle
+   758→   758→   758→- "Enable All" / "Disable All" quick actions
+   759→   759→   759→- Save button
+   760→   760→   760→
+   761→   761→   761→---
+   762→   762→   762→
+   763→   763→   763→## 9. Wallet Components
+   764→   764→   764→
+   765→   765→   765→### BalanceDisplay
+   766→   766→   766→
+   767→   767→   767→| Field | Value |
+   768→   768→   768→|-------|-------|
+   769→   769→   769→| **Path** | `components/wallet/BalanceDisplay.tsx` |
+   770→   770→   770→| **Type** | Server Component |
+   771→   771→   771→| **Props** | `label: string`, `available: number`, `pending: number`, `currency?: string` (default: "USD"), `mode?: 'demo' | 'live'` |
+   772→   772→   772→
+   773→   773→   773→**Elements:**
+   774→   774→   774→- Label (e.g., "Live Balance" or "Demo Balance")
+   775→   775→   775→- Mode badge/indicator (distinct color per mode)
+   776→   776→   776→- Large available balance figure
+   777→   777→   777→- Pending amount (smaller, muted text: "$X.XX pending")
+   778→   778→   778→- Optional trend indicator
+   779→   779→   779→
+   780→   780→   780→---
+   781→   781→   781→
+   782→   782→   782→### TransactionItem
+   783→   783→   783→
+   784→   784→   784→| Field | Value |
+   785→   785→   785→|-------|-------|
+   786→   786→   786→| **Path** | `components/wallet/TransactionItem.tsx` |
+   787→   787→   787→| **Type** | Server Component |
+   788→   788→   788→| **Props** | `transaction: { id: string; type: 'deposit' | 'withdrawal' | 'investment' | 'return' | 'commission'; description: string; amount: number; status: string; createdAt: string }` |
+   789→   789→   789→
+   790→   790→   790→**Elements:**
+   791→   791→   791→- Icon (colored by type: green for deposits/returns, red for withdrawals, blue for investments, purple for commissions)
+   792→   792→   792→- Description text
+   793→   793→   793→- Amount (green for credits, red for debits)
+   794→   794→   794→- Date (relative or formatted)
+   795→   795→   795→- Status `<Badge />`
+   796→   796→   796→
+   797→   797→   797→---
+   798→   798→   798→
+   799→   799→   799→### FeeBreakdown
+   800→   800→   800→
+   801→   801→   801→| Field | Value |
+   802→   802→   802→|-------|-------|
+   803→   803→   803→| **Path** | `components/wallet/FeeBreakdown.tsx` |
+   804→   804→   804→| **Type** | Server Component |
+   805→   805→   805→| **Props** | `amount: number`, `feePercentage: number` (default: 21) |
+   806→   806→   806→
+   807→   807→   807→**Elements:**
+   808→   808→   808→- Line items:
+   809→   809→   809→  - "Gross Amount: $X.XX"
+   810→   810→   810→  - "Withdrawal Fee (21%): -$Y.YY" (in red)
+   811→   811→   811→  - Divider line
+   812→   812→   812→  - "Net Amount: $Z.ZZ" (in bold, green or white)
+   813→   813→   813→- Fee percentage clearly labeled
+   814→   814→   814→
+   815→   815→   815→---
+   816→   816→   816→
+   817→   817→   817→## 10. Investment Components
+   818→   818→   818→
+   819→   819→   819→### PlanCard
+   820→   820→   820→
+   821→   821→   821→| Field | Value |
+   822→   822→   822→|-------|-------|
+   823→   823→   823→| **Path** | `components/investments/PlanCard.tsx` |
+   824→   824→   824→| **Type** | Client Component (`'use client'` — hover effects) |
+   825→   825→   825→| **Props** | `plan: { id: string; name: string; min: number; max: number; duration: string; returnRate: number; features: string[] }`, `locked?: boolean`, `onInvest?: (planId: string) => void` |
+   826→   826→   826→
+   827→   827→   827→**Elements:**
+   828→   828→   828→- Plan name (header)
+   829→   829→   829→- Investment range: "$200 — $4,999"
+   830→   830→   830→- Duration: "24 Hours"
+   831→   831→   831→- Expected return rate: "X%"
+   832→   832→   832→- Feature list (checkmark icons)
+   833→   833→   833→- CTA button: "Invest Now" (or "Locked — Upgrade KYC" if locked)
+   834→   834→   834→- Popular/badge indicator (optional, e.g., "Most Popular" on Gold)
+   835→   835→   835→- Hover elevation effect
+   836→   836→   836→
+   837→   837→   837→---
+   838→   838→   838→
+   839→   839→   839→### ActiveInvestmentCard
+   840→   840→   840→
+   841→   841→   841→| Field | Value |
+   842→   842→   842→|-------|-------|
+   843→   843→   843→| **Path** | `components/investments/ActiveInvestmentCard.tsx` |
+   844→   844→   844→| **Type** | Client Component (`'use client'` — countdown) |
+   845→   845→   845→| **Props** | `investment: { id: string; planName: string; amount: number; expectedReturn: number; startTime: string; maturityTime: string; progress: number }` |
+   846→   846→   846→
+   847→   847→   847→**Elements:**
+   848→   848→   848→- Plan name and mode badge
+   849→   849→   849→- Invested amount
+   850→   850→   850→- `<ProgressBar />` showing time elapsed / time remaining
+   851→   851→   851→- Expected return amount
+   852→   852→   852→- `<CountdownTimer />` to maturity
+   853→   853→   853→- Status `<Badge />` (active/maturing)
+   854→   854→   854→
+   855→   855→   855→---
+   856→   856→   856→
+   857→   857→   857→### InvestmentHistoryRow
+   858→   858→   858→
+   859→   859→   859→| Field | Value |
+   860→   860→   860→|-------|-------|
+   861→   861→   861→| **Path** | `components/investments/InvestmentHistoryRow.tsx` |
+   862→   862→   862→| **Type** | Server Component |
+   863→   863→   863→| **Props** | `investment: { id: string; planName: string; amount: number; returnAmount: number; startDate: string; endDate: string; status: string }` |
+   864→   864→   864→
+   865→   865→   865→**Elements:**
+   866→   866→   866→- Plan name
+   867→   867→   867→- Invested amount
+   868→   868→   868→- Return amount (actual)
+   869→   869→   869→- Start and end dates
+   870→   870→   870→- Status `<Badge />` (completed, cancelled, failed)
+   871→   871→   871→- ROI percentage
+   872→   872→   872→
+   873→   873→   873→---
+   874→   874→   874→
+   875→   875→   875→## 11. KYC Components
+   876→   876→   876→
+   877→   877→   877→### KYCLevelIndicator
+   878→   878→   878→
+   879→   879→   879→| Field | Value |
+   880→   880→   880→|-------|-------|
+   881→   881→   881→| **Path** | `components/kyc/KYCLevelIndicator.tsx` |
+   882→   882→   882→| **Type** | Server Component |
+   883→   883→   883→| **Props** | `currentLevel: number`, `maxLevel: number`, `levels: Array<{ level: number; name: string; limits: string; requirements: string[] }>` |
+   884→   884→   884→
+   885→   885→   885→**Elements:**
+   886→   886→   886→- Current level badge (e.g., "Level 1 — Basic")
+   887→   887→   887→- Step progress bar showing levels 0 → 1 → 2
+   888→   888→   888→- Current limits displayed (deposit max, investment max per plan)
+   889→   889→   889→- Requirements for next level (list with checkmarks for completed)
+   890→   890→   890→- Visual progress to next level
+   891→   891→   891→
+   892→   892→   892→---
+   893→   893→   893→
+   894→   894→   894→### DocumentUploadCard
+   895→   895→   895→
+   896→   896→   896→| Field | Value |
+   897→   897→   897→|-------|-------|
+   898→   898→   898→| **Path** | `components/kyc/DocumentUploadCard.tsx` |
+   899→   899→   899→| **Type** | Client Component (`'use client'` — upload state) |
+   900→   900→   900→| **Props** | `documentType: string`, `requirements: string[]`, `examples?: string[]`, `currentStatus?: 'none' | 'pending_review' | 'approved' | 'rejected'`, `rejectionReason?: string`, `onUpload: (file: File) => Promise<void>` |
+   901→   901→   901→
+   902→   902→   902→**Elements:**
+   903→   903→   903→- Document type title (e.g., "Government-Issued ID")
+   904→   904→   904→- Requirements list (bullet points)
+   905→   905→   905→- Example descriptions
+   906→   906→   906→- `<FileUpload />` component (or status display)
+   907→   907→   907→- Status indicator: not uploaded, pending (yellow), approved (green), rejected (red with reason)
+   908→   908→   908→- Rejection reason with "Re-upload" button (if rejected)
+   909→   909→   909→
+   910→   910→   910→---
+   911→   911→   911→
+   912→   912→   912→### DocumentViewer
+   913→   913→   913→
+   914→   914→   914→| Field | Value |
+   915→   915→   915→|-------|-------|
+   916→   916→   916→| **Path** | `components/kyc/DocumentViewer.tsx` |
+   917→   917→   917→| **Type** | Client Component (`'use client'` — zoom, pan) |
+   918→   918→   918→| **Props** | `fileUrl: string`, `fileType: 'image' | 'pdf'` |
+   919→   919→   919→
+   920→   920→   920→**Elements:**
+   921→   921→   921→- Full-resolution image viewer (for JPG/PNG) with zoom and pan controls
+   922→   922→   922→- PDF viewer (for PDF files)
+   923→   923→   923→- Fullscreen toggle
+   924→   924→   924→- Download button
+   925→   925→   925→
+   926→   926→   926→---
+   927→   927→   927→
+   928→   928→   928→## 12. Referral Components
+   929→   929→   929→
+   930→   930→   930→### ReferralLinkCard
+   931→   931→   931→
+   932→   932→   932→| Field | Value |
+   933→   933→   933→|-------|-------|
+   934→   934→   934→| **Path** | `components/referrals/ReferralLinkCard.tsx` |
+   935→   935→   935→| **Type** | Client Component (`'use client'` — copy feedback, share) |
+   936→   936→   936→| **Props** | `referralCode: string`, `referralLink: string` |
+   937→   937→   937→
+   938→   938→   938→**Elements:**
+   939→   939→   939→- Referral code display (large, monospace font)
+   940→   940→   940→- Full referral link display
+   941→   941→   941→- `<CopyButton />` for the link
+   942→   942→   942→- Share icons/links (email, Twitter/X, Telegram, WhatsApp, Facebook)
+   943→   943→   943→- Info text: "Earn 10% on every referral's deposit!"
+   944→   944→   944→
+   945→   945→   945→---
+   946→   946→   946→
+   947→   947→   947→### ReferralStatsCard
+   948→   948→   948→
+   949→   949→   949→| Field | Value |
+   950→   950→   950→|-------|-------|
+   951→   951→   951→| **Path** | `components/referrals/ReferralStatsCard.tsx` |
+   952→   952→   952→| **Type** | Server Component |
+   953→   953→   953→| **Props** | `totalReferrals: number`, `activeReferrals: number`, `totalCommissions: number`, `pendingCommissions: number` |
+   954→   954→   954→
+   955→   955→   955→**Elements:**
+   956→   956→   956→- Grid of 3-4 `<StatCard />` components:
+   957→   957→   957→  - Total Referrals (count)
+   958→   958→   958→  - Active Referrals (count)
+   959→   959→   959→  - Total Commissions Earned (USD)
+   960→   960→   960→  - Pending Commissions (USD)
+   961→   961→   961→
+   962→   962→   962→---
+   963→   963→   963→
+   964→   964→   964→### BinaryTreeView
+   965→   965→   965→
+   966→   966→   966→| Field | Value |
+   967→   967→   967→|-------|-------|
+   968→   968→   968→| **Path** | `components/referrals/BinaryTreeView.tsx` |
+   969→   969→   969→| **Type** | Client Component (`'use client'`) |
+   970→   970→   970→| **Props** | `treeData: BinaryTreeNode`, `onNodeClick?: (node: BinaryTreeNode) => void` |
+   971→   971→   971→
+   972→   972→   972→**Elements:**
+   973→   973→   973→- Wrapper around `<BinaryTreeChart />` with supplementary UI:
+   974→   974→   974→  - Left leg volume display
+   975→   975→   975→  - Right leg volume display
+   976→   976→   976→  - Weakest leg callout
+   977→   977→   977→  - Search input to find a specific referral
+   978→   978→   978→  - Depth level indicator
+   979→   979→   979→  - Expand/collapse controls
+   980→   980→   980→
+   981→   981→   981→---
+   982→   982→   982→
+   983→   983→   983→## 13. Common / UI Components
+   984→   984→   984→
+   985→   985→   985→### Button
+   986→   986→   986→
+   987→   987→   987→| Field | Value |
+   988→   988→   988→|-------|-------|
+   989→   989→   989→| **Path** | `components/ui/Button.tsx` |
+   990→   990→   990→| **Type** | Client Component (`'use client'` — click, loading state) |
+   991→   991→   991→| **Props** | `variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'`, `size?: 'sm' | 'md' | 'lg'`, `loading?: boolean`, `icon?: ReactNode`, `iconPosition?: 'left' | 'right'`, `disabled?: boolean`, `fullWidth?: boolean`, `children: ReactNode`, `onClick?: () => void` |
+   992→   992→   992→
+   993→   993→   993→**Variants:**
+   994→   994→   994→- `primary` — red background, white text (default)
+   995→   995→   995→- `secondary` — dark gray background, white text
+   996→   996→   996→- `ghost` — transparent, white text, border on hover
+   997→   997→   997→- `danger` — red outline, red text (or filled red for destructive actions)
+   998→   998→   998→- `outline` — border only, white text
+   999→   999→   999→
+  1000→  1000→  1000→**Sizes:** sm (h-8), md (h-10), lg (h-12)
+  1001→  1001→  1001→
+  1002→  1002→  1002→**States:** default, hover, active, focus, disabled, loading (spinner replaces icon/text)
+  1003→  1003→  1003→
+  1004→  1004→  1004→---
+  1005→  1005→  1005→
+  1006→  1006→  1006→### IconButton
+  1007→  1007→  1007→
+  1008→  1008→  1008→| Field | Value |
+  1009→  1009→  1009→|-------|-------|
+  1010→  1010→  1010→| **Path** | `components/ui/IconButton.tsx` |
+  1011→  1011→  1011→| **Type** | Client Component (`'use client'`) |
+  1012→  1012→  1012→| **Props** | `icon: ReactNode`, `variant?: 'ghost' | 'outline'`, `size?: 'sm' | 'md'`, `label?: string` (for accessibility), `onClick?: () => void` |
+  1013→  1013→  1013→
+  1014→  1014→  1014→---
+  1015→  1015→  1015→
+  1016→  1016→  1016→### LoadingSpinner
+  1017→  1017→  1017→
+  1018→  1018→  1018→| Field | Value |
+  1019→  1019→  1019→|-------|-------|
+  1020→  1020→  1020→| **Path** | `components/ui/LoadingSpinner.tsx` |
+  1021→  1021→  1021→| **Type** | Server Component |
+  1022→  1022→  1022→| **Props** | `size?: 'sm' | 'md' | 'lg'`, `className?: string` |
+  1023→  1023→  1023→
+  1024→  1024→  1024→**Elements:**
+  1025→  1025→  1025→- CSS/SVG animated spinning circle
+  1026→  1026→  1026→- Color matches theme (white or red)
+  1027→  1027→  1027→
+  1028→  1028→  1028→---
+  1029→  1029→  1029→
+  1030→  1030→  1030→### Pagination
+  1031→  1031→  1031→
+  1032→  1032→  1032→| Field | Value |
+  1033→  1033→  1033→|-------|-------|
+  1034→  1034→  1034→| **Path** | `components/ui/Pagination.tsx` |
+  1035→  1035→  1035→| **Type** | Client Component (`'use client'`) |
+  1036→  1036→  1036→| **Props** | `currentPage: number`, `totalPages: number`, `onPageChange: (page: number) => void`, `pageSize?: number`, `onPageSizeChange?: (size: number) => void`, `totalItems?: number` |
+  1037→  1037→  1037→
+  1038→  1038→  1038→**Elements:**
+  1039→  1039→  1039→- Previous/Next arrow buttons
+  1040→  1040→  1040→- Page number buttons (with ellipsis for large ranges)
+  1041→  1041→  1041→- Items per page selector (dropdown)
+  1042→  1042→  1042→- Total items count text
+  1043→  1043→  1043→- Disabled state for first/last page
+  1044→  1044→  1044→
+  1045→  1045→  1045→---
+  1046→  1046→  1046→
+  1047→  1047→  1047→### Tabs
+  1048→  1048→  1048→
+  1049→  1049→  1049→| Field | Value |
+  1050→  1050→  1050→|-------|-------|
+  1051→  1051→  1051→| **Path** | `components/ui/Tabs.tsx` |
+  1052→  1052→  1052→| **Type** | Client Component (`'use client'` — active tab state) |
+  1053→  1053→  1053→| **Props:** Compound component pattern |
+  1054→  1054→  1054→- `<Tabs>` — root wrapper, `defaultValue?: string`, `onValueChange?: (value: string) => void`
+  1055→  1055→  1055→- `<TabsList>` — tab button container
+  1056→  1056→  1056→- `<TabsTrigger value="tab1">` — individual tab button
+  1057→  1057→  1057→- `<TabsContent value="tab1">` — panel content for the tab
+  1058→  1058→  1058→
+  1059→  1059→  1059→---
+  1060→  1060→  1060→
+  1061→  1061→  1061→### Accordion
+  1062→  1062→  1062→
+  1063→  1063→  1063→| Field | Value |
+  1064→  1064→  1064→|-------|-------|
+  1065→  1065→  1065→| **Path** | `components/ui/Accordion.tsx` |
+  1066→  1066→  1066→| **Type** | Client Component (`'use client'` — expand/collapse animation) |
+  1067→  1067→  1067→| **Props:** Compound component pattern |
+  1068→  1068→  1068→- `<Accordion>` — root wrapper, `type?: 'single' | 'multiple'`
+  1069→  1069→  1069→- `<AccordionItem value="item1">` — individual item wrapper
+  1070→  1070→  1070→- `<AccordionTrigger>` — clickable header with chevron icon
+  1071→  1071→  1071→- `<AccordionContent>` — expandable content panel
+  1072→  1072→  1072→
+  1073→  1073→  1073→---
+  1074→  1074→  1074→
+  1075→  1075→  1075→### Switch
+  1076→  1076→  1076→
+  1077→  1077→  1077→| Field | Value |
+  1078→  1078→  1078→|-------|-------|
+  1079→  1079→  1079→| **Path** | `components/ui/Switch.tsx` |
+  1080→  1080→  1080→| **Type** | Client Component (`'use client'`) |
+  1081→  1081→  1081→| **Props** | `checked?: boolean`, `onCheckedChange?: (checked: boolean) => void`, `label?: string`, `disabled?: boolean` |
+  1082→  1082→  1082→
+  1083→  1083→  1083→**Elements:**
+  1084→  1084→  1084→- Toggle switch (off = gray, on = red)
+  1085→  1085→  1085→- Optional label text
+  1086→  1086→  1086→- Smooth transition animation
+  1087→  1087→  1087→
+  1088→  1088→  1088→---
+  1089→  1089→  1089→
+  1090→  1090→  1090→### CopyButton
+  1091→  1091→  1091→
+  1092→  1092→  1092→| Field | Value |
+  1093→  1093→  1093→|-------|-------|
+  1094→  1094→  1094→| **Path** | `components/ui/CopyButton.tsx` |
+  1095→  1095→  1095→| **Type** | Client Component (`'use client'` — clipboard API) |
+  1096→  1096→  1096→| **Props** | `text: string`, `label?: string` (default: "Copy") |
+  1097→  1097→  1097→
+  1098→  1098→  1098→**Elements:**
+  1099→  1099→  1099→- Copy icon button
+  1100→  1100→  1100→- Click copies text to clipboard
+  1101→  1101→  1101→- Feedback: icon changes to checkmark for 2 seconds
+  1102→  1102→  1102→- Toast: "Copied to clipboard!"
+  1103→  1103→  1103→
+  1104→  1104→  1104→---
+  1105→  1105→  1105→
+  1106→  1106→  1106→### QRCode
+  1107→  1107→  1107→
+  1108→  1108→  1108→| Field | Value |
+  1109→  1109→  1109→|-------|-------|
+  1110→  1110→  1110→| **Path** | `components/ui/QRCode.tsx` |
+  1111→  1111→  1111→| **Type** | Server Component |
+  1112→  1112→  1112→| **Props** | `value: string`, `size?: number` (default: 200) |
+  1113→  1113→  1113→
+  1114→  1114→  1114→**Elements:**
+  1115→  1115→  1115→- QR code rendered as SVG (using a library like `qrcode.react`)
+  1116→  1116→  1116→- White QR code on dark background (or configurable)
+  1117→  1117→  1117→- Used primarily for cryptocurrency wallet addresses
+  1118→  1118→  1118→
+  1119→  1119→  1119→---
+  1120→  1120→  1120→
+  1121→  1121→  1121→### ThemeToggle
+  1122→  1122→  1122→
+  1123→  1123→  1123→| Field | Value |
+  1124→  1124→  1124→|-------|-------|
+  1125→  1125→  1125→| **Path** | `components/ui/ThemeToggle.tsx` |
+  1126→  1126→  1126→| **Type** | Client Component (`'use client'`) |
+  1127→  1127→  1127→| **Props** | None |
+  1128→  1128→  1128→
+  1129→  1129→  1129→**Elements:**
+  1130→  1130→  1130→- Sun/Moon icon toggle button
+  1131→  1131→  1131→- Switches between dark and light themes (dark is default/primary)
+  1132→  1132→  1132→- Persists preference in localStorage
+  1133→  1133→  1133→- Applies `dark` class on `<html>` element for Tailwind dark mode
+  1134→  1134→  1134→
+  1135→  1135→  1135→---
+  1136→  1136→  1136→
+  1137→  1137→  1137→### LanguageSelector
+  1138→  1138→  1138→
+  1139→  1139→  1139→| Field | Value |
+  1140→  1140→  1140→|-------|-------|
+  1141→  1141→  1141→| **Path** | `components/ui/LanguageSelector.tsx` |
+  1142→  1142→  1142→| **Type** | Client Component (`'use client'` — dropdown state) |
+  1143→  1143→  1143→| **Props** | `currentLanguage?: string`, `onLanguageChange?: (lang: string) => void` |
+  1144→  1144→  1144→
+  1145→  1145→  1145→**Elements:**
+  1146→  1146→  1146→- Globe icon button (trigger)
+  1147→  1147→  1147→- Dropdown with available languages (e.g., English, Spanish, French, Arabic, Chinese)
+  1148→  1148→  1148→- Current language shown with a checkmark
+  1149→  1149→  1149→- Persists selection in localStorage and user preferences
+  1150→  1150→  1150→- Triggers i18n context update
+  1151→  1151→  1151→
+  1152→  1152→  1152→---
+  1153→  1153→  1153→
+  1154→  1154→  1154→*End of Component Inventory Document — Phase 1*

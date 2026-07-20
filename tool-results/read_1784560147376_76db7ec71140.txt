@@ -1,0 +1,534 @@
+     1→     1→# Feature Inventory
+     2→     2→
+     3→     3→**Project:** Enterprise Investment Platform
+     4→     4→**Phase:** 1 — Discovery & Documentation
+     5→     5→**Last Updated:** 2025
+     6→     6→**Status:** Draft
+     7→     7→
+     8→     8→---
+     9→     9→
+    10→    10→## 1. Feature Overview
+    11→    11→
+    12→    12→This document provides a complete, categorized inventory of every feature the platform must include. Each feature is assigned a unique identifier, a descriptive name, a functional description, a priority level, a target phase, any dependencies on other features, and an estimated implementation complexity.
+    13→    13→
+    14→    14→### Priority Definitions
+    15→    15→
+    16→    16→- **P0 (Must Have):** Required for launch. The platform cannot function without this feature. Blocking if missing.
+    17→    17→- **P1 (Should Have):** Important for launch but not strictly blocking. Significant user experience or operational impact if absent.
+    18→    18→- **P2 (Nice to Have):** Desirable for launch but can be deferred to a post-launch update without major impact.
+    19→    19→
+    20→    20→### Phase Definitions
+    21→    21→
+    22→    22→- **Launch:** Implemented and available at the initial platform launch.
+    23→    23→- **Future:** Planned for a post-launch development cycle. Not a launch blocker.
+    24→    24→
+    25→    25→### Complexity Definitions
+    26→    26→
+    27→    27→- **Low:** Straightforward implementation, well-understood patterns, minimal integration points. Estimated 1–3 days.
+    28→    28→- **Medium:** Requires business logic, multiple integration points, or non-trivial UI. Estimated 4–8 days.
+    29→    29→- **High:** Complex business logic, multiple system integrations, significant UI complexity, or security-sensitive. Estimated 2+ weeks.
+    30→    30→
+    31→    31→---
+    32→    32→
+    33→    33→## 2. Authentication & Authorization
+    34→    34→
+    35→    35→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+    36→    36→|----|---------|----------|-------|-------------|------------|
+    37→    37→| F-AUTH-01 | User Registration | P0 | Launch | — | Medium |
+    38→    38→| F-AUTH-02 | User Login/Logout | P0 | Launch | F-AUTH-01 | Medium |
+    39→    39→| F-AUTH-03 | Email Verification (OTP) | P0 | Launch | F-AUTH-01 | Medium |
+    40→    40→| F-AUTH-04 | Password Reset | P0 | Launch | F-AUTH-01, F-NOTIF-02 | Medium |
+    41→    41→| F-AUTH-05 | Two-Factor Authentication (TOTP) | P0 | Launch | F-AUTH-02 | High |
+    42→    42→| F-AUTH-06 | Session Management (JWT) | P0 | Launch | F-AUTH-02 | High |
+    43→    43→| F-AUTH-07 | Device Tracking | P1 | Launch | F-AUTH-06 | Medium |
+    44→    44→| F-AUTH-08 | Account Lockout | P0 | Launch | F-AUTH-02 | Low |
+    45→    45→| F-AUTH-09 | RBAC System | P0 | Launch | — | High |
+    46→    46→
+    47→    47→### F-AUTH-01: User Registration
+    48→    48→
+    49→    49→Users create an account by providing email, username, password, and optional referral code. The system validates uniqueness of email and username, enforces password strength requirements (minimum 8 characters, uppercase, lowercase, number, special character), hashes the password using bcrypt, creates the user record with KYC Level 0, initializes both demo and live wallets with zero balances, and triggers an email verification OTP (F-AUTH-03). If a valid referral code is provided, the referral relationship is established.
+    50→    50→
+    51→    51→### F-AUTH-02: User Login/Logout
+    52→    52→
+    53→    53→Users authenticate with their email and password. The system verifies credentials against the stored hash, checks account status (active, suspended, locked), and returns JWT access and refresh tokens. Logout invalidates the active refresh token and clears the client-side token storage. Failed login attempts are tracked for the account lockout system (F-AUTH-08).
+    54→    54→
+    55→    55→### F-AUTH-03: Email Verification (OTP)
+    56→    56→
+    57→    57→Upon registration, a 6-digit one-time password (OTP) is generated and sent to the user's email. The OTP expires after a configurable duration (default: 15 minutes). The user enters the OTP on the verification page. Successful verification upgrades the user's KYC level from 0 to 1, enabling deposits and other platform features. Resend functionality allows users to request a new OTP after a cooldown period.
+    58→    58→
+    59→    59→### F-AUTH-04: Password Reset
+    60→    60→
+    61→    61→Users who have forgotten their password request a reset via email. The system generates a secure, single-use token with a configurable expiry (default: 1 hour), stores it hashed in the database, and sends a reset link via email. The user clicks the link, enters a new password (meeting strength requirements), and the password is updated. All existing sessions for the user are revoked. The reset token is invalidated after use or expiry.
+    62→    62→
+    63→    63→### F-AUTH-05: Two-Factor Authentication (TOTP)
+    64→    64→
+    65→    65→Users can enable 2FA from their security settings. The system generates a TOTP secret, displays it as a QR code for scanning with an authenticator app (Google Authenticator, Authy), and provides backup codes (one-time use). Users verify setup by entering a current TOTP code. When 2FA is enabled, the login flow requires both password and TOTP code. Users can disable 2FA by entering a current TOTP code (and optionally re-entering their password). Lost device recovery is handled through backup codes or admin-assisted verification.
+    66→    66→
+    67→    67→### F-AUTH-06: Session Management (JWT)
+    68→    68→
+    69→    69→The session system uses short-lived access tokens (15-minute TTL) and longer-lived refresh tokens (7-day TTL). Access tokens are sent with every API request in the Authorization header. When the access token expires, the client uses the refresh token to obtain a new access token pair. Refresh token rotation invalidates the old refresh token on each use, preventing token theft. Administrators can revoke all sessions for a user. Sessions are tracked in Redis for real-time revocation capability.
+    70→    70→
+    71→    71→### F-AUTH-07: Device Tracking
+    72→    72→
+    73→    73→The system records the device information (user agent, IP address, approximate geolocation) for each login session. Users can view a list of all devices that have active sessions. Suspicious login notifications are sent when a login occurs from a new device or unusual location. Users can manually revoke sessions for specific devices. This feature enhances account security visibility and provides an audit trail for support investigations.
+    74→    74→
+    75→    75→### F-AUTH-08: Account Lockout
+    76→    76→
+    77→    77→After a configurable number of consecutive failed login attempts (default: 5), the account is locked for a configurable duration (default: 30 minutes). Each subsequent failed attempt after unlock increases the lockout duration (exponential backoff). Account lockout status and attempt count are stored in Redis for fast access. An email notification is sent to the user when their account is locked, with instructions for unlocking or contacting support. Administrators can manually unlock accounts.
+    78→    78→
+    79→    79→### F-AUTH-09: RBAC System
+    80→    80→
+    81→    81→Role-based access control defines three primary roles: User, Admin, and Super Admin. Each API endpoint and UI route is annotated with the required role(s). The middleware layer enforces authorization by extracting the user's role from the JWT payload and comparing it against the endpoint's requirements. Permissions are structured hierarchically — Super Admin has all Admin permissions, Admin has all User permissions plus admin-specific operations. Additional custom roles can be defined for specialized admin functions (e.g., KYC Reviewer, Finance Manager) if needed.
+    82→    82→
+    83→    83→---
+    84→    84→
+    85→    85→## 3. User Management
+    86→    86→
+    87→    87→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+    88→    88→|----|---------|----------|-------|-------------|------------|
+    89→    89→| F-USER-01 | User Profile | P0 | Launch | F-AUTH-01 | Low |
+    90→    90→| F-USER-02 | Profile Settings | P0 | Launch | F-USER-01 | Low |
+    91→    91→| F-USER-03 | Password Change | P0 | Launch | F-AUTH-02 | Low |
+    92→    92→| F-USER-04 | Language Preference | P1 | Launch | — | Low |
+    93→    93→| F-USER-05 | Currency Preference | P1 | Launch | — | Low |
+    94→    94→| F-USER-06 | Notification Preferences | P1 | Launch | F-NOTIF-01, F-NOTIF-02 | Low |
+    95→    95→
+    96→    96→### F-USER-01: User Profile
+    97→    97→
+    98→    98→The user profile page displays the user's personal information (name, email, username, registration date), KYC verification level and status, wallet balance summary (demo and live), and referral code. The profile is visible to the user in a read-only view from the main profile page, with editable fields accessible through the settings page.
+    99→    99→
+   100→   100→### F-USER-02: Profile Settings
+   101→   101→
+   102→   102→Users can edit their profile information including display name, phone number (optional), and profile avatar (uploaded to Cloudinary, resized and optimized). Changes are persisted immediately with validation. Sensitive fields (email, username) require re-verification if changed to prevent account hijacking.
+   103→   103→
+   104→   104→### F-USER-03: Password Change
+   105→   105→
+   106→   106→Authenticated users can change their password by providing their current password and a new password meeting strength requirements. On successful password change, all existing sessions (except the current one) are revoked, and the user is prompted to re-authenticate on other devices. This ensures that a compromised session cannot be used to change the password and maintain access.
+   107→   107→
+   108→   108→### F-USER-04: Language Preference
+   109→   109→
+   110→   110→Users can select their preferred language from a dropdown in settings. The selection is stored in the user's profile and applied to all UI text, email content, and system messages. The platform detects the user's browser language on first visit and sets a default, which the user can override. Language changes take effect immediately without page reload.
+   111→   111→
+   112→   112→### F-USER-05: Currency Preference
+   113→   113→
+   114→   114→Users can select their preferred display currency (USD, EUR, GBP, BTC, ETH) for wallet balances and transaction amounts. The underlying accounting always uses USD, but displayed amounts are converted at the current exchange rate. This is a display preference only and does not affect deposit/withdrawal currencies.
+   115→   115→
+   116→   116→### F-USER-06: Notification Preferences
+   117→   117→
+   118→   118→Users can configure which notifications they receive via email and which appear as in-app notifications. Notification categories include: account activity (logins, password changes), deposits, investments, withdrawals, KYC updates, and referral commissions. Each category has independent toggles for email and in-app channels.
+   119→   119→
+   120→   120→---
+   121→   121→
+   122→   122→## 4. KYC System
+   123→   123→
+   124→   124→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   125→   125→|----|---------|----------|-------|-------------|------------|
+   126→   126→| F-KYC-01 | Document Upload | P0 | Launch | F-USER-02 | Medium |
+   127→   127→| F-KYC-02 | KYC Level Progression | P0 | Launch | F-KYC-01 | Medium |
+   128→   128→| F-KYC-03 | Admin KYC Review | P0 | Launch | F-KYC-01, F-ADM-01 | Medium |
+   129→   129→| F-KYC-04 | KYC Status Notifications | P0 | Launch | F-KYC-03, F-NOTIF-02 | Low |
+   130→   130→| F-KYC-05 | Document Re-upload | P0 | Launch | F-KYC-03 | Low |
+   131→   131→
+   132→   132→### F-KYC-01: Document Upload
+   133→   133→
+   134→   134→Users upload KYC documents through a secure, guided interface. The upload component supports common image formats (JPG, PNG) and PDF. Documents are uploaded directly to Cloudinary with private access (signed URLs). The upload interface provides clear instructions on acceptable document types, image quality requirements, and data that must be visible. File size limits and format restrictions are enforced client-side and server-side.
+   135→   135→
+   136→   136→### F-KYC-02: KYC Level Progression
+   137→   137→
+   138→   138→The KYC system implements progressive verification levels: Level 0 (unverified — registration only), Level 1 (email verified — basic platform access), Level 2 (government ID verified — increased deposit/withdrawal limits), Level 3 (ID + proof of address verified — full platform access). Each level has defined deposit and withdrawal limits. Users see their current level, limits, and the requirements to advance to the next level on their profile page.
+   139→   139→
+   140→   140→### F-KYC-03: Admin KYC Review
+   141→   141→
+   142→   142→Administrators access a dedicated KYC review queue that shows all pending submissions ordered by submission date. Each submission displays the user's information, uploaded documents (viewable in a comparison lightbox), and admin action buttons (approve, reject, request additional documents). The review interface supports side-by-side document comparison for ID verification. Approved submissions advance the user's KYC level; rejected submissions notify the user with specific feedback.
+   143→   143→
+   144→   144→### F-KYC-04: KYC Status Notifications
+   145→   145→
+   146→   146→Users receive email and in-app notifications at each KYC status transition: submission received, under review, approved, rejected (with feedback), and additional documents requested. Notifications include clear next steps and links to the relevant page (re-upload, profile, etc.). Admin actions that change KYC status are the trigger for these notifications.
+   147→   147→
+   148→   148→### F-KYC-05: Document Re-upload
+   149→   149→
+   150→   150→When a KYC submission is rejected or additional documents are requested, the user can re-upload the required documents through their profile page. The re-upload interface pre-fills the context of the rejection (which document was rejected, why, what is needed). The re-submission enters the admin review queue with a reference to the previous submission for continuity.
+   151→   151→
+   152→   152→---
+   153→   153→
+   154→   154→## 5. Wallet System
+   155→   155→
+   156→   156→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   157→   157→|----|---------|----------|-------|-------------|------------|
+   158→   158→| F-WALLET-01 | Wallet Dashboard | P0 | Launch | F-WALLET-02, F-WALLET-03 | Medium |
+   159→   159→| F-WALLET-02 | Balance Display (Demo + Live) | P0 | Launch | F-AUTH-02 | Low |
+   160→   160→| F-WALLET-03 | Transaction History | P0 | Launch | F-WALLET-02 | Medium |
+   161→   161→| F-WALLET-04 | Pending/Available Balance | P0 | Launch | F-WALLET-02 | Medium |
+   162→   162→
+   163→   163→### F-WALLET-01: Wallet Dashboard
+   164→   164→
+   165→   165→The wallet dashboard provides a comprehensive view of the user's financial position. It displays demo and live wallet balances side by side, a summary of active investments and expected returns, recent transactions (last 10), and quick action buttons (deposit, invest, withdraw). The dashboard is the primary financial overview page and is accessible from the main navigation.
+   166→   166→
+   167→   167→### F-WALLET-02: Balance Display (Demo + Live)
+   168→   168→
+   169→   169→Each user has two separate wallets: a demo wallet for practice (funded with virtual credits) and a live wallet for real transactions. The balance display shows total balance, available balance (funds that can be used immediately), and pending balance (funds from processing deposits or maturing investments). The demo and live balances are visually distinct to prevent user confusion. The live wallet is the primary display and is always prominent.
+   170→   170→
+   171→   171→### F-WALLET-03: Transaction History
+   172→   172→
+   173→   173→A comprehensive, filterable transaction history displays all financial transactions associated with the user's wallets. Each transaction record includes: type (deposit, withdrawal, investment, return, commission), amount, status (pending, completed, failed, reversed), timestamp, and a reference ID. Filters include: transaction type, status, date range, and wallet type (demo/live). Pagination supports browsing through large transaction histories. Transaction details are viewable by clicking on a record.
+   174→   174→
+   175→   175→### F-WALLET-04: Pending/Available Balance
+   176→   176→
+   177→   177→The wallet distinguishes between available balance (funds that can be immediately used for investments or withdrawals) and pending balance (funds that are being processed or are locked in active investments). Deposits are pending until verified (crypto confirmation or gift card admin approval). Investment returns are pending until the investment matures. Only the available balance is used for investment funding and withdrawal calculations.
+   178→   178→
+   179→   179→---
+   180→   180→
+   181→   181→## 6. Deposit System
+   182→   182→
+   183→   183→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   184→   184→|----|---------|----------|-------|-------------|------------|
+   185→   185→| F-DEP-01 | Crypto Deposit (BTC, ETH, USDT) | P0 | Launch | F-WALLET-02 | High |
+   186→   186→| F-DEP-02 | Crypto Address Generation | P0 | Launch | F-DEP-01 | High |
+   187→   187→| F-DEP-03 | Crypto Transaction Tracking | P1 | Launch | F-DEP-01 | Medium |
+   188→   188→| F-DEP-04 | Gift Card Deposit | P0 | Launch | F-WALLET-02 | Medium |
+   189→   189→| F-DEP-05 | Gift Card Screenshot Upload | P0 | Launch | F-DEP-04 | Low |
+   190→   190→| F-DEP-06 | Gift Card Admin Verification | P0 | Launch | F-DEP-04, F-ADM-01 | Medium |
+   191→   191→| F-DEP-07 | Deposit Notifications | P0 | Launch | F-DEP-01, F-DEP-04, F-NOTIF-02 | Low |
+   192→   192→
+   193→   193→### F-DEP-01: Crypto Deposit (BTC, ETH, USDT)
+   194→   194→
+   195→   195→Users can deposit cryptocurrency by sending funds to a platform-provided address. The deposit page shows the user's unique deposit address for each supported cryptocurrency, a QR code for easy scanning, the current exchange rate, and an estimated USD value. The system monitors the blockchain for incoming transactions matching user deposit addresses. Upon detection, the transaction enters a confirmation tracking state.
+   196→   196→
+   197→   197→### F-DEP-02: Crypto Address Generation
+   198→   198→
+   199→   199→Each user receives a unique deposit address for each supported cryptocurrency. Addresses are generated using a hierarchical deterministic (HD) wallet approach, deriving addresses from a master key. This allows the platform to generate unlimited unique addresses without managing separate private keys for each. Generated addresses are stored in the database and associated with the user. The address generation is deterministic — the same user always receives the same address for the same cryptocurrency, simplifying the user experience.
+   200→   200→
+   201→   201→### F-DEP-03: Crypto Transaction Tracking
+   202→   202→
+   203→   203→After a crypto deposit transaction is detected on the blockchain, the system tracks its confirmation count. BTC requires configurable confirmations (default: 3), ETH requires 12 confirmations, and USDT requires 12 confirmations. The user sees a real-time status of their deposit (detected, confirming, confirmed, credited). Once the required confirmations are reached, the deposit amount (converted to USD at the confirmation-time exchange rate) is credited to the user's live wallet.
+   204→   204→
+   205→   205→### F-DEP-04: Gift Card Deposit
+   206→   206→
+   207→   207→Users can deposit funds by submitting gift card details. The deposit form captures: gift card brand (from a dropdown of supported brands), card value (selected from predefined denominations), card number, and PIN code. The submission is entered into a pending state and routed to the admin verification queue. Users see a clear status indicator showing their submission is under review.
+   208→   208→
+   209→   209→### F-DEP-05: Gift Card Screenshot Upload
+   210→   210→
+   211→   211→As part of the gift card deposit submission, users upload a clear photograph or screenshot of the physical gift card showing the card number, PIN, and any security codes. The upload uses the same Cloudinary integration as KYC documents, with private access and file validation. Clear instructions guide users on photograph quality requirements (readable, well-lit, no cropped edges).
+   212→   212→
+   213→   213→### F-DEP-06: Gift Card Admin Verification
+   214→   214→
+   215→   215→Administrators review gift card deposit submissions in a dedicated queue. Each submission shows the card details, uploaded image, and the user's information. The admin can verify the card balance (via external tools or APIs), approve the deposit (crediting the user's live wallet), or reject the deposit (notifying the user with a reason). A fraud scoring indicator highlights submissions that match known fraud patterns. The admin can also flag a user for review based on their submission history.
+   216→   216→
+   217→   217→### F-DEP-07: Deposit Notifications
+   218→   218→
+   219→   219→Users receive email and in-app notifications for key deposit events: crypto deposit detected, crypto deposit confirmed and credited, gift card submission received, gift card verified and credited, and gift card rejected. Notifications include the deposit amount, USD value, and current wallet balance. Failed crypto deposits (insufficient confirmations, transaction reverted) are also notified.
+   220→   220→
+   221→   221→---
+   222→   222→
+   223→   223→## 7. Investment Plans
+   224→   224→
+   225→   225→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   226→   226→|----|---------|----------|-------|-------------|------------|
+   227→   227→| F-INV-01 | Plan Browsing | P0 | Launch | — | Low |
+   228→   228→| F-INV-02 | Plan Selection & Funding | P0 | Launch | F-INV-01, F-WALLET-04 | High |
+   229→   229→| F-INV-03 | Active Investments Tracking | P0 | Launch | F-INV-02 | Medium |
+   230→   230→| F-INV-04 | Investment Maturity & Returns | P0 | Launch | F-INV-02 | High |
+   231→   231→| F-INV-05 | Investment History | P0 | Launch | F-INV-02 | Low |
+   232→   232→| F-INV-06 | Admin Plan Management | P0 | Launch | F-ADM-01 | Medium |
+   233→   233→
+   234→   234→### F-INV-01: Plan Browsing
+   235→   235→
+   236→   236→Users can browse all available investment plans on a dedicated plans page and from the investment section of the dashboard. Each plan displays: name (Basic, Silver, Gold, Platinum), minimum and maximum investment amounts, investment duration, expected return rate, and a brief description. Plans are visually differentiated with the red and black theme. Users who are not yet KYC-verified at the required level see the plans but cannot invest.
+   237→   237→
+   238→   238→### F-INV-02: Plan Selection & Funding
+   239→   239→
+   240→   240→Users select a plan and enter their investment amount. The system validates that the amount falls within the plan's minimum and maximum thresholds, that the user's available live wallet balance is sufficient, and that the user's KYC level permits the investment. Upon confirmation, the investment amount is deducted from the user's available balance and moved to pending, and an active investment record is created with the start date, expected maturity date, and expected return amount.
+   241→   241→
+   242→   242→### F-INV-03: Active Investments Tracking
+   243→   243→
+   244→   244→Users can view all their active investments on a dedicated page. Each investment shows: plan name, invested amount, start date, maturity date, expected return, days remaining, and a progress indicator. Active investments are listed in chronological order by start date. The investment section of the dashboard also displays a summary of total active investments and total expected returns.
+   245→   245→
+   246→   246→### F-INV-04: Investment Maturity & Returns
+   247→   247→
+   248→   248→When an investment reaches its maturity date, a background worker processes the maturity. The invested principal and the calculated return are credited to the user's live wallet available balance. The investment status is updated to "matured." The user receives email and in-app notifications of the maturity and the credited amount. The referral commission system is triggered for the investor's referrer. This process is idempotent — if the worker fails and retries, the credit is not applied twice (enforced by a processed flag on the investment record).
+   249→   249→
+   250→   250→### F-INV-05: Investment History
+   251→   251→
+   252→   252→A historical view of all investments (active, matured, and any other terminal states) with filtering and sorting. Each record shows the plan, amount, return, dates, and final status. This provides users with a complete record of their investment activity for personal tracking and reference.
+   253→   253→
+   254→   254→### F-INV-06: Admin Plan Management
+   255→   255→
+   256→   256→Administrators can create, edit, and deactivate investment plans through the admin dashboard. Each plan has configurable parameters: name, description, minimum amount, maximum amount, duration (in hours or days), return rate (percentage), and KYC level requirement. Plan changes only affect new investments — existing active investments continue under the terms in effect at the time of investment. This immutability of active investment terms is critical for user trust and regulatory compliance.
+   257→   257→
+   258→   258→---
+   259→   259→
+   260→   260→## 8. Withdrawal System
+   261→   261→
+   262→   262→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   263→   263→|----|---------|----------|-------|-------------|------------|
+   264→   264→| F-WD-01 | Withdrawal Request | P0 | Launch | F-WALLET-04 | Medium |
+   265→   265→| F-WD-02 | Fee Calculation Display | P0 | Launch | F-WD-01 | Low |
+   266→   266→| F-WD-03 | Admin Withdrawal Approval | P0 | Launch | F-WD-01, F-ADM-01 | Medium |
+   267→   267→| F-WD-04 | Withdrawal Status Tracking | P0 | Launch | F-WD-01 | Low |
+   268→   268→| F-WD-05 | Withdrawal Notifications | P0 | Launch | F-WD-01, F-WD-03, F-NOTIF-02 | Low |
+   269→   269→
+   270→   270→### F-WD-01: Withdrawal Request
+   271→   271→
+   272→   272→Users initiate a withdrawal from their available live wallet balance. The withdrawal form captures the amount (pre-filled from available balance, editable down) and the withdrawal destination (crypto wallet address for crypto withdrawals). The system validates that the amount does not exceed the available balance, that the withdrawal destination is in a valid format for the selected cryptocurrency, and that the user's KYC level permits withdrawals of the requested amount. The withdrawal amount is deducted from the available balance and placed in a pending state.
+   273→   273→
+   274→   274→### F-WD-02: Fee Calculation Display
+   275→   275→
+   276→   276→Before confirming a withdrawal, the system clearly displays the fee calculation: the requested amount, the 21% platform fee, and the net amount the user will receive. The fee is shown both as an absolute value and as a percentage. This transparency ensures users understand the cost of withdrawal before committing. The fee is non-negotiable and consistent across all withdrawal amounts and methods.
+   277→   277→
+   278→   278→### F-WD-03: Admin Withdrawal Approval
+   279→   279→
+   280→   280→Withdrawal requests enter an admin approval queue. Each request shows the user's information, withdrawal amount, fee, net amount, and withdrawal destination. The admin can approve (triggering the actual withdrawal processing), reject (returning the funds to the user's available balance), or request additional information from the user. Large withdrawals (above a configurable threshold) require additional verification steps. The approval process is logged in the audit trail with the admin's identity and timestamp.
+   281→   281→
+   282→   282→### F-WD-04: Withdrawal Status Tracking
+   283→   283→
+   284→   284→Users can track the status of their withdrawal requests through the transaction history. Statuses include: pending (awaiting admin review), processing (approved and being sent), completed (funds sent, transaction hash available), and rejected (funds returned to wallet). Each status change triggers a notification. For crypto withdrawals, the transaction hash is displayed once the withdrawal is completed, allowing the user to verify on the blockchain.
+   285→   285→
+   286→   286→### F-WD-05: Withdrawal Notifications
+   287→   287→
+   288→   288→Users receive email and in-app notifications for all withdrawal status changes: request submitted, approved, processing, completed (with transaction hash), and rejected (with reason and returned amount). These notifications keep users informed throughout the withdrawal process and reduce support inquiries about withdrawal status.
+   289→   289→
+   290→   290→---
+   291→   291→
+   292→   292→## 9. Referral System
+   293→   293→
+   294→   294→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   295→   295→|----|---------|----------|-------|-------------|------------|
+   296→   296→| F-REF-01 | Referral Code/Link Generation | P0 | Launch | F-AUTH-01 | Low |
+   297→   297→| F-REF-02 | Referral Tracking Dashboard | P0 | Launch | F-REF-01 | Medium |
+   298→   298→| F-REF-03 | Direct Referral Commission (10%) | P0 | Launch | F-REF-01, F-INV-04 | High |
+   299→   299→| F-REF-04 | Binary Tree Structure | P0 | Launch | F-REF-01 | High |
+   300→   300→| F-REF-05 | Binary Bonus Calculation | P0 | Launch | F-REF-04, F-INV-04 | High |
+   301→   301→| F-REF-06 | Commission Payout History | P0 | Launch | F-REF-03, F-REF-05 | Low |
+   302→   302→| F-REF-07 | Admin Referral Management | P0 | Launch | F-ADM-01 | Medium |
+   303→   303→
+   304→   304→### F-REF-01: Referral Code/Link Generation
+   305→   305→
+   306→   306→Each user receives a unique referral code upon registration. The referral code is displayed on the user's dashboard and can be shared as a direct link (`https://platform.com/ref/CODE`). When a new user registers using this link or enters the code during registration, the referral relationship is established. The referral code is permanent and cannot be changed.
+   307→   307→
+   308→   308→### F-REF-02: Referral Tracking Dashboard
+   309→   309→
+   310→   310→A dedicated referral dashboard shows the user their referral network: total direct referrals, binary tree visualization (left and right legs), active referrals, total commissions earned, and commission history. The dashboard provides a clear overview of the referral program's performance for the individual user and serves as motivation for active referral participation.
+   311→   311→
+   312→   312→### F-REF-03: Direct Referral Commission (10%)
+   313→   313→
+   314→   314→When a directly referred user earns investment returns, the referring user receives a 10% commission on those returns. The commission is calculated at the time the investment matures and is credited to the referrer's live wallet. The commission amount is recorded in the referrer's transaction history with a reference to the triggering investment. This commission structure is configurable by administrators.
+   315→   315→
+   316→   316→### F-REF-04: Binary Tree Structure
+   317→   317→
+   318→   318→The referral system uses a binary tree structure where each user can have at most two direct referrals: one on the left leg and one on the right leg. When a user refers more than two people, additional referrals are placed in the binary tree according to a configurable placement strategy (typically, new referrals are placed in the leg with fewer members to maintain balance). The tree structure is stored in the database and supports efficient traversal for commission calculations.
+   319→   319→
+   320→   320→### F-REF-05: Binary Bonus Calculation
+   321→   321→
+   322→   322→Binary bonuses are calculated based on the investment volume of the weaker leg in the user's binary tree. At configurable intervals (daily, weekly, or on investment maturity), the system compares the total investment volume on the left leg and right leg. The bonus is calculated as a percentage (configurable) of the weaker leg's volume, up to a daily or weekly cap (configurable). Binary bonuses are credited to the user's live wallet and recorded in the transaction history.
+   323→   323→
+   324→   324→### F-REF-06: Commission Payout History
+   325→   325→
+   326→   326→A detailed history of all commission payouts (both direct referral commissions and binary bonuses) is displayed to the user. Each record shows: commission type, source (which referral or investment triggered the commission), amount, timestamp, and current wallet balance after the commission. The history is filterable by commission type and date range.
+   327→   327→
+   328→   328→### F-REF-07: Admin Referral Management
+   329→   329→
+   330→   330→Administrators can view the global referral tree, inspect individual user referral networks, view commission calculations and payouts, and adjust referral program parameters (direct commission percentage, binary bonus percentage, binary bonus cap, placement strategy). Administrators can also investigate and resolve referral-related issues (e.g., misassigned referrals, commission calculation disputes).
+   331→   331→
+   332→   332→---
+   333→   333→
+   334→   334→## 10. Notifications
+   335→   335→
+   336→   336→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   337→   337→|----|---------|----------|-------|-------------|------------|
+   338→   338→| F-NOTIF-01 | In-App Notification Center | P0 | Launch | F-AUTH-02 | Medium |
+   339→   339→| F-NOTIF-02 | Email Notifications | P0 | Launch | — | Medium |
+   340→   340→| F-NOTIF-03 | Notification Preferences | P1 | Launch | F-NOTIF-01, F-NOTIF-02 | Low |
+   341→   341→| F-NOTIF-04 | Admin Notifications | P0 | Launch | F-ADM-01 | Low |
+   342→   342→| F-NOTIF-05 | Real-Time Updates | P1 | Launch | F-NOTIF-01 | Medium |
+   343→   343→
+   344→   344→### F-NOTIF-01: In-App Notification Center
+   345→   345→
+   346→   346→A notification bell icon in the header displays the count of unread notifications. Clicking the icon opens a dropdown panel listing recent notifications with timestamps and read/unread status. A dedicated notifications page shows the full notification history with filtering capabilities. Notifications are marked as read when viewed. The notification center stores all notifications in the database, ensuring they persist across sessions and devices.
+   347→   347→
+   348→   348→### F-NOTIF-02: Email Notifications
+   349→   349→
+   350→   350→Transactional emails are sent for all critical user events using Resend and React Email. Email templates are designed in the platform's red and black theme with clear, professional layouts. Email types include: verification OTP, password reset, 2FA setup, deposit status, investment activation, investment maturity, withdrawal status, KYC status, and commission credits. Emails include action links where appropriate and are optimized for both desktop and mobile email clients.
+   351→   351→
+   352→   352→### F-NOTIF-03: Notification Preferences
+   353→   353→
+   354→   354→Users can configure their notification preferences to control which events trigger email notifications, which trigger in-app notifications, and which are disabled entirely. Preferences are organized by category (account, deposits, investments, withdrawals, KYC, referrals) and can be independently toggled for each channel (email, in-app). Default preferences are set to receive all critical notifications via both channels.
+   355→   355→
+   356→   356→### F-NOTIF-04: Admin Notifications
+   357→   357→
+   358→   358→Administrators receive email and in-app notifications for operational events that require attention: new KYC submissions, new gift card deposits pending verification, withdrawal requests pending approval, large withdrawal requests, suspicious activity alerts, and system error alerts. Admin notifications ensure timely handling of user requests and system issues.
+   359→   359→
+   360→   360→### F-NOTIF-05: Real-Time Updates
+   361→   361→
+   362→   362→For time-sensitive information (deposit confirmations, withdrawal status changes, new commissions), the platform provides real-time updates through Server-Sent Events (SSE) or WebSocket connections. Real-time updates appear as in-app toasts or update the UI without a page refresh. This feature enhances the user experience by providing immediate feedback for financial events.
+   363→   363→
+   364→   364→---
+   365→   365→
+   366→   366→## 11. Admin Features
+   367→   367→
+   368→   368→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   369→   369→|----|---------|----------|-------|-------------|------------|
+   370→   370→| F-ADM-01 | Admin Dashboard | P0 | Launch | F-AUTH-09 | High |
+   371→   371→| F-ADM-02 | User Management | P0 | Launch | F-ADM-01 | Medium |
+   372→   372→| F-ADM-03 | KYC Review Queue | P0 | Launch | F-ADM-01, F-KYC-03 | Medium |
+   373→   373→| F-ADM-04 | Deposit Verification | P0 | Launch | F-ADM-01, F-DEP-06 | Medium |
+   374→   374→| F-ADM-05 | Withdrawal Approval | P0 | Launch | F-ADM-01, F-WD-03 | Medium |
+   375→   375→| F-ADM-06 | Investment Plan CRUD | P0 | Launch | F-ADM-01, F-INV-06 | Medium |
+   376→   376→| F-ADM-07 | Financial Reports | P1 | Launch | F-ADM-01 | High |
+   377→   377→| F-ADM-08 | Audit Log Viewer | P0 | Launch | F-ADM-01 | Medium |
+   378→   378→| F-ADM-09 | System Settings | P1 | Launch | F-ADM-01 | Medium |
+   379→   379→| F-ADM-10 | Support Ticket Management | P0 | Launch | F-ADM-01, F-SUP-01 | Medium |
+   380→   380→
+   381→   381→### F-ADM-01: Admin Dashboard
+   382→   382→
+   383→   383→The admin dashboard is the central operations hub, providing an overview panel with key metrics (total users, new registrations today, active investments, total platform balance, pending withdrawals, pending KYC, pending deposits), quick-access links to all admin sections, and a recent activity feed showing the latest platform events. The dashboard is the first page administrators see upon login and provides immediate situational awareness of the platform's state.
+   384→   384→
+   385→   385→### F-ADM-02: User Management
+   386→   386→
+   387→   387→Administrators can search for users by email, username, or ID, view detailed user profiles (all personal information, KYC status, wallet balances, transaction history, referral network), edit user details, suspend or activate accounts, and manually adjust wallet balances (with audit logging and dual-approval for significant adjustments). The user management interface includes pagination, sorting, and filtering for efficient navigation of the user base.
+   388→   388→
+   389→   389→### F-ADM-03: KYC Review Queue
+   390→   390→
+   391→   391→A dedicated queue interface displays all pending KYC submissions ordered by submission date. Each submission card shows the user's basic info, submitted documents (viewable in a lightbox with zoom), and action buttons (approve, reject, request more info). Bulk actions are available for common operations. The queue displays counts for pending, approved today, and rejected today.
+   392→   392→
+   393→   393→### F-ADM-04: Deposit Verification
+   394→   394→
+   395→   395→The gift card deposit verification queue shows all pending gift card submissions with card details, uploaded images, user information, and fraud scoring indicators. Administrators can verify card balances, approve deposits, or reject with reasons. The queue supports filtering by card brand, submission date, and fraud score. Approved deposits immediately credit the user's wallet.
+   396→   396→
+   397→   397→### F-ADM-05: Withdrawal Approval
+   398→   398→
+   399→   399→The withdrawal approval queue displays all pending withdrawal requests with user information, withdrawal amount, fee, net amount, and destination address. Administrators can approve (triggering withdrawal processing), reject (returning funds), or request additional verification. The queue highlights large withdrawals and withdrawals from recently registered accounts for additional scrutiny.
+   400→   400→
+   401→   401→### F-ADM-06: Investment Plan CRUD
+   402→   402→
+   403→   403→Administrators can create new investment plans, edit existing plans (changes affect new investments only), deactivate plans (preventing new investments while existing ones continue), and view plan performance metrics (total invested, active investments, total returns paid). Plan management uses a form-based interface with validation for all numeric fields.
+   404→   404→
+   405→   405→### F-ADM-07: Financial Reports
+   406→   406→
+   407→   407→Predefined financial reports provide visibility into platform financials: daily/weekly/monthly deposit summaries, withdrawal summaries, commission payouts, platform balance breakdown, and net revenue calculations. Reports are displayed in tabular format with date range selectors and support export to CSV for external analysis. Reports help administrators and stakeholders make informed financial decisions.
+   408→   408→
+   409→   409→### F-ADM-08: Audit Log Viewer
+   410→   410→
+   411→   411→A comprehensive audit log records all significant admin actions (user edits, KYC approvals/rejections, deposit verifications, withdrawal approvals, balance adjustments, plan changes) with the admin's identity, timestamp, IP address, and detailed change description. The audit log viewer provides search, filter, and pagination capabilities. The audit log is immutable — entries cannot be edited or deleted, only viewed.
+   412→   412→
+   413→   413→### F-ADM-09: System Settings
+   414→   414→
+   415→   415→A settings management interface allows administrators to configure platform-wide parameters: commission rates, withdrawal fees, KYC level limits, investment plan defaults, email templates, and platform maintenance mode. Changes to system settings are audit-logged and take effect immediately. A settings history shows who changed what and when.
+   416→   416→
+   417→   417→### F-ADM-10: Support Ticket Management
+   418→   418→
+   419→   419→Administrators view and respond to all support tickets through the admin dashboard. The ticket management interface shows open tickets, allows assignment to specific admins, supports internal notes (not visible to the user), and tracks response time against SLA targets. Ticket status transitions (open, in progress, waiting for user, resolved, closed) are tracked. Analytics show ticket volume trends and average resolution times.
+   420→   420→
+   421→   421→---
+   422→   422→
+   423→   423→## 12. Support
+   424→   424→
+   425→   425→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   426→   426→|----|---------|----------|-------|-------------|------------|
+   427→   427→| F-SUP-01 | Support Ticket Creation | P0 | Launch | F-AUTH-02 | Medium |
+   428→   428→| F-SUP-02 | Ticket Conversation | P0 | Launch | F-SUP-01 | Medium |
+   429→   429→| F-SUP-03 | FAQ/Knowledge Base | P1 | Launch | — | Medium |
+   430→   430→| F-SUP-04 | Contact Form | P0 | Launch | — | Low |
+   431→   431→
+   432→   432→### F-SUP-01: Support Ticket Creation
+   433→   433→
+   434→   434→Authenticated users can create support tickets by selecting a category (account issues, deposits, withdrawals, investments, KYC, referrals, other), writing a subject and description, and optionally attaching screenshots or documents. Each ticket receives a unique reference number. A confirmation notification is sent to the user with the ticket reference number for tracking purposes.
+   435→   435→
+   436→   436→### F-SUP-02: Ticket Conversation
+   437→   437→
+   438→   438→Users can view their open and past support tickets, read admin responses, and submit follow-up messages. The conversation interface displays messages chronologically with clear visual distinction between user messages and admin responses. Users can close tickets that they consider resolved. New admin responses trigger in-app and email notifications.
+   439→   439→
+   440→   440→### F-SUP-03: FAQ/Knowledge Base
+   441→   441→
+   442→   442→A public-facing FAQ page provides answers to common questions organized by category (getting started, deposits, investments, withdrawals, referrals, KYC, security, account management). Each FAQ entry has a clear question and answer. The FAQ is searchable. Content is managed through the admin panel or directly in code (for launch). This feature reduces support ticket volume by providing self-service answers to common questions.
+   443→   443→
+   444→   444→### F-SUP-04: Contact Form
+   445→   445→
+   446→   446→A simple contact form on the public contact page allows non-authenticated visitors (and authenticated users who prefer it) to send a message to the support team. The form captures name, email, subject, and message. Submissions are routed to the admin support ticket system as a new ticket. A confirmation message is displayed to the user after submission.
+   447→   447→
+   448→   448→---
+   449→   449→
+   450→   450→## 13. Public Pages
+   451→   451→
+   452→   452→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   453→   453→|----|---------|----------|-------|-------------|------------|
+   454→   454→| F-PUB-01 | Landing Page | P0 | Launch | — | Medium |
+   455→   455→| F-PUB-02 | About Page | P1 | Launch | — | Low |
+   456→   456→| F-PUB-03 | FAQ Page | P1 | Launch | F-SUP-03 | Low |
+   457→   457→| F-PUB-04 | Contact Page | P0 | Launch | F-SUP-04 | Low |
+   458→   458→| F-PUB-05 | Plans Page | P0 | Launch | F-INV-01 | Medium |
+   459→   459→| F-PUB-06 | Privacy Policy | P0 | Launch | — | Low |
+   460→   460→| F-PUB-07 | Terms of Service | P0 | Launch | — | Low |
+   461→   461→| F-PUB-08 | Newsletter Subscription | P2 | Future | — | Low |
+   462→   462→
+   463→   463→### F-PUB-01: Landing Page
+   464→   464→
+   465→   465→The landing page is the primary marketing and conversion page for the platform. It features: a hero section with headline, value proposition, and call-to-action (register button), a features section highlighting key platform benefits, a plans overview section showing all four investment tiers, a testimonials or trust section (if available), and a footer with links to all public pages, social media, and legal documents. The page is fully responsive and optimized for conversion with the red and black dark theme.
+   466→   466→
+   467→   467→### F-PUB-02: About Page
+   468→   468→
+   469→   469→The about page provides information about the company, its mission, its team, and its values. Content is structured with clear headings and may include team member profiles. The page builds trust and credibility with prospective users and is important for regulatory transparency.
+   470→   470→
+   471→   471→### F-PUB-03: FAQ Page
+   472→   472→
+   473→   473→The public FAQ page displays the same content as the admin-managed FAQ/knowledge base (F-SUP-03) in a user-friendly format. Questions are organized by category with expandable/collapsible answers. A search bar allows users to quickly find relevant answers. This is the self-service support entry point for non-authenticated visitors.
+   474→   474→
+   475→   475→### F-PUB-04: Contact Page
+   476→   476→
+   477→   477→The contact page provides multiple ways to reach the support team: a contact form (F-SUP-04), email address, and optionally social media links. The page is clean and straightforward, encouraging users to reach out with questions or concerns before registering.
+   478→   478→
+   479→   479→### F-PUB-05: Plans Page
+   480→   480→
+   481→   481→A detailed plans page displays all four investment plans (Basic, Silver, Gold, Platinum) with complete information: tier name, investment range, duration, expected return rate, and any additional benefits or requirements. Plans are presented in a comparison format (cards or table) that makes it easy for users to compare options. The page is designed to drive registration and investment.
+   482→   482→
+   483→   483→### F-PUB-06: Privacy Policy
+   484→   484→
+   485→   485→A comprehensive privacy policy page detailing data collection practices, data usage, data storage, third-party data sharing, cookie usage, user rights (access, correction, deletion, portability), and contact information for privacy-related inquiries. The privacy policy is reviewed by legal counsel and is a regulatory requirement.
+   486→   486→
+   487→   487→### F-PUB-07: Terms of Service
+   488→   488→
+   489→   489→A comprehensive terms of service page detailing user obligations, platform disclaimers, limitation of liability, dispute resolution, investment risk disclosures, withdrawal fee disclosure, and governing law. The terms of service are reviewed by legal counsel and must be accepted by users during registration.
+   490→   490→
+   491→   491→### F-PUB-08: Newsletter Subscription
+   492→   492→
+   493→   493→A newsletter subscription form allows visitors to subscribe to platform updates, news, and promotional content. Subscribers provide their email address and receive a confirmation email. This feature is deferred to a post-launch update and is not required for the initial launch.
+   494→   494→
+   495→   495→---
+   496→   496→
+   497→   497→## 14. Charts & Analytics
+   498→   498→
+   499→   499→| ID | Feature | Priority | Phase | Dependencies | Complexity |
+   500→   500→|----|---------|----------|-------|-------------|------------|
+   501→   501→| F-CHART-01 | Portfolio Performance Chart | P1 | Launch | F-WALLET-01 | Medium |
+   502→   502→| F-CHART-02 | Earnings Over Time Chart | P1 | Launch | F-WALLET-01, F-REF-06 | Medium |
+   503→   503→| F-CHART-03 | Investment Distribution Chart | P2 | Future | F-CHART-01 | Low |
+   504→   504→| F-CHART-04 | Referral Network Visualization | P2 | Future | F-REF-02 | High |
+   505→   505→
+   506→   506→### F-CHART-01: Portfolio Performance Chart
+   507→   507→
+   508→   508→An interactive line chart on the user's dashboard shows portfolio performance over time, plotting the total wallet balance (available + invested) on a time axis. Users can select time ranges (7 days, 30 days, 90 days, all time). The chart is implemented using a lightweight charting library (Recharts or Chart.js) with the red and black theme applied to all chart elements.
+   509→   509→
+   510→   510→### F-CHART-02: Earnings Over Time Chart
+   511→   511→
+   512→   512→A bar or area chart displays cumulative earnings over time, broken down by source (investment returns, direct referral commissions, binary bonuses). Users can see the growth trajectory of their earnings and understand which revenue streams contribute most to their total returns.
+   513→   513→
+   514→   514→### F-CHART-03: Investment Distribution Chart
+   515→   515→
+   516→   516→A pie or donut chart shows the distribution of the user's investments across the four plan tiers. This helps users understand their portfolio allocation at a glance. Deferred to a post-launch update.
+   517→   517→
+   518→   518→### F-CHART-04: Referral Network Visualization
+   519→   519→
+   520→   520→An interactive tree visualization shows the user's binary referral tree, displaying the structure of their downline, the investment volume on each leg, and highlighting weak and strong legs. This visualization is complex to implement (especially for large trees) and is deferred to a post-launch update.
+   521→   521→
+   522→   522→---
+   523→   523→
+   524→   524→## 15. Future Features (Not in Launch)
+   525→   525→
+   526→   526→The following features are planned for future development cycles and are explicitly excluded from the initial launch scope. They are documented here for roadmap planning purposes.
+   527→   527→
+   528→   528→| Feature | Priority | Description |
+   529→   529→|---------|----------|-------------|
+   530→   530→| Mobile App (iOS/Android) | P3 | Native or cross-platform mobile application providing full platform functionality on mobile devices. Significant development effort requiring separate design and QA cycles. |
+   531→   531→| Social Login | P3 | Support for Google, Apple, and Facebook login as alternatives to email/password registration. Reduces registration friction but introduces dependency on third-party OAuth providers. |
+   532→   532→| Push Notifications | P3 | Browser and mobile push notifications for real-time alerts. Requires user permission, push service integration (Firebase Cloud Messaging or Web Push API), and additional notification management UI. |
+   533→   533→| Additional Payment Methods | P3 | Support for bank transfers, credit/debit cards, or additional cryptocurrency options. Each new payment method requires integration work, compliance review, and operational procedures. |
+   534→   534→| Advanced Analytics/Reports | P3 | User-facing detailed analytics including ROI calculations, investment performance comparisons, tax document generation, and exportable financial statements. Significant business logic and UI development effort. |
