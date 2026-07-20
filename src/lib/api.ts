@@ -9,9 +9,9 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(path, { ...options, headers });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Request failed');
-  return data;
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error?.message || 'Request failed');
+  return json.success ? json.data : json;
 }
 
 export const api = {

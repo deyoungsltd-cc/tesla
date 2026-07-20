@@ -19,7 +19,7 @@ export async function getSessionUser(request: NextRequest) {
   return user;
 }
 
-export function requireAuth(handler: Function) {
+export function requireAuth(handler: (request: NextRequest, context: any, user: any) => Promise<NextResponse>) {
   return async (request: NextRequest, context: any) => {
     const user = await getSessionUser(request);
     if (!user) {
@@ -30,7 +30,7 @@ export function requireAuth(handler: Function) {
 }
 
 export function requireRole(...roles: string[]) {
-  return (handler: Function) => {
+  return (handler: (request: NextRequest, context: any, user: any) => Promise<NextResponse>) => {
     return async (request: NextRequest, context: any) => {
       const user = await getSessionUser(request);
       if (!user) {
