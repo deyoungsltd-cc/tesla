@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import ChatWidget from '@/components/ChatWidget';
+
+const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
 
 const plans = [
   { name: 'Basic', badge: 'STARTER', badgeColor: 'bg-gray-600', min: 200, max: 4999, daily: 0.5, duration: 30, model: 'Model 3', image: 'https://cdn.motor1.com/images/mgl/3r5Xj/s1/tesla-model-3.jpg' },
@@ -38,6 +41,18 @@ export default function InvestmentsPage() {
       <div>
         <h2 className="text-white font-bold text-lg">Investment Plans</h2>
         <p className="text-gray-500 text-sm mt-0.5">Choose a plan and start earning daily returns</p>
+      </div>
+
+      {/* TradingView Chart */}
+      <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden !p-0">
+        <div className="px-4 py-2.5 border-b border-tesla-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-white font-bold text-sm">NASDAQ:TSLA</span>
+            <span className="text-gray-500 text-xs">Live</span>
+          </div>
+        </div>
+        <TradingViewWidget />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

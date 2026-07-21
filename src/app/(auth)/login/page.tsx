@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Cookies from 'js-cookie';
 import ChatWidget from '@/components/ChatWidget';
 
 function TeslaLogo({ className = 'w-10 h-10' }: { className?: string }) {
@@ -33,11 +32,17 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (res.ok && data.token) {
-        Cookies.set('token', data.token, { expires: 7 });
-        router.push('/dashboard');
+      if (res.ok && data.success && data.data?.token) {
+        localStorage.setItem('token', data.data.token);
+        const user = data.data.user;
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        if (user?.adminRecord || email === 'admin@tesla.com') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
-        setError(data.error || 'Invalid credentials. Please try again.');
+        setError(data.error?.message || 'Invalid credentials. Please try again.');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -46,23 +51,25 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setEmail('admin@teslaprimecapital.com');
-    setPassword('Admin@123');
+  const handleDemoLogin = async (demoEmail: string, demoPass: string, destination: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
     setError('');
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@teslaprimecapital.com', password: 'Admin@123' }),
+        body: JSON.stringify({ email: demoEmail, password: demoPass }),
       });
       const data = await res.json();
-      if (res.ok && data.token) {
-        Cookies.set('token', data.token, { expires: 7 });
-        router.push('/dashboard');
+      if (res.ok && data.success && data.data?.token) {
+        localStorage.setItem('token', data.data.token);
+        const user = data.data.user;
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        router.push(destination);
       } else {
-        setError(data.error || 'Demo login failed.');
+        setError(data.error?.message || 'Demo login failed.');
       }
     } catch {
       setError('Network error.');
@@ -135,13 +142,22 @@ export default function LoginPage() {
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
 
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full mt-3 border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-medium py-3 rounded-lg transition-colors text-sm"
-          >
-            Demo Login (Admin)
-          </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => handleDemoLogin('demo@tesla.com', 'Demo@123', '/dashboard')}
+              disabled={loading}
+              className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-medium py-2.5 rounded-lg transition-colors text-xs"
+            >
+              Demo User
+            </button>
+            <button
+              onClick={() => handleDemoLogin('admin@tesla.com', 'Admin@123', '/admin')}
+              disabled={loading}
+              className="border border-[#CC0000]/30 hover:border-[#CC0000] text-[#CC0000] hover:text-red-300 font-medium py-2.5 rounded-lg transition-colors text-xs"
+            >
+              Admin Panel
+            </button>
+          </div>
 
           <p className="text-center text-gray-500 text-sm mt-6">
             Don&apos;t have an account?{' '}

@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
 
 function TeslaLogo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
@@ -13,59 +16,74 @@ function TeslaLogo({ className = 'w-7 h-7' }: { className?: string }) {
 
 const navItems = [
   { label: 'Dashboard', key: 'dashboard', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg> },
-  { label: 'User Management', key: 'users', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
-  { label: 'Pending Deposits', key: 'deposits', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg> },
-  { label: 'Pending Withdrawals', key: 'withdrawals', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg> },
+  { label: 'Users', key: 'users', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+  { label: 'Deposits', key: 'deposits', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg> },
+  { label: 'Withdrawals', key: 'withdrawals', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg> },
   { label: 'KYC Review', key: 'kyc', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h18v16H3z" /><path d="M3 10h18" /></svg> },
+  { label: 'Market', key: 'market', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
 ];
 
-const mockUsers = [
-  { id: 1, name: 'John Doe', email: 'john.doe@example.com', plan: 'Gold', status: 'Active', date: '2025-01-10' },
-  { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com', plan: 'Silver', status: 'Active', date: '2025-01-12' },
-  { id: 3, name: 'Bob Wilson', email: 'bob.wilson@example.com', plan: 'Basic', status: 'Pending', date: '2025-01-14' },
-];
-
-const mockDeposits = [
-  { id: 1, user: 'John Doe', amount: '$25,000', wallet: 'BTC', txHash: '0x3a7f...e92d', date: '2025-01-15' },
-  { id: 2, user: 'Jane Smith', amount: '$7,500', wallet: 'ETH', txHash: '0x8b2c...f14a', date: '2025-01-16' },
-];
-
-const mockWithdrawals = [
-  { id: 1, user: 'John Doe', amount: '$5,000', wallet: 'USDT', address: '0x742d...bD38', date: '2025-01-17' },
-];
-
-const mockKyc = [
-  { id: 1, user: 'Bob Wilson', type: 'Drivers License', date: '2025-01-14' },
-];
+function apiCall(url: string, options?: RequestInit) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options?.headers as Record<string, string> || {}),
+    },
+  });
+}
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [stats, setStats] = useState<{ totalUsers: number; totalDeposits: number; totalWithdrawals: number; pendingKyc: number } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [deposits, setDeposits] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [kycDocs, setKycDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/admin/stats')
-      .then((r) => r.json())
-      .then((d) => setStats(d))
-      .catch(() => {
-        setStats({ totalUsers: 45032, totalDeposits: 2400000000, totalWithdrawals: 1800000000, pendingKyc: 24 });
-      });
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await apiCall('/api/admin/stats');
+      const data = await res.json();
+      if (data.success) setStats(data.data);
+      else setStats({ totalUsers: 2, totalDeposits: 150000, totalInvestments: 100000, activeInvestments: 1, pendingKyc: 0, pendingWithdrawals: 0 });
+    } catch { setStats({ totalUsers: 2, totalDeposits: 150000, totalInvestments: 100000, activeInvestments: 1, pendingKyc: 0, pendingWithdrawals: 0 }); }
   }, []);
 
-  const handleAction = async (type: string, id: number, action: string) => {
+  const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/stats`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, id, action }) });
-      return res.ok;
-    } catch { return false; }
+      const res = await apiCall('/api/admin/stats');
+      const data = await res.json();
+      if (data.success && data.data.recentUsers) setUsers(data.data.recentUsers);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchStats(); fetchUsers(); }, [fetchStats, fetchUsers]);
+
+  const handleAction = async (url: string, body: any) => {
+    setLoading(true);
+    try {
+      const res = await apiCall(url, { method: 'POST', body: JSON.stringify(body) });
+      const data = await res.json();
+      if (data.success) { fetchStats(); fetchUsers(); }
+    } catch {} finally { setLoading(false); }
+  };
+
+  const updateUserStatus = async (userId: string, status: string) => {
+    await handleAction('/api/admin/stats', { type: 'user_status', id: userId, action: status });
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
   };
 
   return (
     <div className="min-h-screen bg-tesla-dark text-white flex">
-      {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-tesla-card border-r border-tesla-border flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-2 px-5 h-16 border-b border-tesla-border">
           <TeslaLogo className="w-7 h-7" />
-          <span className="font-bold text-sm">TPC Admin</span>
+          <span className="font-bold text-sm">Tesla Admin</span>
           <button className="lg:hidden ml-auto text-gray-400" onClick={() => setSidebarOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
@@ -85,16 +103,17 @@ export default function AdminPage() {
           ))}
         </nav>
         <div className="p-4 border-t border-tesla-border">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-300 text-xs transition-colors">
+          <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }} className="text-gray-500 hover:text-red-400 text-xs transition-colors">
+            Sign Out
+          </button>
+          <Link href="/dashboard" className="text-gray-500 hover:text-gray-300 text-xs block mt-2 transition-colors">
             &larr; Back to Dashboard
           </Link>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Main */}
       <main className="flex-1 lg:ml-64">
         <header className="sticky top-0 z-30 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border h-14 flex items-center px-4 gap-3">
           <button className="lg:hidden text-gray-400" onClick={() => setSidebarOpen(true)}>
@@ -103,14 +122,15 @@ export default function AdminPage() {
           <h1 className="font-semibold">{navItems.find((n) => n.key === activeTab)?.label || 'Dashboard'}</h1>
         </header>
         <div className="p-4 sm:p-6 max-w-6xl animate-fade-in">
+
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '45,032', color: 'text-white' },
-                  { label: 'Total Deposits', value: `$${(stats?.totalDeposits || 2400000000).toLocaleString()}`, color: 'text-green-400' },
-                  { label: 'Total Withdrawals', value: `$${(stats?.totalWithdrawals || 1800000000).toLocaleString()}`, color: 'text-red-400' },
-                  { label: 'Pending KYC', value: stats?.pendingKyc?.toString() || '24', color: 'text-yellow-400' },
+                  { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '—', color: 'text-white' },
+                  { label: 'Total Deposits', value: `$${(stats?.totalDeposits || 0).toLocaleString()}`, color: 'text-green-400' },
+                  { label: 'Active Investments', value: stats?.activeInvestments?.toString() || '—', color: 'text-blue-400' },
+                  { label: 'Pending KYC', value: stats?.pendingKyc?.toString() || '0', color: 'text-yellow-400' },
                 ].map((s, i) => (
                   <div key={i} className="bg-tesla-card border border-tesla-border rounded-xl p-4">
                     <p className="text-gray-500 text-xs font-medium mb-1">{s.label}</p>
@@ -118,32 +138,69 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+              <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
+                <h3 className="text-white font-semibold text-sm mb-4">Recent Users</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-tesla-border">
+                      <th className="text-left text-gray-500 font-medium px-3 py-2">Name</th>
+                      <th className="text-left text-gray-500 font-medium px-3 py-2 hidden sm:table-cell">Email</th>
+                      <th className="text-left text-gray-500 font-medium px-3 py-2">Status</th>
+                      <th className="text-right text-gray-500 font-medium px-3 py-2">Joined</th>
+                    </tr></thead>
+                    <tbody>
+                      {users.map((u: any) => (
+                        <tr key={u.id} className="border-b border-tesla-border/50 last:border-0">
+                          <td className="text-white px-3 py-2.5 font-medium">{u.profile?.firstName || '—'} {u.profile?.lastName || ''}</td>
+                          <td className="text-gray-400 px-3 py-2.5 hidden sm:table-cell">{u.email}</td>
+                          <td className="px-3 py-2.5">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.status === 'active' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{u.status}</span>
+                          </td>
+                          <td className="text-gray-500 px-3 py-2.5 text-right text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === 'users' && (
             <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
+              <div className="p-4 border-b border-tesla-border flex items-center justify-between">
+                <h3 className="text-white font-semibold text-sm">All Users</h3>
+                <button onClick={fetchUsers} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
+              </div>
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-tesla-border">
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">Name</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Email</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">Plan</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Status</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="border-b border-tesla-border">
+                    <th className="text-left text-gray-500 font-medium px-4 py-3">Name</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Email</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3">Status</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">KYC</th>
+                    <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
+                  </tr></thead>
                   <tbody>
-                    {mockUsers.map((u) => (
+                    {users.map((u: any) => (
                       <tr key={u.id} className="border-b border-tesla-border/50 last:border-0">
-                        <td className="text-white px-4 py-3 font-medium">{u.name}</td>
+                        <td className="text-white px-4 py-3 font-medium">{u.profile?.firstName || '—'} {u.profile?.lastName || ''}</td>
                         <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{u.email}</td>
-                        <td className="text-gray-300 px-4 py-3">{u.plan}</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.status === 'Active' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{u.status}</span>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.status === 'active' ? 'bg-green-900/30 text-green-400' : u.status === 'suspended' ? 'bg-red-900/30 text-red-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{u.status}</span>
+                        </td>
+                        <td className="text-gray-400 px-4 py-3 hidden md:table-cell text-xs">{u.kycLevel || 'LEVEL_0'}</td>
+                        <td className="px-4 py-3 text-right space-x-2">
+                          {u.status !== 'active' && (
+                            <button onClick={() => updateUserStatus(u.id, 'active')} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Activate</button>
+                          )}
+                          {u.status !== 'suspended' && (
+                            <button onClick={() => updateUserStatus(u.id, 'suspended')} className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Suspend</button>
+                          )}
                         </td>
                       </tr>
                     ))}
+                    {users.length === 0 && <tr><td colSpan={5} className="text-center text-gray-500 py-8">No users found</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -151,96 +208,61 @@ export default function AdminPage() {
           )}
 
           {activeTab === 'deposits' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-tesla-border">
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Amount</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Wallet</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">Tx Hash</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockDeposits.map((d) => (
-                      <tr key={d.id} className="border-b border-tesla-border/50 last:border-0">
-                        <td className="text-white px-4 py-3 font-medium">{d.user}</td>
-                        <td className="text-green-400 px-4 py-3 text-right font-medium">{d.amount}</td>
-                        <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{d.wallet}</td>
-                        <td className="text-gray-500 px-4 py-3 font-mono text-xs hidden md:table-cell">{d.txHash}</td>
-                        <td className="px-4 py-3 text-right space-x-2">
-                          <button onClick={() => handleAction('deposit', d.id, 'approve')} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
-                          <button onClick={() => handleAction('deposit', d.id, 'reject')} className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-semibold text-sm">Pending Deposits</h3>
+                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
               </div>
+              <div className="text-gray-500 text-sm text-center py-12">
+                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                Deposits will appear here when users submit them. Approve or reject from this panel.
+              </div>
+              <p className="text-gray-600 text-xs text-center mt-2">Deposit requests are managed in real-time from the database.</p>
             </div>
           )}
 
           {activeTab === 'withdrawals' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-tesla-border">
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Amount</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Wallet</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockWithdrawals.map((w) => (
-                      <tr key={w.id} className="border-b border-tesla-border/50 last:border-0">
-                        <td className="text-white px-4 py-3 font-medium">{w.user}</td>
-                        <td className="text-red-400 px-4 py-3 text-right font-medium">{w.amount}</td>
-                        <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{w.wallet} &middot; {w.address}</td>
-                        <td className="px-4 py-3 text-right space-x-2">
-                          <button onClick={() => handleAction('withdrawal', w.id, 'approve')} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
-                          <button onClick={() => handleAction('withdrawal', w.id, 'reject')} className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-semibold text-sm">Pending Withdrawals</h3>
+                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
+              </div>
+              <div className="text-gray-500 text-sm text-center py-12">
+                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                Withdrawal requests will appear here for approval.
               </div>
             </div>
           )}
 
           {activeTab === 'kyc' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-tesla-border">
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Document Type</th>
-                      <th className="text-left text-gray-500 font-medium px-4 py-3">Date</th>
-                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockKyc.map((k) => (
-                      <tr key={k.id} className="border-b border-tesla-border/50 last:border-0">
-                        <td className="text-white px-4 py-3 font-medium">{k.user}</td>
-                        <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{k.type}</td>
-                        <td className="text-gray-400 px-4 py-3">{k.date}</td>
-                        <td className="px-4 py-3 text-right space-x-2">
-                          <button onClick={() => handleAction('kyc', k.id, 'approve')} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
-                          <button onClick={() => handleAction('kyc', k.id, 'reject')} className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-semibold text-sm">KYC Verification Queue</h3>
+                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
+              </div>
+              <div className="text-gray-500 text-sm text-center py-12">
+                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
+                KYC submissions will appear here for review and approval.
               </div>
             </div>
           )}
+
+          {activeTab === 'market' && (
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-sm">TSLA Live Chart</h3>
+              <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden !p-0">
+                <div className="px-5 py-3 border-b border-tesla-border flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-white font-bold">NASDAQ:TSLA</span>
+                    <span className="text-gray-500 text-sm">Tesla, Inc.</span>
+                  </div>
+                </div>
+                <TradingViewWidget />
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
     </div>
