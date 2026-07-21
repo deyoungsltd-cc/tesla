@@ -189,17 +189,17 @@ export default function Kyc() {
       </div>
 
       {/* Level Progress */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white">Verification Level</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="space-y-4">
-              <Skeleton className="h-6 w-40 bg-[#1a1a1a]" />
+              <Skeleton className="h-6 w-40 bg-white/[0.03]" />
               <div className="flex gap-2">
                 {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-20 flex-1 bg-[#1a1a1a]" />
+                  <Skeleton key={i} className="h-20 flex-1 bg-white/[0.03]" />
                 ))}
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function Kyc() {
                           ? `${lvl.color} border`
                           : isCompleted
                           ? 'border-green-600/30 bg-green-600/5'
-                          : 'border-[#1e1e1e] bg-[#0f0f0f]/50 opacity-50'
+                          : 'border-white/[0.02] bg-black/30/50 opacity-50'
                       }`}
                     >
                       {isCompleted && !isCurrent && (
@@ -245,7 +245,7 @@ export default function Kyc() {
                               ? `${lvl.color} border`
                               : isCompleted
                               ? 'border-green-600/30 bg-green-600/10 text-green-400'
-                              : 'border-[#262626] text-neutral-600'
+                              : 'border-white/[0.04] text-neutral-600'
                           }`}
                         >
                           {isCompleted && !isCurrent ? (
@@ -270,7 +270,7 @@ export default function Kyc() {
 
       {/* Submit KYC Form */}
       {nextLevel && !hasPending && (
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
               <Upload className="h-4 w-4 text-red-500" />
@@ -278,7 +278,7 @@ export default function Kyc() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-yellow-600/5 border border-yellow-600/20 p-3">
+            <div className="rounded-xl bg-yellow-600/5 border border-yellow-600/20 p-3">
               <p className="text-xs text-yellow-400 flex items-center gap-2">
                 <FileText className="h-4 w-4 shrink-0" />
                 Upload your documents to Cloudinary and paste the URL below.
@@ -294,7 +294,7 @@ export default function Kyc() {
                   value={form.idFrontUrl}
                   onChange={(e) => setForm((f) => ({ ...f, idFrontUrl: e.target.value }))}
                   placeholder="https://res.cloudinary.com/..."
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -305,7 +305,7 @@ export default function Kyc() {
                   value={form.idBackUrl}
                   onChange={(e) => setForm((f) => ({ ...f, idBackUrl: e.target.value }))}
                   placeholder="https://res.cloudinary.com/..."
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               {nextLevel >= 2 && (
@@ -317,7 +317,7 @@ export default function Kyc() {
                     value={form.proofOfAddressUrl}
                     onChange={(e) => setForm((f) => ({ ...f, proofOfAddressUrl: e.target.value }))}
                     placeholder="https://res.cloudinary.com/..."
-                    className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                    className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                   />
                 </div>
               )}
@@ -330,7 +330,7 @@ export default function Kyc() {
                     value={form.selfieUrl}
                     onChange={(e) => setForm((f) => ({ ...f, selfieUrl: e.target.value }))}
                     placeholder="https://res.cloudinary.com/..."
-                    className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                    className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                   />
                 </div>
               )}
@@ -381,7 +381,7 @@ export default function Kyc() {
       )}
 
       {/* Submitted Documents Table */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-white">Submission History</CardTitle>
         </CardHeader>
@@ -389,7 +389,7 @@ export default function Kyc() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
               ))}
             </div>
           ) : submissions.length === 0 ? (
@@ -401,7 +401,7 @@ export default function Kyc() {
             <div className="max-h-96 overflow-y-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-[#262626] hover:bg-transparent">
+                  <TableRow className="border-white/[0.04] hover:bg-transparent">
                     <TableHead className="text-[11px] text-neutral-500 font-medium">Level</TableHead>
                     <TableHead className="text-[11px] text-neutral-500 font-medium">Date</TableHead>
                     <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Status</TableHead>
@@ -410,7 +410,7 @@ export default function Kyc() {
                 </TableHeader>
                 <TableBody>
                   {submissions.map((sub) => (
-                    <TableRow key={sub.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                    <TableRow key={sub.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                       <TableCell className="py-2.5">
                         <Badge
                           className={`${KYC_LEVELS[sub.level || 0]?.color || ''} border text-[10px]`}

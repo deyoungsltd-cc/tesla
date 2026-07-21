@@ -172,7 +172,7 @@ export default function Investments() {
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList className="bg-[#141414] border border-[#262626]">
+        <TabsList className="bg-white/[0.02] border border-white/[0.04]">
           <TabsTrigger
             value="active"
             className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 transition-colors"
@@ -192,16 +192,16 @@ export default function Investments() {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <Card key={i} className="border-[#262626] bg-gradient-card">
+                <Card key={i} className="border-white/[0.04] bg-white/[0.01]">
                   <CardContent className="p-5 space-y-4">
-                    <Skeleton className="h-5 w-36 bg-[#1a1a1a]" />
-                    <Skeleton className="h-8 w-28 bg-[#1a1a1a]" />
-                    <Skeleton className="h-2 w-full bg-[#1a1a1a]" />
+                    <Skeleton className="h-5 w-36 bg-white/[0.03]" />
+                    <Skeleton className="h-8 w-28 bg-white/[0.03]" />
+                    <Skeleton className="h-2 w-full bg-white/[0.03]" />
                     <div className="grid grid-cols-2 gap-3">
-                      <Skeleton className="h-4 w-20 bg-[#1a1a1a]" />
-                      <Skeleton className="h-4 w-20 bg-[#1a1a1a]" />
-                      <Skeleton className="h-4 w-20 bg-[#1a1a1a]" />
-                      <Skeleton className="h-4 w-20 bg-[#1a1a1a]" />
+                      <Skeleton className="h-4 w-20 bg-white/[0.03]" />
+                      <Skeleton className="h-4 w-20 bg-white/[0.03]" />
+                      <Skeleton className="h-4 w-20 bg-white/[0.03]" />
+                      <Skeleton className="h-4 w-20 bg-white/[0.03]" />
                     </div>
                   </CardContent>
                 </Card>
@@ -224,7 +224,7 @@ export default function Investments() {
                 return (
                   <Card
                     key={inv.id}
-                    className="border-[#262626] bg-gradient-card hover:border-[#333] transition-colors"
+                    className="border-white/[0.04] bg-white/[0.01] border-white/[0.08] transition-colors"
                   >
                     <CardContent className="p-5 space-y-4">
                       {/* Header */}
@@ -244,7 +244,7 @@ export default function Investments() {
                       </div>
 
                       {/* Invested Amount */}
-                      <div className="bg-[#0f0f0f] rounded-lg p-3">
+                      <div className="bg-black/30 rounded-xl p-3">
                         <p className="text-xs text-neutral-500 mb-1">Invested Amount</p>
                         <p className="text-xl font-bold text-white">${fmt(inv.amount)}</p>
                       </div>
@@ -287,7 +287,7 @@ export default function Investments() {
                           <span className="text-neutral-500">Progress</span>
                           <span className="text-neutral-300">{Math.round(progress)}%</span>
                         </div>
-                        <Progress value={progress} className="h-2 bg-[#1a1a1a]" />
+                        <Progress value={progress} className="h-2 bg-white/[0.03]" />
                       </div>
 
                       {/* Mode Badge */}
@@ -306,7 +306,7 @@ export default function Investments() {
 
         {/* Tab 2: Investment History */}
         <TabsContent value="history" className="mt-4">
-          <Card className="border-[#262626] bg-gradient-card">
+          <Card className="border-white/[0.04] bg-white/[0.01]">
             <CardContent className="p-4 lg:p-5">
               {/* Filter */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -315,10 +315,10 @@ export default function Investments() {
                   <span className="text-sm text-neutral-400">Filter by status:</span>
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[160px] bg-[#0f0f0f] border-[#262626] text-neutral-300 text-sm h-9">
+                  <SelectTrigger className="w-[160px] bg-black/30 border-white/[0.04] text-neutral-300 text-sm h-9">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#262626]">
+                  <SelectContent className="bg-white/[0.02] border-white/[0.04]">
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="failed">Failed</SelectItem>
@@ -331,7 +331,7 @@ export default function Investments() {
               {historyLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
                   ))}
                 </div>
               ) : history.length === 0 ? (
@@ -344,7 +344,7 @@ export default function Investments() {
                   <div className="max-h-[480px] overflow-y-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="border-[#262626] hover:bg-transparent">
+                        <TableRow className="border-white/[0.04] hover:bg-transparent">
                           <TableHead className="text-[11px] text-neutral-500 font-medium">Date</TableHead>
                           <TableHead className="text-[11px] text-neutral-500 font-medium">Plan</TableHead>
                           <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
@@ -356,7 +356,7 @@ export default function Investments() {
                       </TableHeader>
                       <TableBody>
                         {history.map((inv) => (
-                          <TableRow key={inv.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                          <TableRow key={inv.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                             <TableCell className="text-xs text-neutral-400 py-2.5">
                               {fmtDate(inv.createdAt)}
                             </TableCell>
@@ -395,7 +395,7 @@ export default function Investments() {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#1e1e1e]">
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/[0.02]">
                       <p className="text-xs text-neutral-500">
                         Page {page} of {totalPages}
                       </p>
@@ -403,7 +403,7 @@ export default function Investments() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-3 border-[#262626] text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+                          className="h-8 px-3 border-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                           onClick={() => setPage((p) => Math.max(1, p - 1))}
                           disabled={page <= 1}
                         >
@@ -413,7 +413,7 @@ export default function Investments() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-3 border-[#262626] text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+                          className="h-8 px-3 border-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                           disabled={page >= totalPages}
                         >

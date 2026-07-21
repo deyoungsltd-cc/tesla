@@ -180,7 +180,7 @@ function RejectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="bg-[#141414] border-[#333] text-white sm:max-w-md">
+      <DialogContent className="bg-white/[0.02] border-white/[0.08] text-white sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-400">
             <AlertTriangle className="h-4 w-4" />
@@ -194,14 +194,14 @@ function RejectionDialog({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Enter reason for rejection..."
-              className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+              className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
             />
           </div>
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={onClose}
-              className="border-[#333] text-neutral-300 hover:bg-[#1a1a1a]"
+              className="border-white/[0.08] text-neutral-300 hover:bg-white/[0.03]"
             >
               Cancel
             </Button>
@@ -482,38 +482,38 @@ export default function Admin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#141414] border border-[#262626] flex-wrap h-auto gap-1 p-1">
+        <TabsList className="bg-white/[0.02] border border-white/[0.04] flex-wrap h-auto gap-1 p-1">
           <TabsTrigger
             value="dashboard"
-            className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
+            className="data-[state=active]:bg-white/[0.03] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
           >
             <LayoutDashboard className="h-3.5 w-3.5" />
             Dashboard
           </TabsTrigger>
           <TabsTrigger
             value="users"
-            className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
+            className="data-[state=active]:bg-white/[0.03] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
           >
             <Users className="h-3.5 w-3.5" />
             Users
           </TabsTrigger>
           <TabsTrigger
             value="deposits"
-            className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
+            className="data-[state=active]:bg-white/[0.03] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
           >
             <ArrowDownCircle className="h-3.5 w-3.5" />
             Deposits
           </TabsTrigger>
           <TabsTrigger
             value="withdrawals"
-            className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
+            className="data-[state=active]:bg-white/[0.03] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
           >
             <ArrowUpCircle className="h-3.5 w-3.5" />
             Withdrawals
           </TabsTrigger>
           <TabsTrigger
             value="kyc"
-            className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
+            className="data-[state=active]:bg-white/[0.03] data-[state=active]:text-red-400 text-neutral-500 text-xs gap-1.5"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
             KYC
@@ -573,7 +573,7 @@ export default function Admin() {
 
         {/* ====== USERS TAB ====== */}
         <TabsContent value="users">
-          <Card className="border-[#262626] bg-gradient-card">
+          <Card className="border-white/[0.04] bg-white/[0.01]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -585,7 +585,7 @@ export default function Admin() {
                     variant="outline"
                     size="sm"
                     onClick={() => fetchUsers(userPage)}
-                    className="border-[#333] text-neutral-400 text-xs h-8 gap-1"
+                    className="border-white/[0.08] text-neutral-400 text-xs h-8 gap-1"
                   >
                     <Search className="h-3 w-3" />
                     Refresh
@@ -597,7 +597,7 @@ export default function Admin() {
               {usersLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
                   ))}
                 </div>
               ) : users.length === 0 ? (
@@ -609,7 +609,7 @@ export default function Admin() {
                 <div className="max-h-[500px] overflow-y-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-[#262626] hover:bg-transparent">
+                      <TableRow className="border-white/[0.04] hover:bg-transparent">
                         <TableHead className="text-[11px] text-neutral-500 font-medium">Email</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-center hidden sm:table-cell">Status</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-center hidden md:table-cell">KYC</TableHead>
@@ -619,7 +619,7 @@ export default function Admin() {
                     </TableHeader>
                     <TableBody>
                       {users.map((u) => (
-                        <TableRow key={u.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                        <TableRow key={u.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                           <TableCell className="text-xs text-neutral-300 py-2.5 font-medium max-w-[200px] truncate">
                             {u.email}
                             {(u.profile?.firstName || u.profile?.lastName) && (
@@ -646,7 +646,7 @@ export default function Admin() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+                                className="h-7 w-7 p-0 text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                                 onClick={() => handleViewUser(u.id)}
                               >
                                 <Eye className="h-3.5 w-3.5" />
@@ -703,13 +703,13 @@ export default function Admin() {
                     </TableBody>
                   </Table>
                   {/* Pagination */}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#262626]">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.04]">
                     <span className="text-[11px] text-neutral-600">Page {userPage}</span>
                     <div className="flex gap-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 border-[#333] text-neutral-400 text-xs"
+                        className="h-7 px-2 border-white/[0.08] text-neutral-400 text-xs"
                         onClick={() => {
                           const p = Math.max(1, userPage - 1);
                           setUserPage(p);
@@ -722,7 +722,7 @@ export default function Admin() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 border-[#333] text-neutral-400 text-xs"
+                        className="h-7 px-2 border-white/[0.08] text-neutral-400 text-xs"
                         onClick={() => {
                           const p = userPage + 1;
                           setUserPage(p);
@@ -742,7 +742,7 @@ export default function Admin() {
 
         {/* ====== DEPOSITS TAB ====== */}
         <TabsContent value="deposits">
-          <Card className="border-[#262626] bg-gradient-card">
+          <Card className="border-white/[0.04] bg-white/[0.01]">
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -750,14 +750,14 @@ export default function Admin() {
                   Deposit Management
                 </CardTitle>
                 <Select value={depositFilter} onValueChange={(v) => { setDepositFilter(v); fetchDeposits(v); }}>
-                  <SelectTrigger className="w-36 bg-[#0a0a0a] border-[#333] text-white text-xs h-8">
+                  <SelectTrigger className="w-36 bg-[#0a0a0a] border-white/[0.08] text-white text-xs h-8">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#333]">
-                    <SelectItem value="pending" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Pending</SelectItem>
-                    <SelectItem value="approved" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Approved</SelectItem>
-                    <SelectItem value="rejected" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Rejected</SelectItem>
-                    <SelectItem value="all" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">All</SelectItem>
+                  <SelectContent className="bg-white/[0.02] border-white/[0.08]">
+                    <SelectItem value="pending" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Pending</SelectItem>
+                    <SelectItem value="approved" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Approved</SelectItem>
+                    <SelectItem value="rejected" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Rejected</SelectItem>
+                    <SelectItem value="all" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">All</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -766,7 +766,7 @@ export default function Admin() {
               {depositsLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
                   ))}
                 </div>
               ) : deposits.length === 0 ? (
@@ -778,7 +778,7 @@ export default function Admin() {
                 <div className="max-h-[500px] overflow-y-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-[#262626] hover:bg-transparent">
+                      <TableRow className="border-white/[0.04] hover:bg-transparent">
                         <TableHead className="text-[11px] text-neutral-500 font-medium">User</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium hidden sm:table-cell">Method</TableHead>
@@ -789,7 +789,7 @@ export default function Admin() {
                     </TableHeader>
                     <TableBody>
                       {deposits.map((d) => (
-                        <TableRow key={d.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                        <TableRow key={d.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                           <TableCell className="text-xs text-neutral-300 py-2.5 max-w-[180px] truncate">
                             {getUserEmail(d)}
                           </TableCell>
@@ -850,7 +850,7 @@ export default function Admin() {
 
         {/* ====== WITHDRAWALS TAB ====== */}
         <TabsContent value="withdrawals">
-          <Card className="border-[#262626] bg-gradient-card">
+          <Card className="border-white/[0.04] bg-white/[0.01]">
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -858,14 +858,14 @@ export default function Admin() {
                   Withdrawal Management
                 </CardTitle>
                 <Select value={withdrawalFilter} onValueChange={(v) => { setWithdrawalFilter(v); fetchWithdrawals(v); }}>
-                  <SelectTrigger className="w-36 bg-[#0a0a0a] border-[#333] text-white text-xs h-8">
+                  <SelectTrigger className="w-36 bg-[#0a0a0a] border-white/[0.08] text-white text-xs h-8">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#333]">
-                    <SelectItem value="pending" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Pending</SelectItem>
-                    <SelectItem value="approved" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Approved</SelectItem>
-                    <SelectItem value="rejected" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">Rejected</SelectItem>
-                    <SelectItem value="all" className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">All</SelectItem>
+                  <SelectContent className="bg-white/[0.02] border-white/[0.08]">
+                    <SelectItem value="pending" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Pending</SelectItem>
+                    <SelectItem value="approved" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Approved</SelectItem>
+                    <SelectItem value="rejected" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">Rejected</SelectItem>
+                    <SelectItem value="all" className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">All</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -874,7 +874,7 @@ export default function Admin() {
               {withdrawalsLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
                   ))}
                 </div>
               ) : withdrawals.length === 0 ? (
@@ -886,7 +886,7 @@ export default function Admin() {
                 <div className="max-h-[500px] overflow-y-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-[#262626] hover:bg-transparent">
+                      <TableRow className="border-white/[0.04] hover:bg-transparent">
                         <TableHead className="text-[11px] text-neutral-500 font-medium">User</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-right hidden sm:table-cell">Fee</TableHead>
@@ -898,7 +898,7 @@ export default function Admin() {
                     </TableHeader>
                     <TableBody>
                       {withdrawals.map((w) => (
-                        <TableRow key={w.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                        <TableRow key={w.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                           <TableCell className="text-xs text-neutral-300 py-2.5 max-w-[160px] truncate">
                             {getUserEmail(w)}
                           </TableCell>
@@ -962,7 +962,7 @@ export default function Admin() {
 
         {/* ====== KYC TAB ====== */}
         <TabsContent value="kyc">
-          <Card className="border-[#262626] bg-gradient-card">
+          <Card className="border-white/[0.04] bg-white/[0.01]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -973,7 +973,7 @@ export default function Admin() {
                   variant="outline"
                   size="sm"
                   onClick={fetchKyc}
-                  className="border-[#333] text-neutral-400 text-xs h-8 gap-1"
+                  className="border-white/[0.08] text-neutral-400 text-xs h-8 gap-1"
                 >
                   <Search className="h-3 w-3" />
                   Refresh
@@ -984,7 +984,7 @@ export default function Admin() {
               {kycLoading ? (
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
                   ))}
                 </div>
               ) : kycList.length === 0 ? (
@@ -996,7 +996,7 @@ export default function Admin() {
                 <div className="max-h-[500px] overflow-y-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-[#262626] hover:bg-transparent">
+                      <TableRow className="border-white/[0.04] hover:bg-transparent">
                         <TableHead className="text-[11px] text-neutral-500 font-medium">User</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Level</TableHead>
                         <TableHead className="text-[11px] text-neutral-500 font-medium hidden sm:table-cell">Submitted</TableHead>
@@ -1006,7 +1006,7 @@ export default function Admin() {
                     </TableHeader>
                     <TableBody>
                       {kycList.map((k) => (
-                        <TableRow key={k.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                        <TableRow key={k.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                           <TableCell className="text-xs text-neutral-300 py-2.5 max-w-[200px] truncate">
                             {getUserEmail(k)}
                           </TableCell>
@@ -1102,7 +1102,7 @@ export default function Admin() {
 
       {/* User Detail Dialog */}
       <Dialog open={userDetailOpen} onOpenChange={setUserDetailOpen}>
-        <DialogContent className="bg-[#141414] border-[#333] text-white sm:max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-white/[0.02] border-white/[0.08] text-white sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCheck className="h-4 w-4 text-red-500" />
@@ -1112,7 +1112,7 @@ export default function Admin() {
           {userDetailLoading ? (
             <div className="space-y-3 py-4">
               {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-8 w-full bg-[#1a1a1a]" />
+                <Skeleton key={i} className="h-8 w-full bg-white/[0.03]" />
               ))}
             </div>
           ) : userDetail ? (
@@ -1128,10 +1128,10 @@ export default function Admin() {
               <DetailRow label="Joined" value={fmtDate(userDetail.createdAt)} />
               <DetailRow label="Referral Code" value={userDetail.referralCode || 'N/A'} />
               {userDetail.wallets && userDetail.wallets.length > 0 && (
-                <div className="space-y-1 pt-2 border-t border-[#262626]">
+                <div className="space-y-1 pt-2 border-t border-white/[0.04]">
                   <p className="text-xs text-neutral-500 font-medium">Wallets</p>
                   {userDetail.wallets.map((w: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between text-xs p-2 rounded bg-[#0f0f0f]">
+                    <div key={i} className="flex items-center justify-between text-xs p-2 rounded bg-black/30">
                       <span className="text-neutral-400 capitalize">{w.type} Wallet</span>
                       <span className="text-white font-medium">${fmt(w.balance || 0)}</span>
                     </div>
@@ -1167,7 +1167,7 @@ function StatCard({
 }) {
   return (
     <Card
-      className={`border-[#262626] bg-gradient-card ${onClick ? 'cursor-pointer hover:border-red-500/30 transition-colors' : ''}`}
+      className={`border-white/[0.04] bg-white/[0.01] ${onClick ? 'cursor-pointer hover:border-red-500/30 transition-colors' : ''}`}
       onClick={onClick}
     >
       <CardContent className="p-4">
@@ -1176,7 +1176,7 @@ function StatCard({
           <span className="text-xs text-neutral-500">{label}</span>
         </div>
         {loading ? (
-          <Skeleton className="h-7 w-28 bg-[#1a1a1a]" />
+          <Skeleton className="h-7 w-28 bg-white/[0.03]" />
         ) : (
           <p className="text-xl font-bold text-white">
             {format === 'money'

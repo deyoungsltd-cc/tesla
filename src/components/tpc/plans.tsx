@@ -35,17 +35,21 @@ interface Plan {
   id: string;
   name: string;
   slug: string;
-  tier: string;
+  tier?: string;
+  tierName?: string;
   description: string;
   dailyReturnRate: number;
   duration: number;
-  minInvestment: number;
-  maxInvestment: number;
+  minInvestment?: number;
+  maxInvestment?: number;
+  minAmount?: number;
+  maxAmount?: number;
   features: string[] | string;
   isActive: boolean;
 }
 
-function fmt(n: number): string {
+function fmt(n: number | undefined | null): string {
+  if (n == null || isNaN(n)) return '0.00';
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -144,12 +148,14 @@ export default function Plans({ navigate }: PlansProps) {
       setAmountError('Please enter a valid amount');
       return false;
     }
-    if (num < selectedPlan.minInvestment) {
-      setAmountError(`Minimum investment is $${fmt(selectedPlan.minInvestment)}`);
+    const minInv = selectedPlan.minAmount ?? selectedPlan.minInvestment ?? 0;
+    const maxInv = selectedPlan.maxAmount ?? selectedPlan.maxInvestment ?? 0;
+    if (num < minInv) {
+      setAmountError(`Minimum investment is $${fmt(minInv)}`);
       return false;
     }
-    if (selectedPlan.maxInvestment > 0 && num > selectedPlan.maxInvestment) {
-      setAmountError(`Maximum investment is $${fmt(selectedPlan.maxInvestment)}`);
+    if (maxInv > 0 && num > maxInv) {
+      setAmountError(`Maximum investment is $${fmt(maxInv)}`);
       return false;
     }
     if (num > selectedBalance) {
@@ -218,15 +224,15 @@ export default function Plans({ navigate }: PlansProps) {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="border-[#262626] bg-gradient-card">
+            <Card key={i} className="border-white/[0.04] bg-neutral-900/30">
               <CardContent className="p-5 space-y-4">
-                <Skeleton className="h-5 w-24 bg-[#1a1a1a]" />
-                <Skeleton className="h-10 w-32 bg-[#1a1a1a]" />
+                <Skeleton className="h-5 w-24 bg-white/[0.03]" />
+                <Skeleton className="h-10 w-32 bg-white/[0.03]" />
                 <div className="space-y-2">
-                  <Skeleton className="h-3 w-full bg-[#1a1a1a]" />
-                  <Skeleton className="h-3 w-3/4 bg-[#1a1a1a]" />
+                  <Skeleton className="h-3 w-full bg-white/[0.03]" />
+                  <Skeleton className="h-3 w-3/4 bg-white/[0.03]" />
                 </div>
-                <Skeleton className="h-9 w-full bg-[#1a1a1a]" />
+                <Skeleton className="h-9 w-full bg-white/[0.03]" />
               </CardContent>
             </Card>
           ))}
@@ -242,12 +248,19 @@ export default function Plans({ navigate }: PlansProps) {
           {plans
             .filter((p) => p.isActive !== false)
             .map((plan) => {
-              const tier = tierConfig(plan.tier);
-              const features = parseFeatures(plan.features);
+              let tier: any;
+              let features: string[] = [];
+              try {
+                tier = tierConfig(plan.tier || plan.tierName || plan.name);
+                features = parseFeatures(plan.features);
+              } catch (e: any) {
+                console.error('Plan render error:', e);
+                tier = { badge: 'border-neutral-500/30 bg-neutral-500/10 text-neutral-400', icon: <Zap className="h-4 w-4 text-neutral-400" />, label: plan.name, glow: '' };
+              }
               return (
                 <Card
                   key={plan.id}
-                  className={`border-[#262626] bg-gradient-card transition-all cursor-pointer ${tier.glow}`}
+                  className={`border-white/[0.04] bg-neutral-900/30 transition-all cursor-pointer ${tier.glow}`}
                   onClick={() => handleOpenInvest(plan)}
                 >
                   <CardContent className="p-5 flex flex-col h-full">
@@ -279,15 +292,15 @@ export default function Plans({ navigate }: PlansProps) {
                     </div>
 
                     {/* Min/Max */}
-                    <div className="bg-[#0f0f0f] rounded-lg p-3 mb-4 space-y-1.5">
+                    <div className="bg-black/30 rounded-xl p-3 mb-4 space-y-1.5">
                       <div className="flex justify-between text-xs">
                         <span className="text-neutral-500">Min Investment</span>
-                        <span className="text-white font-medium">${fmt(plan.minInvestment)}</span>
+                        <span className="text-white font-medium">${fmt(plan.minAmount ?? plan.minInvestment)}</span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-neutral-500">Max Investment</span>
                         <span className="text-white font-medium">
-                          {plan.maxInvestment > 0 ? `$${fmt(plan.maxInvestment)}` : 'Unlimited'}
+                          {(plan.maxAmount ?? plan.maxInvestment) > 0 ? `$${fmt(plan.maxAmount ?? plan.maxInvestment)}` : 'Unlimited'}
                         </span>
                       </div>
                     </div>
@@ -325,7 +338,7 @@ export default function Plans({ navigate }: PlansProps) {
 
       {/* Invest Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[#141414] border-[#262626] sm:max-w-md">
+        <DialogContent className="bg-white/[0.02] border-white/[0.04] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-lg">
               Invest in {selectedPlan?.name}
@@ -338,7 +351,7 @@ export default function Plans({ navigate }: PlansProps) {
           {selectedPlan && (
             <div className="space-y-5">
               {/* Plan Summary */}
-              <div className="bg-[#0f0f0f] rounded-lg p-4 space-y-2">
+              <div className="bg-black/30 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-500">Daily Return</span>
                   <span className="text-red-400 font-semibold">{selectedPlan.dailyReturnRate}%</span>
@@ -349,12 +362,12 @@ export default function Plans({ navigate }: PlansProps) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-500">Min Investment</span>
-                  <span className="text-white">${fmt(selectedPlan.minInvestment)}</span>
+                  <span className="text-white">${fmt(selectedPlan.minAmount ?? selectedPlan.minInvestment)}</span>
                 </div>
-                {selectedPlan.maxInvestment > 0 && (
+                {(selectedPlan.maxAmount ?? selectedPlan.maxInvestment) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-neutral-500">Max Investment</span>
-                    <span className="text-white">${fmt(selectedPlan.maxInvestment)}</span>
+                    <span className="text-white">${fmt(selectedPlan.maxAmount ?? selectedPlan.maxInvestment)}</span>
                   </div>
                 )}
               </div>
@@ -371,10 +384,10 @@ export default function Plans({ navigate }: PlansProps) {
                   className="grid grid-cols-2 gap-3"
                 >
                   <label
-                    className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 cursor-pointer transition-all ${
+                    className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${
                       investMode === 'demo'
                         ? 'border-red-500/50 bg-red-500/5 glow-red-sm'
-                        : 'border-[#262626] bg-[#0f0f0f] hover:border-[#333]'
+                        : 'border-white/[0.04] bg-black/30 hover:border-white/[0.08]'
                     }`}
                   >
                     <RadioGroupItem value="demo" className="sr-only" />
@@ -385,10 +398,10 @@ export default function Plans({ navigate }: PlansProps) {
                     </div>
                   </label>
                   <label
-                    className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 cursor-pointer transition-all ${
+                    className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${
                       investMode === 'live'
                         ? 'border-red-500/50 bg-red-500/5 glow-red-sm'
-                        : 'border-[#262626] bg-[#0f0f0f] hover:border-[#333]'
+                        : 'border-white/[0.04] bg-black/30 hover:border-white/[0.08]'
                     }`}
                   >
                     <RadioGroupItem value="live" className="sr-only" />
@@ -416,7 +429,7 @@ export default function Plans({ navigate }: PlansProps) {
                     placeholder="0.00"
                     value={investAmount}
                     onChange={(e) => handleAmountChange(e.target.value)}
-                    className="pl-7 bg-[#0f0f0f] border-[#262626] text-white placeholder:text-neutral-600 focus:border-red-500/50 focus:ring-red-500/20"
+                    className="pl-7 bg-black/30 border-white/[0.04] text-white placeholder:text-neutral-600 focus:border-red-500/50 focus:ring-red-500/20"
                   />
                 </div>
                 {amountError && (
@@ -426,7 +439,7 @@ export default function Plans({ navigate }: PlansProps) {
 
               {/* Calculated Returns */}
               {investAmount && !isNaN(parseFloat(investAmount)) && parseFloat(investAmount) > 0 && (
-                <div className="bg-[#0f0f0f] rounded-lg p-4 space-y-2 border border-[#1e1e1e]">
+                <div className="bg-black/30 rounded-xl p-4 space-y-2 border border-white/[0.02]">
                   <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-3">
                     Projected Returns
                   </p>
@@ -438,7 +451,7 @@ export default function Plans({ navigate }: PlansProps) {
                     <span className="text-neutral-500">Expected Total Return</span>
                     <span className="text-green-400 font-semibold">+${fmt(expectedTotalReturn)}</span>
                   </div>
-                  <div className="border-t border-[#1e1e1e] pt-2 mt-2 flex justify-between text-sm">
+                  <div className="border-t border-white/[0.02] pt-2 mt-2 flex justify-between text-sm">
                     <span className="text-neutral-300 font-medium">Total at Maturity</span>
                     <span className="text-white font-bold">
                       ${fmt(parseFloat(investAmount) + expectedTotalReturn)}
@@ -451,7 +464,7 @@ export default function Plans({ navigate }: PlansProps) {
                 <Button
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
-                  className="border-[#262626] text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+                  className="border-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                 >
                   Cancel
                 </Button>

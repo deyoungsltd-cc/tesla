@@ -115,7 +115,7 @@ export default function Referral() {
       </div>
 
       {/* Referral Code Card */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -123,7 +123,7 @@ export default function Referral() {
                 Your Referral Code
               </p>
               {loading ? (
-                <Skeleton className="h-12 w-52 bg-[#1a1a1a]" />
+                <Skeleton className="h-12 w-52 bg-white/[0.03]" />
               ) : (
                 <p className="text-3xl sm:text-4xl font-bold font-mono tracking-widest text-red-500">
                   {referralCode}
@@ -152,32 +152,32 @@ export default function Referral() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600/10">
                 <Users className="h-4 w-4 text-red-400" />
               </div>
               <span className="text-xs text-neutral-500">Total Referrals</span>
             </div>
             {loading ? (
-              <Skeleton className="h-7 w-20 bg-[#1a1a1a]" />
+              <Skeleton className="h-7 w-20 bg-white/[0.03]" />
             ) : (
               <p className="text-2xl font-bold text-white">{info?.totalReferrals ?? 0}</p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-600/10">
                 <DollarSign className="h-4 w-4 text-green-400" />
               </div>
               <span className="text-xs text-neutral-500">Commissions Earned</span>
             </div>
             {loading ? (
-              <Skeleton className="h-7 w-28 bg-[#1a1a1a]" />
+              <Skeleton className="h-7 w-28 bg-white/[0.03]" />
             ) : (
               <p className="text-2xl font-bold text-white">
                 ${fmt(info?.totalCommissions ?? 0)}
@@ -186,16 +186,16 @@ export default function Referral() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-600/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-600/10">
                 <Percent className="h-4 w-4 text-yellow-400" />
               </div>
               <span className="text-xs text-neutral-500">Commission Rate</span>
             </div>
             {loading ? (
-              <Skeleton className="h-7 w-16 bg-[#1a1a1a]" />
+              <Skeleton className="h-7 w-16 bg-white/[0.03]" />
             ) : (
               <p className="text-2xl font-bold text-white">{info?.commissionRate ?? 10}%</p>
             )}
@@ -206,7 +206,7 @@ export default function Referral() {
       {/* How It Works + Promo Code */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* How It Works */}
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
               <Zap className="h-4 w-4 text-red-500" />
@@ -259,7 +259,7 @@ export default function Referral() {
         </Card>
 
         {/* Promo Code */}
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
               <Gift className="h-4 w-4 text-red-500" />
@@ -275,7 +275,7 @@ export default function Referral() {
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Enter promo code..."
-                className="flex-1 bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                className="flex-1 bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
               />
               <Button
                 onClick={handleApplyPromo}
@@ -295,7 +295,7 @@ export default function Referral() {
             </p>
 
             {/* Share Buttons */}
-            <div className="pt-4 border-t border-[#262626]">
+            <div className="pt-4 border-t border-white/[0.04]">
               <p className="text-xs text-neutral-500 font-medium mb-3">Share via</p>
               <div className="flex flex-wrap gap-2">
                 {shareButtons.map((btn) => (
@@ -303,7 +303,7 @@ export default function Referral() {
                     key={btn.label}
                     variant="outline"
                     size="sm"
-                    className={`border-[#333] text-neutral-400 text-xs gap-1.5 h-9 ${btn.color} transition-colors`}
+                    className={`border-white/[0.08] text-neutral-400 text-xs gap-1.5 h-9 ${btn.color} transition-colors`}
                   >
                     {btn.icon}
                     {btn.label}

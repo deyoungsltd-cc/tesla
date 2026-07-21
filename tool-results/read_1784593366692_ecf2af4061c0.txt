@@ -1,0 +1,652 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useEffect, useState, useCallback } from 'react';
+     4→     4→import { useAuthStore } from '@/store/useAuthStore';
+     5→     5→import { api } from '@/lib/api';
+     6→     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     7→     7→import { Badge } from '@/components/ui/badge';
+     8→     8→import { Button } from '@/components/ui/button';
+     9→     9→import { Skeleton } from '@/components/ui/skeleton';
+    10→    10→import { Input } from '@/components/ui/input';
+    11→    11→import { Label } from '@/components/ui/label';
+    12→    12→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    13→    13→import {
+    14→    14→  Select,
+    15→    15→  SelectContent,
+    16→    16→  SelectItem,
+    17→    17→  SelectTrigger,
+    18→    18→  SelectValue,
+    19→    19→} from '@/components/ui/select';
+    20→    20→import {
+    21→    21→  Table,
+    22→    22→  TableBody,
+    23→    23→  TableCell,
+    24→    24→  TableHead,
+    25→    25→  TableHeader,
+    26→    26→  TableRow,
+    27→    27→} from '@/components/ui/table';
+    28→    28→import { toast } from 'sonner';
+    29→    29→import {
+    30→    30→  ArrowDownCircle,
+    31→    31→  Copy,
+    32→    32→  Check,
+    33→    33→  Wallet,
+    34→    34→  Clock,
+    35→    35→  Gift,
+    36→    36→  Info,
+    37→    37→  Loader2,
+    38→    38→  ImageIcon,
+    39→    39→} from 'lucide-react';
+    40→    40→
+    41→    41→// ─── Utilities ────────────────────────────────────────────────────────────────
+    42→    42→
+    43→    43→function fmt(n: number): string {
+    44→    44→  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    45→    45→}
+    46→    46→
+    47→    47→function fmtDate(dateStr: string): string {
+    48→    48→  if (!dateStr) return '—';
+    49→    49→  const d = new Date(dateStr);
+    50→    50→  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    51→    51→}
+    52→    52→
+    53→    53→function statusColor(status: string) {
+    54→    54→  switch (status?.toLowerCase()) {
+    55→    55→    case 'confirmed':
+    56→    56→    case 'completed':
+    57→    57→    case 'approved':
+    58→    58→      return 'border-green-600/30 bg-green-600/10 text-green-400';
+    59→    59→    case 'pending':
+    60→    60→      return 'border-yellow-600/30 bg-yellow-600/10 text-yellow-400';
+    61→    61→    case 'rejected':
+    62→    62→    case 'failed':
+    63→    63→    case 'cancelled':
+    64→    64→      return 'border-red-600/30 bg-red-600/10 text-red-400';
+    65→    65→    default:
+    66→    66→      return 'border-neutral-600/30 bg-neutral-600/10 text-neutral-400';
+    67→    67→  }
+    68→    68→}
+    69→    69→
+    70→    70→function modeBadge(mode: string) {
+    71→    71→  if (mode === 'live') return 'border-red-600/30 bg-red-600/10 text-red-400';
+    72→    72→  return 'border-neutral-600/30 bg-neutral-600/10 text-neutral-400';
+    73→    73→}
+    74→    74→
+    75→    75→function methodBadge(method: string) {
+    76→    76→  if (method === 'crypto') return 'border-orange-600/30 bg-orange-600/10 text-orange-400';
+    77→    77→  if (method === 'gift_card') return 'border-purple-600/30 bg-purple-600/10 text-purple-400';
+    78→    78→  return 'border-neutral-600/30 bg-neutral-600/10 text-neutral-400';
+    79→    79→}
+    80→    80→
+    81→    81→// ─── Mock Wallet Addresses ───────────────────────────────────────────────────
+    82→    82→
+    83→    83→const MOCK_ADDRESSES: Record<string, string> = {
+    84→    84→  BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    85→    85→  ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18',
+    86→    86→  USDT: 'TXkRc3XHQF8bC7vZLF8EVb1vP3cNH9FqWZ',
+    87→    87→};
+    88→    88→
+    89→    89→// ─── Interfaces ───────────────────────────────────────────────────────────────
+    90→    90→
+    91→    91→interface DepositRecord {
+    92→    92→  id: string;
+    93→    93→  amount: number;
+    94→    94→  method: string;
+    95→    95→  cryptoCurrency?: string;
+    96→    96→  giftCardType?: string;
+    97→    97→  status: string;
+    98→    98→  mode: string;
+    99→    99→  createdAt: string;
+   100→   100→}
+   101→   101→
+   102→   102→// ─── Component ────────────────────────────────────────────────────────────────
+   103→   103→
+   104→   104→export default function Deposits() {
+   105→   105→  const { user } = useAuthStore();
+   106→   106→  const activeMode = user?.activeMode || 'demo';
+   107→   107→
+   108→   108→  // Crypto deposit form
+   109→   109→  const [cryptoCurrency, setCryptoCurrency] = useState('BTC');
+   110→   110→  const [cryptoAmount, setCryptoAmount] = useState('');
+   111→   111→  const [cryptoMode, setCryptoMode] = useState<'demo' | 'live'>(activeMode);
+   112→   112→  const [cryptoSubmitting, setCryptoSubmitting] = useState(false);
+   113→   113→
+   114→   114→  // Gift card deposit form
+   115→   115→  const [giftCardType, setGiftCardType] = useState('Amazon');
+   116→   116→  const [giftCardCode, setGiftCardCode] = useState('');
+   117→   117→  const [giftCardPin, setGiftCardPin] = useState('');
+   118→   118→  const [giftCardAmount, setGiftCardAmount] = useState('');
+   119→   119→  const [giftCardImageUrl, setGiftCardImageUrl] = useState('');
+   120→   120→  const [giftCardMode, setGiftCardMode] = useState<'demo' | 'live'>(activeMode);
+   121→   121→  const [giftCardSubmitting, setGiftCardSubmitting] = useState(false);
+   122→   122→
+   123→   123→  // Copy state
+   124→   124→  const [copied, setCopied] = useState(false);
+   125→   125→
+   126→   126→  // History
+   127→   127→  const [history, setHistory] = useState<DepositRecord[]>([]);
+   128→   128→  const [historyLoading, setHistoryLoading] = useState(true);
+   129→   129→  const [statusFilter, setStatusFilter] = useState('all');
+   130→   130→
+   131→   131→  // ─── Wallet balance from store ──────────────────────────────────────────
+   132→   132→
+   133→   133→  const getWalletBalance = (mode: 'demo' | 'live') => {
+   134→   134→    const wallet = user?.wallets?.find((w) => w.type === mode);
+   135→   135→    return wallet?.balance ?? 0;
+   136→   136→  };
+   137→   137→
+   138→   138→  // ─── Fetch History ──────────────────────────────────────────────────────
+   139→   139→
+   140→   140→  const fetchHistory = useCallback(async (status: string) => {
+   141→   141→    setHistoryLoading(true);
+   142→   142→    try {
+   143→   143→      const params = status !== 'all' ? `status=${status}` : '';
+   144→   144→      const res = await api.deposits.history(params);
+   145→   145→      const data = res.deposits || res.data || res;
+   146→   146→      if (Array.isArray(data)) {
+   147→   147→        setHistory(data);
+   148→   148→      } else if (data && typeof data === 'object') {
+   149→   149→        setHistory(data.items || data.deposits || data.data || []);
+   150→   150→      }
+   151→   151→    } catch {
+   152→   152→      setHistory([]);
+   153→   153→    } finally {
+   154→   154→      setHistoryLoading(false);
+   155→   155→    }
+   156→   156→  }, []);
+   157→   157→
+   158→   158→  useEffect(() => {
+   159→   159→    fetchHistory(statusFilter);
+   160→   160→  }, [statusFilter, fetchHistory]);
+   161→   161→
+   162→   162→  // ─── Copy Address ───────────────────────────────────────────────────────
+   163→   163→
+   164→   164→  const handleCopy = async () => {
+   165→   165→    try {
+   166→   166→      await navigator.clipboard.writeText(MOCK_ADDRESSES[cryptoCurrency]);
+   167→   167→      setCopied(true);
+   168→   168→      toast.success('Address copied to clipboard');
+   169→   169→      setTimeout(() => setCopied(false), 2000);
+   170→   170→    } catch {
+   171→   171→      toast.error('Failed to copy address');
+   172→   172→    }
+   173→   173→  };
+   174→   174→
+   175→   175→  // ─── Submit Crypto Deposit ──────────────────────────────────────────────
+   176→   176→
+   177→   177→  const handleCryptoSubmit = async () => {
+   178→   178→    const amount = parseFloat(cryptoAmount);
+   179→   179→    if (!amount || amount < 10) {
+   180→   180→      toast.error('Minimum deposit amount is $10.00');
+   181→   181→      return;
+   182→   182→    }
+   183→   183→
+   184→   184→    setCryptoSubmitting(true);
+   185→   185→    try {
+   186→   186→      await api.deposits.create({
+   187→   187→        amount,
+   188→   188→        method: 'crypto',
+   189→   189→        cryptoCurrency,
+   190→   190→        mode: cryptoMode,
+   191→   191→        txHash: 'pending',
+   192→   192→      });
+   193→   193→      toast.success(cryptoMode === 'demo' ? 'Demo deposit credited instantly!' : 'Deposit submitted for confirmation.');
+   194→   194→      setCryptoAmount('');
+   195→   195→      fetchHistory(statusFilter);
+   196→   196→    } catch (err: any) {
+   197→   197→      toast.error(err?.message || 'Failed to submit deposit');
+   198→   198→    } finally {
+   199→   199→      setCryptoSubmitting(false);
+   200→   200→    }
+   201→   201→  };
+   202→   202→
+   203→   203→  // ─── Submit Gift Card Deposit ───────────────────────────────────────────
+   204→   204→
+   205→   205→  const handleGiftCardSubmit = async () => {
+   206→   206→    const amount = parseFloat(giftCardAmount);
+   207→   207→    if (!amount || amount < 10) {
+   208→   208→      toast.error('Minimum deposit amount is $10.00');
+   209→   209→      return;
+   210→   210→    }
+   211→   211→    if (!giftCardCode.trim()) {
+   212→   212→      toast.error('Card code is required');
+   213→   213→      return;
+   214→   214→    }
+   215→   215→
+   216→   216→    setGiftCardSubmitting(true);
+   217→   217→    try {
+   218→   218→      await api.deposits.create({
+   219→   219→        amount,
+   220→   220→        method: 'gift_card',
+   221→   221→        giftCardType,
+   222→   222→        giftCardCode: giftCardCode.trim(),
+   223→   223→        giftCardPin: giftCardPin.trim() || undefined,
+   224→   224→        giftCardImageUrl: giftCardImageUrl.trim() || undefined,
+   225→   225→        mode: giftCardMode,
+   226→   226→      });
+   227→   227→      toast.success('Gift card deposit submitted successfully!');
+   228→   228→      setGiftCardCode('');
+   229→   229→      setGiftCardPin('');
+   230→   230→      setGiftCardAmount('');
+   231→   231→      setGiftCardImageUrl('');
+   232→   232→      fetchHistory(statusFilter);
+   233→   233→    } catch (err: any) {
+   234→   234→      toast.error(err?.message || 'Failed to submit gift card deposit');
+   235→   235→    } finally {
+   236→   236→      setGiftCardSubmitting(false);
+   237→   237→    }
+   238→   238→  };
+   239→   239→
+   240→   240→  // ─── Render ─────────────────────────────────────────────────────────────
+   241→   241→
+   242→   242→  return (
+   243→   243→    <div className="space-y-6 p-4 lg:p-6 animate-fade-in">
+   244→   244→      {/* Header */}
+   245→   245→      <div>
+   246→   246→        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+   247→   247→          <ArrowDownCircle className="h-6 w-6 text-green-400" />
+   248→   248→          Deposits
+   249→   249→        </h2>
+   250→   250→        <p className="text-sm text-neutral-500 mt-1">
+   251→   251→          Fund your wallet via cryptocurrency or gift cards.
+   252→   252→        </p>
+   253→   253→      </div>
+   254→   254→
+   255→   255→      {/* Create Deposit Card */}
+   256→   256→      <Card className="border-[#262626] bg-gradient-card">
+   257→   257→        <CardHeader className="pb-4">
+   258→   258→          <CardTitle className="text-base font-semibold text-white">Create Deposit</CardTitle>
+   259→   259→        </CardHeader>
+   260→   260→        <CardContent>
+   261→   261→          <Tabs defaultValue="crypto" className="space-y-4">
+   262→   262→            <TabsList className="bg-[#141414] border border-[#262626]">
+   263→   263→              <TabsTrigger
+   264→   264→                value="crypto"
+   265→   265→                className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 transition-colors"
+   266→   266→              >
+   267→   267→                <Wallet className="h-4 w-4 mr-1.5" />
+   268→   268→                Crypto Deposit
+   269→   269→              </TabsTrigger>
+   270→   270→              <TabsTrigger
+   271→   271→                value="gift_card"
+   272→   272→                className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 transition-colors"
+   273→   273→              >
+   274→   274→                <Gift className="h-4 w-4 mr-1.5" />
+   275→   275→                Gift Card Deposit
+   276→   276→              </TabsTrigger>
+   277→   277→            </TabsList>
+   278→   278→
+   279→   279→            {/* ─── Crypto Deposit Tab ─────────────────────────────────────── */}
+   280→   280→            <TabsContent value="crypto" className="mt-4 space-y-5">
+   281→   281→              {/* Mode Toggle */}
+   282→   282→              <div className="flex items-center gap-4">
+   283→   283→                <span className="text-sm text-neutral-400">Mode:</span>
+   284→   284→                <div className="flex items-center gap-2">
+   285→   285→                  {(['demo', 'live'] as const).map((m) => (
+   286→   286→                    <button
+   287→   287→                      key={m}
+   288→   288→                      onClick={() => setCryptoMode(m)}
+   289→   289→                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+   290→   290→                        cryptoMode === m
+   291→   291→                          ? m === 'live'
+   292→   292→                            ? 'bg-red-600/20 border-red-600/50 text-red-400'
+   293→   293→                            : 'bg-neutral-700/50 border-neutral-600/50 text-neutral-300'
+   294→   294→                          : 'border-[#262626] text-neutral-500 hover:text-neutral-300 hover:border-[#333]'
+   295→   295→                      }`}
+   296→   296→                    >
+   297→   297→                      {m === 'live' ? '🔴 Live' : '⚪ Demo'}
+   298→   298→                    </button>
+   299→   299→                  ))}
+   300→   300→                </div>
+   301→   301→              </div>
+   302→   302→
+   303→   303→              {/* Wallet Balance */}
+   304→   304→              <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#1e1e1e]">
+   305→   305→                <div className="flex items-center justify-between">
+   306→   306→                  <div className="flex items-center gap-2">
+   307→   307→                    <Wallet className="h-4 w-4 text-neutral-500" />
+   308→   308→                    <span className="text-xs text-neutral-500">
+   309→   309→                      {cryptoMode === 'live' ? 'Live' : 'Demo'} Wallet Balance
+   310→   310→                    </span>
+   311→   311→                  </div>
+   312→   312→                  <span className="text-lg font-bold text-white">
+   313→   313→                    ${fmt(getWalletBalance(cryptoMode))}
+   314→   314→                  </span>
+   315→   315→                </div>
+   316→   316→              </div>
+   317→   317→
+   318→   318→              {/* Crypto Select */}
+   319→   319→              <div className="space-y-2">
+   320→   320→                <Label className="text-xs text-neutral-400">Select Cryptocurrency</Label>
+   321→   321→                <Select value={cryptoCurrency} onValueChange={setCryptoCurrency}>
+   322→   322→                  <SelectTrigger className="bg-[#0f0f0f] border-[#262626] text-neutral-300 h-10">
+   323→   323→                    <SelectValue />
+   324→   324→                  </SelectTrigger>
+   325→   325→                  <SelectContent className="bg-[#141414] border-[#262626]">
+   326→   326→                    <SelectItem value="BTC">BTC — Bitcoin</SelectItem>
+   327→   327→                    <SelectItem value="ETH">ETH — Ethereum</SelectItem>
+   328→   328→                    <SelectItem value="USDT">USDT — Tether</SelectItem>
+   329→   329→                  </SelectContent>
+   330→   330→                </Select>
+   331→   331→              </div>
+   332→   332→
+   333→   333→              {/* Amount */}
+   334→   334→              <div className="space-y-2">
+   335→   335→                <Label className="text-xs text-neutral-400">Amount (USD)</Label>
+   336→   336→                <div className="relative">
+   337→   337→                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+   338→   338→                  <Input
+   339→   339→                    type="number"
+   340→   340→                    min={10}
+   341→   341→                    step="0.01"
+   342→   342→                    placeholder="0.00"
+   343→   343→                    value={cryptoAmount}
+   344→   344→                    onChange={(e) => setCryptoAmount(e.target.value)}
+   345→   345→                    className="pl-7 bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+   346→   346→                  />
+   347→   347→                </div>
+   348→   348→                <p className="text-[11px] text-neutral-600">Minimum deposit: $10.00</p>
+   349→   349→              </div>
+   350→   350→
+   351→   351→              {/* Wallet Address (Live mode only) */}
+   352→   352→              {cryptoMode === 'live' && (
+   353→   353→                <div className="space-y-2">
+   354→   354→                  <Label className="text-xs text-neutral-400 flex items-center gap-1.5">
+   355→   355→                    <Info className="h-3 w-3 text-yellow-500" />
+   356→   356→                    Send {cryptoCurrency} to this address
+   357→   357→                  </Label>
+   358→   358→                  <div className="flex items-center gap-2">
+   359→   359→                    <div className="flex-1 bg-[#0f0f0f] border border-[#262626] rounded-md px-3 py-2.5 text-xs text-neutral-300 font-mono truncate select-all">
+   360→   360→                      {MOCK_ADDRESSES[cryptoCurrency]}
+   361→   361→                    </div>
+   362→   362→                    <Button
+   363→   363→                      variant="outline"
+   364→   364→                      size="sm"
+   365→   365→                      className="shrink-0 h-10 w-10 p-0 border-[#262626] text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+   366→   366→                      onClick={handleCopy}
+   367→   367→                    >
+   368→   368→                      {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+   369→   369→                    </Button>
+   370→   370→                  </div>
+   371→   371→                  <p className="text-[11px] text-yellow-500/70">
+   372→   372→                    Live deposits require admin confirmation after blockchain verification.
+   373→   373→                  </p>
+   374→   374→                </div>
+   375→   375→              )}
+   376→   376→
+   377→   377→              {/* Demo Notice */}
+   378→   378→              {cryptoMode === 'demo' && (
+   379→   379→                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-lg p-3">
+   380→   380→                  <Info className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+   381→   381→                  <p className="text-xs text-green-400/80">
+   382→   382→                    Demo deposits are credited instantly. No real cryptocurrency is required.
+   383→   383→                  </p>
+   384→   384→                </div>
+   385→   385→              )}
+   386→   386→
+   387→   387→              {/* Submit */}
+   388→   388→              <Button
+   389→   389→                onClick={handleCryptoSubmit}
+   390→   390→                disabled={cryptoSubmitting || !cryptoAmount || parseFloat(cryptoAmount) < 10}
+   391→   391→                className="w-full h-11 bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+   392→   392→              >
+   393→   393→                {cryptoSubmitting ? (
+   394→   394→                  <>
+   395→   395→                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+   396→   396→                    Submitting...
+   397→   397→                  </>
+   398→   398→                ) : (
+   399→   399→                  'Submit Deposit'
+   400→   400→                )}
+   401→   401→              </Button>
+   402→   402→            </TabsContent>
+   403→   403→
+   404→   404→            {/* ─── Gift Card Deposit Tab ──────────────────────────────────── */}
+   405→   405→            <TabsContent value="gift_card" className="mt-4 space-y-5">
+   406→   406→              {/* Mode Toggle */}
+   407→   407→              <div className="flex items-center gap-4">
+   408→   408→                <span className="text-sm text-neutral-400">Mode:</span>
+   409→   409→                <div className="flex items-center gap-2">
+   410→   410→                  {(['demo', 'live'] as const).map((m) => (
+   411→   411→                    <button
+   412→   412→                      key={m}
+   413→   413→                      onClick={() => setGiftCardMode(m)}
+   414→   414→                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+   415→   415→                        giftCardMode === m
+   416→   416→                          ? m === 'live'
+   417→   417→                            ? 'bg-red-600/20 border-red-600/50 text-red-400'
+   418→   418→                            : 'bg-neutral-700/50 border-neutral-600/50 text-neutral-300'
+   419→   419→                          : 'border-[#262626] text-neutral-500 hover:text-neutral-300 hover:border-[#333]'
+   420→   420→                      }`}
+   421→   421→                    >
+   422→   422→                      {m === 'live' ? '🔴 Live' : '⚪ Demo'}
+   423→   423→                    </button>
+   424→   424→                  ))}
+   425→   425→                </div>
+   426→   426→              </div>
+   427→   427→
+   428→   428→              {/* Wallet Balance */}
+   429→   429→              <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#1e1e1e]">
+   430→   430→                <div className="flex items-center justify-between">
+   431→   431→                  <div className="flex items-center gap-2">
+   432→   432→                    <Wallet className="h-4 w-4 text-neutral-500" />
+   433→   433→                    <span className="text-xs text-neutral-500">
+   434→   434→                      {giftCardMode === 'live' ? 'Live' : 'Demo'} Wallet Balance
+   435→   435→                    </span>
+   436→   436→                  </div>
+   437→   437→                  <span className="text-lg font-bold text-white">
+   438→   438→                    ${fmt(getWalletBalance(giftCardMode))}
+   439→   439→                  </span>
+   440→   440→                </div>
+   441→   441→              </div>
+   442→   442→
+   443→   443→              {/* Card Type */}
+   444→   444→              <div className="space-y-2">
+   445→   445→                <Label className="text-xs text-neutral-400">Card Type</Label>
+   446→   446→                <Select value={giftCardType} onValueChange={setGiftCardType}>
+   447→   447→                  <SelectTrigger className="bg-[#0f0f0f] border-[#262626] text-neutral-300 h-10">
+   448→   448→                    <SelectValue />
+   449→   449→                  </SelectTrigger>
+   450→   450→                  <SelectContent className="bg-[#141414] border-[#262626]">
+   451→   451→                    <SelectItem value="Amazon">Amazon</SelectItem>
+   452→   452→                    <SelectItem value="Google Play">Google Play</SelectItem>
+   453→   453→                    <SelectItem value="iTunes">iTunes</SelectItem>
+   454→   454→                    <SelectItem value="Visa">Visa</SelectItem>
+   455→   455→                    <SelectItem value="Mastercard">Mastercard</SelectItem>
+   456→   456→                    <SelectItem value="Other">Other</SelectItem>
+   457→   457→                  </SelectContent>
+   458→   458→                </Select>
+   459→   459→              </div>
+   460→   460→
+   461→   461→              {/* Card Code */}
+   462→   462→              <div className="space-y-2">
+   463→   463→                <Label className="text-xs text-neutral-400">Card Code</Label>
+   464→   464→                <Input
+   465→   465→                  placeholder="XXXX-XXXX-XXXX-XXXX"
+   466→   466→                  value={giftCardCode}
+   467→   467→                  onChange={(e) => setGiftCardCode(e.target.value)}
+   468→   468→                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+   469→   469→                />
+   470→   470→              </div>
+   471→   471→
+   472→   472→              {/* PIN Code */}
+   473→   473→              <div className="space-y-2">
+   474→   474→                <Label className="text-xs text-neutral-400">
+   475→   475→                  PIN Code <span className="text-neutral-600">(optional)</span>
+   476→   476→                </Label>
+   477→   477→                <Input
+   478→   478→                  placeholder="Enter PIN if applicable"
+   479→   479→                  value={giftCardPin}
+   480→   480→                  onChange={(e) => setGiftCardPin(e.target.value)}
+   481→   481→                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+   482→   482→                />
+   483→   483→              </div>
+   484→   484→
+   485→   485→              {/* Amount */}
+   486→   486→              <div className="space-y-2">
+   487→   487→                <Label className="text-xs text-neutral-400">Card Amount (USD)</Label>
+   488→   488→                <div className="relative">
+   489→   489→                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+   490→   490→                  <Input
+   491→   491→                    type="number"
+   492→   492→                    min={10}
+   493→   493→                    step="0.01"
+   494→   494→                    placeholder="0.00"
+   495→   495→                    value={giftCardAmount}
+   496→   496→                    onChange={(e) => setGiftCardAmount(e.target.value)}
+   497→   497→                    className="pl-7 bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+   498→   498→                  />
+   499→   499→                </div>
+   500→   500→              </div>
+   501→   501→
+   502→   502→              {/* Image URL (simulated file upload) */}
+   503→   503→              <div className="space-y-2">
+   504→   504→                <Label className="text-xs text-neutral-400 flex items-center gap-1.5">
+   505→   505→                  <ImageIcon className="h-3 w-3" />
+   506→   506→                  Card Image URL
+   507→   507→                </Label>
+   508→   508→                <Input
+   509→   509→                  placeholder="https://example.com/gift-card.jpg"
+   510→   510→                  value={giftCardImageUrl}
+   511→   511→                  onChange={(e) => setGiftCardImageUrl(e.target.value)}
+   512→   512→                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+   513→   513→                />
+   514→   514→                <p className="text-[11px] text-neutral-600">
+   515→   515→                  Paste a URL to an image of the gift card (file upload coming soon).
+   516→   516→                </p>
+   517→   517→              </div>
+   518→   518→
+   519→   519→              {/* Mode-specific notice */}
+   520→   520→              {giftCardMode === 'demo' ? (
+   521→   521→                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-lg p-3">
+   522→   522→                  <Info className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+   523→   523→                  <p className="text-xs text-green-400/80">
+   524→   524→                    Demo deposits are credited instantly. No real gift card is required.
+   525→   525→                  </p>
+   526→   526→                </div>
+   527→   527→              ) : (
+   528→   528→                <div className="flex items-start gap-2 bg-yellow-600/5 border border-yellow-600/20 rounded-lg p-3">
+   529→   529→                  <Info className="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
+   530→   530→                  <p className="text-xs text-yellow-400/80">
+   531→   531→                    Live gift card deposits require admin verification after review.
+   532→   532→                  </p>
+   533→   533→                </div>
+   534→   534→              )}
+   535→   535→
+   536→   536→              {/* Submit */}
+   537→   537→              <Button
+   538→   538→                onClick={handleGiftCardSubmit}
+   539→   539→                disabled={
+   540→   540→                  giftCardSubmitting ||
+   541→   541→                  !giftCardAmount ||
+   542→   542→                  parseFloat(giftCardAmount) < 10 ||
+   543→   543→                  !giftCardCode.trim()
+   544→   544→                }
+   545→   545→                className="w-full h-11 bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+   546→   546→              >
+   547→   547→                {giftCardSubmitting ? (
+   548→   548→                  <>
+   549→   549→                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+   550→   550→                    Submitting...
+   551→   551→                  </>
+   552→   552→                ) : (
+   553→   553→                  'Submit Gift Card'
+   554→   554→                )}
+   555→   555→              </Button>
+   556→   556→            </TabsContent>
+   557→   557→          </Tabs>
+   558→   558→        </CardContent>
+   559→   559→      </Card>
+   560→   560→
+   561→   561→      {/* Deposit History Card */}
+   562→   562→      <Card className="border-[#262626] bg-gradient-card">
+   563→   563→        <CardHeader className="pb-4">
+   564→   564→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+   565→   565→            <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
+   566→   566→              <Clock className="h-4 w-4 text-neutral-500" />
+   567→   567→              Deposit History
+   568→   568→            </CardTitle>
+   569→   569→            {/* Status Filter */}
+   570→   570→            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+   571→   571→              <TabsList className="bg-[#141414] border border-[#262626] h-8">
+   572→   572→                {['all', 'pending', 'confirmed', 'rejected'].map((s) => (
+   573→   573→                  <TabsTrigger
+   574→   574→                    key={s}
+   575→   575→                    value={s}
+   576→   576→                    className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 text-xs px-3 h-6 transition-colors capitalize"
+   577→   577→                  >
+   578→   578→                    {s}
+   579→   579→                  </TabsTrigger>
+   580→   580→                ))}
+   581→   581→              </TabsList>
+   582→   582→            </Tabs>
+   583→   583→          </div>
+   584→   584→        </CardHeader>
+   585→   585→        <CardContent>
+   586→   586→          {historyLoading ? (
+   587→   587→            <div className="space-y-3">
+   588→   588→              {[...Array(6)].map((_, i) => (
+   589→   589→                <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+   590→   590→              ))}
+   591→   591→            </div>
+   592→   592→          ) : history.length === 0 ? (
+   593→   593→            <div className="flex flex-col items-center justify-center py-12 text-neutral-500">
+   594→   594→              <ArrowDownCircle className="h-10 w-10 mb-2 opacity-50" />
+   595→   595→              <p className="text-sm">No deposits found</p>
+   596→   596→              <p className="text-xs text-neutral-600 mt-1">Your deposit history will appear here.</p>
+   597→   597→            </div>
+   598→   598→          ) : (
+   599→   599→            <>
+   600→   600→              <div className="max-h-96 overflow-y-auto">
+   601→   601→                <Table>
+   602→   602→                  <TableHeader>
+   603→   603→                    <TableRow className="border-[#262626] hover:bg-transparent">
+   604→   604→                      <TableHead className="text-[11px] text-neutral-500 font-medium">Date</TableHead>
+   605→   605→                      <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Method</TableHead>
+   606→   606→                      <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
+   607→   607→                      <TableHead className="text-[11px] text-neutral-500 font-medium">Crypto / Type</TableHead>
+   608→   608→                      <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Status</TableHead>
+   609→   609→                      <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Mode</TableHead>
+   610→   610→                    </TableRow>
+   611→   611→                  </TableHeader>
+   612→   612→                  <TableBody>
+   613→   613→                    {history.map((dep) => (
+   614→   614→                      <TableRow key={dep.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+   615→   615→                        <TableCell className="text-xs text-neutral-400 py-2.5">
+   616→   616→                          {fmtDate(dep.createdAt)}
+   617→   617→                        </TableCell>
+   618→   618→                        <TableCell className="py-2.5 text-center">
+   619→   619→                          <Badge className={`${methodBadge(dep.method)} border text-[10px] capitalize`}>
+   620→   620→                            {dep.method === 'gift_card' ? 'Gift Card' : 'Crypto'}
+   621→   621→                          </Badge>
+   622→   622→                        </TableCell>
+   623→   623→                        <TableCell className="text-xs text-white font-medium text-right py-2.5">
+   624→   624→                          ${fmt(dep.amount)}
+   625→   625→                        </TableCell>
+   626→   626→                        <TableCell className="text-xs text-neutral-300 py-2.5">
+   627→   627→                          {dep.method === 'crypto'
+   628→   628→                            ? dep.cryptoCurrency || '—'
+   629→   629→                            : dep.giftCardType || '—'}
+   630→   630→                        </TableCell>
+   631→   631→                        <TableCell className="py-2.5 text-center">
+   632→   632→                          <Badge className={`${statusColor(dep.status)} border text-[10px] capitalize`}>
+   633→   633→                            {dep.status}
+   634→   634→                          </Badge>
+   635→   635→                        </TableCell>
+   636→   636→                        <TableCell className="py-2.5 text-center">
+   637→   637→                          <Badge className={`${modeBadge(dep.mode)} border text-[10px] capitalize`}>
+   638→   638→                            {dep.mode}
+   639→   639→                          </Badge>
+   640→   640→                        </TableCell>
+   641→   641→                      </TableRow>
+   642→   642→                    ))}
+   643→   643→                  </TableBody>
+   644→   644→                </Table>
+   645→   645→              </div>
+   646→   646→            </>
+   647→   647→          )}
+   648→   648→        </CardContent>
+   649→   649→      </Card>
+   650→   650→    </div>
+   651→   651→  );
+   652→   652→}

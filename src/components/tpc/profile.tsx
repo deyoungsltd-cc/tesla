@@ -202,7 +202,7 @@ export default function Profile() {
       </div>
 
       {/* Personal Information */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <User className="h-4 w-4 text-red-500" />
@@ -214,8 +214,8 @@ export default function Profile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-3 w-24 bg-[#1a1a1a]" />
-                  <Skeleton className="h-10 w-full bg-[#1a1a1a]" />
+                  <Skeleton className="h-3 w-24 bg-white/[0.03]" />
+                  <Skeleton className="h-10 w-full bg-white/[0.03]" />
                 </div>
               ))}
             </div>
@@ -229,7 +229,7 @@ export default function Profile() {
                   value={profile.firstName || ''}
                   onChange={(e) => updateField('firstName', e.target.value)}
                   placeholder="Enter first name"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -240,7 +240,7 @@ export default function Profile() {
                   value={profile.lastName || ''}
                   onChange={(e) => updateField('lastName', e.target.value)}
                   placeholder="Enter last name"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function Profile() {
                   value={profile.phone || ''}
                   onChange={(e) => updateField('phone', e.target.value)}
                   placeholder="+1 (555) 000-0000"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -262,7 +262,7 @@ export default function Profile() {
                   type="date"
                   value={profile.dateOfBirth || ''}
                   onChange={(e) => updateField('dateOfBirth', e.target.value)}
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
@@ -273,12 +273,12 @@ export default function Profile() {
                   value={profile.country || ''}
                   onValueChange={(val) => updateField('country', val)}
                 >
-                  <SelectTrigger className="bg-[#0a0a0a] border-[#333] text-white focus:border-red-500/50">
+                  <SelectTrigger className="bg-[#0a0a0a] border-white/[0.08] text-white focus:border-red-500/50">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#333]">
+                  <SelectContent className="bg-white/[0.02] border-white/[0.08]">
                     {COUNTRIES.map((c) => (
-                      <SelectItem key={c} value={c} className="text-neutral-300 focus:text-white focus:bg-[#1a1a1a]">
+                      <SelectItem key={c} value={c} className="text-neutral-300 focus:text-white focus:bg-white/[0.03]">
                         {c}
                       </SelectItem>
                     ))}
@@ -291,7 +291,7 @@ export default function Profile() {
       </Card>
 
       {/* Address */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <MapPin className="h-4 w-4 text-red-500" />
@@ -303,8 +303,8 @@ export default function Profile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="h-3 w-24 bg-[#1a1a1a]" />
-                  <Skeleton className="h-10 w-full bg-[#1a1a1a]" />
+                  <Skeleton className="h-3 w-24 bg-white/[0.03]" />
+                  <Skeleton className="h-10 w-full bg-white/[0.03]" />
                 </div>
               ))}
             </div>
@@ -318,7 +318,7 @@ export default function Profile() {
                   value={profile.streetAddress || ''}
                   onChange={(e) => updateField('streetAddress', e.target.value)}
                   placeholder="123 Main Street, Apt 4B"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -329,7 +329,7 @@ export default function Profile() {
                   value={profile.city || ''}
                   onChange={(e) => updateField('city', e.target.value)}
                   placeholder="City"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -340,7 +340,7 @@ export default function Profile() {
                   value={profile.state || ''}
                   onChange={(e) => updateField('state', e.target.value)}
                   placeholder="State"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -351,7 +351,7 @@ export default function Profile() {
                   value={profile.postalCode || ''}
                   onChange={(e) => updateField('postalCode', e.target.value)}
                   placeholder="10001"
-                  className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                  className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
                 />
               </div>
             </div>
@@ -360,7 +360,7 @@ export default function Profile() {
       </Card>
 
       {/* Account Info */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-red-500" />
@@ -372,8 +372,8 @@ export default function Profile() {
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-3 w-24 bg-[#1a1a1a]" />
-                  <Skeleton className="h-5 w-32 bg-[#1a1a1a]" />
+                  <Skeleton className="h-3 w-24 bg-white/[0.03]" />
+                  <Skeleton className="h-5 w-32 bg-white/[0.03]" />
                 </div>
               ))}
             </div>
@@ -407,7 +407,7 @@ export default function Profile() {
       </Card>
 
       {/* Change Password */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <Lock className="h-4 w-4 text-red-500" />
@@ -425,7 +425,7 @@ export default function Profile() {
                   setPasswords((p) => ({ ...p, currentPassword: e.target.value }))
                 }
                 placeholder="••••••••"
-                className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
               />
             </div>
             <div className="space-y-2">
@@ -437,7 +437,7 @@ export default function Profile() {
                   setPasswords((p) => ({ ...p, newPassword: e.target.value }))
                 }
                 placeholder="••••••••"
-                className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
               />
             </div>
             <div className="space-y-2">
@@ -449,7 +449,7 @@ export default function Profile() {
                   setPasswords((p) => ({ ...p, confirmPassword: e.target.value }))
                 }
                 placeholder="••••••••"
-                className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ export default function Profile() {
             onClick={handleChangePassword}
             disabled={changingPw}
             variant="outline"
-            className="border-[#333] text-neutral-300 hover:text-white hover:bg-[#1a1a1a] gap-2"
+            className="border-white/[0.08] text-neutral-300 hover:text-white hover:bg-white/[0.03] gap-2"
           >
             {changingPw ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -470,7 +470,7 @@ export default function Profile() {
       </Card>
 
       {/* Two-Factor Auth */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-red-500" />

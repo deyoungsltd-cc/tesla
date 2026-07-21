@@ -201,7 +201,7 @@ export default function Support() {
 
       {/* Create Ticket Form */}
       {showForm && (
-        <Card className="border-[#262626] bg-gradient-card">
+        <Card className="border-white/[0.04] bg-white/[0.01]">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-red-500" />
@@ -215,7 +215,7 @@ export default function Support() {
                 value={form.subject}
                 onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                 placeholder="Brief description of your issue"
-                className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50"
+                className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50"
               />
             </div>
             <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function Support() {
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 placeholder="Describe your issue in detail..."
                 rows={5}
-                className="bg-[#0a0a0a] border-[#333] text-white placeholder:text-neutral-600 focus:border-red-500/50 resize-none"
+                className="bg-[#0a0a0a] border-white/[0.08] text-white placeholder:text-neutral-600 focus:border-red-500/50 resize-none"
               />
             </div>
             <Button
@@ -245,12 +245,12 @@ export default function Support() {
       )}
 
       {/* Tickets List */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-white">
             My Tickets
             {!loading && tickets.length > 0 && (
-              <Badge variant="outline" className="border-[#333] text-[10px] text-neutral-500 ml-2">
+              <Badge variant="outline" className="border-white/[0.08] text-[10px] text-neutral-500 ml-2">
                 {tickets.length}
               </Badge>
             )}
@@ -260,10 +260,10 @@ export default function Support() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="p-4 rounded-lg border border-[#1e1e1e] space-y-2">
-                  <Skeleton className="h-4 w-3/4 bg-[#1a1a1a]" />
-                  <Skeleton className="h-3 w-1/2 bg-[#1a1a1a]" />
-                  <Skeleton className="h-3 w-1/3 bg-[#1a1a1a]" />
+                <div key={i} className="p-4 rounded-xl border border-white/[0.02] space-y-2">
+                  <Skeleton className="h-4 w-3/4 bg-white/[0.03]" />
+                  <Skeleton className="h-3 w-1/2 bg-white/[0.03]" />
+                  <Skeleton className="h-3 w-1/3 bg-white/[0.03]" />
                 </div>
               ))}
             </div>
@@ -278,7 +278,7 @@ export default function Support() {
               {tickets.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="p-4 rounded-lg border border-[#1e1e1e] bg-[#0f0f0f]/50 hover:bg-[#1a1a1a]/50 transition-colors"
+                  className="p-4 rounded-xl border border-white/[0.02] bg-black/30/50 hover:bg-white/[0.03]/50 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div className="flex-1 min-w-0">

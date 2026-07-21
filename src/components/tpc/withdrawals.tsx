@@ -220,7 +220,7 @@ export default function Withdrawals() {
       </div>
 
       {/* Create Withdrawal Card */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white">Create Withdrawal</CardTitle>
         </CardHeader>
@@ -249,7 +249,7 @@ export default function Withdrawals() {
           </div>
 
           {/* Available Balance */}
-          <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#1e1e1e]">
+          <div className="bg-black/30 rounded-xl p-3 border border-white/[0.02]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-neutral-500" />
@@ -275,10 +275,10 @@ export default function Withdrawals() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className={`pl-7 bg-[#0f0f0f] border h-10 placeholder:text-neutral-600 text-white ${
+                className={`pl-7 bg-black/30 border h-10 placeholder:text-neutral-600 text-white ${
                   amount && (parsedAmount > availableBalance || parsedAmount <= 0)
                     ? 'border-red-600/50'
-                    : 'border-[#262626]'
+                    : 'border-white/[0.04]'
                 }`}
               />
             </div>
@@ -292,7 +292,7 @@ export default function Withdrawals() {
 
           {/* Live Fee Calculation Breakdown */}
           {parsedAmount > 0 && (
-            <div className="bg-[#0f0f0f] rounded-lg border border-[#1e1e1e] p-4 space-y-3">
+            <div className="bg-black/30 rounded-xl border border-white/[0.02] p-4 space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <Calculator className="h-4 w-4 text-red-400" />
                 <span className="text-sm font-medium text-neutral-300">Fee Breakdown</span>
@@ -319,7 +319,7 @@ export default function Withdrawals() {
           <div className="space-y-2">
             <Label className="text-xs text-neutral-400">Destination Type</Label>
             <Tabs value={destinationType} onValueChange={(v) => setDestinationType(v as 'crypto' | 'bank')}>
-              <TabsList className="bg-[#141414] border border-[#262626] w-full">
+              <TabsList className="bg-white/[0.02] border border-white/[0.04] w-full">
                 <TabsTrigger
                   value="crypto"
                   className="flex-1 data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 transition-colors"
@@ -344,10 +344,10 @@ export default function Withdrawals() {
               <div className="space-y-2">
                 <Label className="text-xs text-neutral-400">Select Cryptocurrency</Label>
                 <Select value={cryptoCurrency} onValueChange={setCryptoCurrency}>
-                  <SelectTrigger className="bg-[#0f0f0f] border-[#262626] text-neutral-300 h-10">
+                  <SelectTrigger className="bg-black/30 border-white/[0.04] text-neutral-300 h-10">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#262626]">
+                  <SelectContent className="bg-white/[0.02] border-white/[0.04]">
                     <SelectItem value="BTC">BTC — Bitcoin</SelectItem>
                     <SelectItem value="ETH">ETH — Ethereum</SelectItem>
                     <SelectItem value="USDT">USDT — Tether</SelectItem>
@@ -360,7 +360,7 @@ export default function Withdrawals() {
                   placeholder="Enter your wallet address"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600 font-mono text-sm"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600 font-mono text-sm"
                 />
               </div>
             </div>
@@ -375,7 +375,7 @@ export default function Withdrawals() {
                   placeholder="e.g., Chase, Bank of America"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                 />
               </div>
               <div className="space-y-2">
@@ -384,7 +384,7 @@ export default function Withdrawals() {
                   placeholder="Name on the bank account"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                 />
               </div>
               <div className="space-y-2">
@@ -393,7 +393,7 @@ export default function Withdrawals() {
                   placeholder="Enter account number"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600 font-mono text-sm"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600 font-mono text-sm"
                 />
               </div>
             </div>
@@ -418,7 +418,7 @@ export default function Withdrawals() {
       </Card>
 
       {/* Withdrawal History Card */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -427,7 +427,7 @@ export default function Withdrawals() {
             </CardTitle>
             {/* Status Filter */}
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="bg-[#141414] border border-[#262626] h-8">
+              <TabsList className="bg-white/[0.02] border border-white/[0.04] h-8">
                 {['all', 'pending', 'processing', 'completed', 'rejected'].map((s) => (
                   <TabsTrigger
                     key={s}
@@ -445,7 +445,7 @@ export default function Withdrawals() {
           {historyLoading ? (
             <div className="space-y-3">
               {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
               ))}
             </div>
           ) : history.length === 0 ? (
@@ -459,7 +459,7 @@ export default function Withdrawals() {
               <div className="max-h-96 overflow-y-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-[#262626] hover:bg-transparent">
+                    <TableRow className="border-white/[0.04] hover:bg-transparent">
                       <TableHead className="text-[11px] text-neutral-500 font-medium">Date</TableHead>
                       <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
                       <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Fee</TableHead>
@@ -471,7 +471,7 @@ export default function Withdrawals() {
                   </TableHeader>
                   <TableBody>
                     {history.map((wd) => (
-                      <TableRow key={wd.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                      <TableRow key={wd.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                         <TableCell className="text-xs text-neutral-400 py-2.5">
                           {fmtDate(wd.createdAt)}
                         </TableCell>

@@ -253,13 +253,13 @@ export default function Deposits() {
       </div>
 
       {/* Create Deposit Card */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-white">Create Deposit</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="crypto" className="space-y-4">
-            <TabsList className="bg-[#141414] border border-[#262626]">
+            <TabsList className="bg-white/[0.02] border border-white/[0.04]">
               <TabsTrigger
                 value="crypto"
                 className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-neutral-400 transition-colors"
@@ -291,7 +291,7 @@ export default function Deposits() {
                           ? m === 'live'
                             ? 'bg-red-600/20 border-red-600/50 text-red-400'
                             : 'bg-neutral-700/50 border-neutral-600/50 text-neutral-300'
-                          : 'border-[#262626] text-neutral-500 hover:text-neutral-300 hover:border-[#333]'
+                          : 'border-white/[0.04] text-neutral-500 hover:text-neutral-300 hover:border-white/[0.08]'
                       }`}
                     >
                       {m === 'live' ? '🔴 Live' : '⚪ Demo'}
@@ -301,7 +301,7 @@ export default function Deposits() {
               </div>
 
               {/* Wallet Balance */}
-              <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#1e1e1e]">
+              <div className="bg-black/30 rounded-xl p-3 border border-white/[0.02]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-neutral-500" />
@@ -319,10 +319,10 @@ export default function Deposits() {
               <div className="space-y-2">
                 <Label className="text-xs text-neutral-400">Select Cryptocurrency</Label>
                 <Select value={cryptoCurrency} onValueChange={setCryptoCurrency}>
-                  <SelectTrigger className="bg-[#0f0f0f] border-[#262626] text-neutral-300 h-10">
+                  <SelectTrigger className="bg-black/30 border-white/[0.04] text-neutral-300 h-10">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#262626]">
+                  <SelectContent className="bg-white/[0.02] border-white/[0.04]">
                     <SelectItem value="BTC">BTC — Bitcoin</SelectItem>
                     <SelectItem value="ETH">ETH — Ethereum</SelectItem>
                     <SelectItem value="USDT">USDT — Tether</SelectItem>
@@ -342,7 +342,7 @@ export default function Deposits() {
                     placeholder="0.00"
                     value={cryptoAmount}
                     onChange={(e) => setCryptoAmount(e.target.value)}
-                    className="pl-7 bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                    className="pl-7 bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                   />
                 </div>
                 <p className="text-[11px] text-neutral-600">Minimum deposit: $10.00</p>
@@ -356,13 +356,13 @@ export default function Deposits() {
                     Send {cryptoCurrency} to this address
                   </Label>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-[#0f0f0f] border border-[#262626] rounded-md px-3 py-2.5 text-xs text-neutral-300 font-mono truncate select-all">
+                    <div className="flex-1 bg-black/30 border border-white/[0.04] rounded-md px-3 py-2.5 text-xs text-neutral-300 font-mono truncate select-all">
                       {MOCK_ADDRESSES[cryptoCurrency]}
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="shrink-0 h-10 w-10 p-0 border-[#262626] text-neutral-400 hover:text-white hover:bg-[#1a1a1a]"
+                      className="shrink-0 h-10 w-10 p-0 border-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                       onClick={handleCopy}
                     >
                       {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
@@ -376,7 +376,7 @@ export default function Deposits() {
 
               {/* Demo Notice */}
               {cryptoMode === 'demo' && (
-                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-lg p-3">
+                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-xl p-3">
                   <Info className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-green-400/80">
                     Demo deposits are credited instantly. No real cryptocurrency is required.
@@ -416,7 +416,7 @@ export default function Deposits() {
                           ? m === 'live'
                             ? 'bg-red-600/20 border-red-600/50 text-red-400'
                             : 'bg-neutral-700/50 border-neutral-600/50 text-neutral-300'
-                          : 'border-[#262626] text-neutral-500 hover:text-neutral-300 hover:border-[#333]'
+                          : 'border-white/[0.04] text-neutral-500 hover:text-neutral-300 hover:border-white/[0.08]'
                       }`}
                     >
                       {m === 'live' ? '🔴 Live' : '⚪ Demo'}
@@ -426,7 +426,7 @@ export default function Deposits() {
               </div>
 
               {/* Wallet Balance */}
-              <div className="bg-[#0f0f0f] rounded-lg p-3 border border-[#1e1e1e]">
+              <div className="bg-black/30 rounded-xl p-3 border border-white/[0.02]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-neutral-500" />
@@ -444,10 +444,10 @@ export default function Deposits() {
               <div className="space-y-2">
                 <Label className="text-xs text-neutral-400">Card Type</Label>
                 <Select value={giftCardType} onValueChange={setGiftCardType}>
-                  <SelectTrigger className="bg-[#0f0f0f] border-[#262626] text-neutral-300 h-10">
+                  <SelectTrigger className="bg-black/30 border-white/[0.04] text-neutral-300 h-10">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#141414] border-[#262626]">
+                  <SelectContent className="bg-white/[0.02] border-white/[0.04]">
                     <SelectItem value="Amazon">Amazon</SelectItem>
                     <SelectItem value="Google Play">Google Play</SelectItem>
                     <SelectItem value="iTunes">iTunes</SelectItem>
@@ -465,7 +465,7 @@ export default function Deposits() {
                   placeholder="XXXX-XXXX-XXXX-XXXX"
                   value={giftCardCode}
                   onChange={(e) => setGiftCardCode(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                 />
               </div>
 
@@ -478,7 +478,7 @@ export default function Deposits() {
                   placeholder="Enter PIN if applicable"
                   value={giftCardPin}
                   onChange={(e) => setGiftCardPin(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                 />
               </div>
 
@@ -494,7 +494,7 @@ export default function Deposits() {
                     placeholder="0.00"
                     value={giftCardAmount}
                     onChange={(e) => setGiftCardAmount(e.target.value)}
-                    className="pl-7 bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                    className="pl-7 bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                   />
                 </div>
               </div>
@@ -509,7 +509,7 @@ export default function Deposits() {
                   placeholder="https://example.com/gift-card.jpg"
                   value={giftCardImageUrl}
                   onChange={(e) => setGiftCardImageUrl(e.target.value)}
-                  className="bg-[#0f0f0f] border-[#262626] text-white h-10 placeholder:text-neutral-600"
+                  className="bg-black/30 border-white/[0.04] text-white h-10 placeholder:text-neutral-600"
                 />
                 <p className="text-[11px] text-neutral-600">
                   Paste a URL to an image of the gift card (file upload coming soon).
@@ -518,14 +518,14 @@ export default function Deposits() {
 
               {/* Mode-specific notice */}
               {giftCardMode === 'demo' ? (
-                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-lg p-3">
+                <div className="flex items-start gap-2 bg-green-600/5 border border-green-600/20 rounded-xl p-3">
                   <Info className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-green-400/80">
                     Demo deposits are credited instantly. No real gift card is required.
                   </p>
                 </div>
               ) : (
-                <div className="flex items-start gap-2 bg-yellow-600/5 border border-yellow-600/20 rounded-lg p-3">
+                <div className="flex items-start gap-2 bg-yellow-600/5 border border-yellow-600/20 rounded-xl p-3">
                   <Info className="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-yellow-400/80">
                     Live gift card deposits require admin verification after review.
@@ -559,7 +559,7 @@ export default function Deposits() {
       </Card>
 
       {/* Deposit History Card */}
-      <Card className="border-[#262626] bg-gradient-card">
+      <Card className="border-white/[0.04] bg-white/[0.01]">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
@@ -568,7 +568,7 @@ export default function Deposits() {
             </CardTitle>
             {/* Status Filter */}
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="bg-[#141414] border border-[#262626] h-8">
+              <TabsList className="bg-white/[0.02] border border-white/[0.04] h-8">
                 {['all', 'pending', 'confirmed', 'rejected'].map((s) => (
                   <TabsTrigger
                     key={s}
@@ -586,7 +586,7 @@ export default function Deposits() {
           {historyLoading ? (
             <div className="space-y-3">
               {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full bg-[#1a1a1a]" />
+                <Skeleton key={i} className="h-12 w-full bg-white/[0.03]" />
               ))}
             </div>
           ) : history.length === 0 ? (
@@ -600,7 +600,7 @@ export default function Deposits() {
               <div className="max-h-96 overflow-y-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-[#262626] hover:bg-transparent">
+                    <TableRow className="border-white/[0.04] hover:bg-transparent">
                       <TableHead className="text-[11px] text-neutral-500 font-medium">Date</TableHead>
                       <TableHead className="text-[11px] text-neutral-500 font-medium text-center">Method</TableHead>
                       <TableHead className="text-[11px] text-neutral-500 font-medium text-right">Amount</TableHead>
@@ -611,7 +611,7 @@ export default function Deposits() {
                   </TableHeader>
                   <TableBody>
                     {history.map((dep) => (
-                      <TableRow key={dep.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]/50">
+                      <TableRow key={dep.id} className="border-white/[0.02] hover:bg-white/[0.03]/50">
                         <TableCell className="text-xs text-neutral-400 py-2.5">
                           {fmtDate(dep.createdAt)}
                         </TableCell>
