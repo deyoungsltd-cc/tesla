@@ -8,9 +8,8 @@ const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget')
 
 function TeslaLogo({ className = 'w-8 h-8' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M50 8C50 8 30 8 20 12L16 40C16 40 10 72 8 88H28L32 56H48V88H52V56H68L72 88H92C92 88 84 40 84 40L80 12C70 8 50 8 50 8Z" fill="#CC0000" />
-      <rect x="36" y="4" width="28" height="8" rx="4" fill="#CC0000" />
+    <svg viewBox="0 0 342 35" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0zm238.6 0h-6.8v34.8h6.8V.1zm-52.3 6.8c-5.3 0-9.7 2.1-12.9 6.2V.1h-6.8v34.8h6.8V19.5c0-7.4 3.8-12.4 10.2-12.4 5.8 0 9.3 4.3 9.3 11.2v16.6h6.8V17c0-6.3-1.8-10.1-4.5-12.6-2.6-2.3-5.4-2.5-8.9-2.5zM293 7.7c-9.7 0-17 7.3-17 18.2s7.3 18.2 17 18.2c9.4 0 16.7-7.3 16.7-18.2S302.4 7.7 293 7.7zm0 6.5c5.8 0 10.1 4.8 10.1 11.7 0 6.8-4.3 11.7-10.1 11.7S283 32.7 283 25.9c0-6.9 4.2-11.7 10-11.7zm-89.3-6.5h-7.5l-11.2 22.8V.1h-6.8v34.8h7.5l11.2-22.8v22.8h6.8V7.7z" fill="#CC0000"/>
     </svg>
   );
 }
@@ -33,10 +32,10 @@ function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; 
 }
 
 const plans = [
-  { name: 'Basic', badge: 'STARTER', badgeColor: 'bg-gray-600', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&h=400&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
-  { name: 'Silver', badge: 'POPULAR', badgeColor: 'bg-[#CC0000]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=400&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'] },
-  { name: 'Gold', badge: 'PREMIUM', badgeColor: 'bg-amber-600', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=600&h=400&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
-  { name: 'Platinum', badge: 'ELITE', badgeColor: 'bg-purple-600', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&h=400&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
+  { name: 'Basic', badge: 'STARTER', badgeColor: 'bg-gray-600', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://cdn.motor1.com/images/mgl/3r5Xj/s1/tesla-model-3.jpg', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
+  { name: 'Silver', badge: 'POPULAR', badgeColor: 'bg-[#CC0000]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model Y', image: 'https://cdn.motor1.com/images/mgl/8N3Eo/s1/tesla-model-y.jpg', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'] },
+  { name: 'Gold', badge: 'PREMIUM', badgeColor: 'bg-amber-600', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model S', image: 'https://cdn.motor1.com/images/mgl/MY1YN/s1/tesla-model-s.jpg', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+  { name: 'Platinum', badge: 'ELITE', badgeColor: 'bg-purple-600', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Model X', image: 'https://cdn.motor1.com/images/mgl/Q0KNR/s1/tesla-model-x.jpg', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
 ];
 
 const stats = [
@@ -47,7 +46,7 @@ const stats = [
 ];
 
 const faqs = [
-  { q: 'How does TeslaPrimeCapital generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, and algorithmic trading for consistent daily returns.' },
+  { q: 'How does Tesla generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, and algorithmic trading for consistent daily returns.' },
   { q: 'Is my initial investment protected?', a: 'Yes, your principal is returned in full at the end of your plan duration. We maintain a capital reserve fund to ensure all investor principals are secured.' },
   { q: 'How do I withdraw my earnings?', a: 'Navigate to Withdraw in your dashboard, enter the amount and wallet address. Withdrawals are processed within minutes for verified accounts.' },
   { q: 'What is the minimum investment?', a: 'Our Basic plan starts at just $200, making professional investment management accessible to everyone.' },
@@ -66,7 +65,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <TeslaLogo />
-              <span className="text-white font-bold text-lg tracking-tight">TeslaPrimeCapital</span>
+              <span className="text-white font-bold text-lg tracking-tight">Tesla</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
               {['Home', 'Plans', 'About', 'FAQ', 'Contact'].map((link) => (
@@ -111,7 +110,7 @@ export default function LandingPage() {
                 <span className="text-[#CC0000]">Earn Daily Returns.</span>
               </h1>
               <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
-                TeslaPrimeCapital offers professionally managed investment plans with daily returns up to 1.8%.
+                Tesla offers professionally managed investment plans with daily returns up to 1.8%. Backed by real performance data.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button onClick={() => router.push('/register')} className="bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300">
@@ -189,7 +188,7 @@ export default function LandingPage() {
                 </div>
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold text-white">{plan.name}</h3>
+                    <h3 className="text-lg font-bold text-white">{plan.name} <span className="text-gray-500 text-sm font-normal">&middot; {plan.model}</span></h3>
                     <span className="text-[#CC0000] text-xl font-bold">{plan.daily}</span>
                   </div>
                   <p className="text-gray-500 text-sm mb-1">{plan.min} — {plan.max}</p>
@@ -284,7 +283,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <TeslaLogo className="w-6 h-6" />
-                <span className="text-white font-bold text-sm">TeslaPrimeCapital</span>
+                <span className="text-white font-bold text-sm">Tesla</span>
               </div>
               <p className="text-gray-500 text-sm leading-relaxed">Professional investment management with daily returns you can count on.</p>
             </div>
@@ -314,7 +313,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-tesla-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-600 text-sm">&copy; 2026 TeslaPrimeCapital. All rights reserved.</p>
+            <p className="text-gray-600 text-sm">&copy; 2026 Tesla. All rights reserved.</p>
             <div className="flex gap-4">
               {['Twitter', 'LinkedIn', 'Telegram'].map((s) => (
                 <a key={s} href="#" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">{s}</a>

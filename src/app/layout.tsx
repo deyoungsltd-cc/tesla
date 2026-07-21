@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TeslaPrimeCapital | Premium Investment Platform",
-  description: "Enterprise managed investment plans with daily returns. Invest in your future with TeslaPrimeCapital.",
+  title: "Tesla | Premium Investment Platform",
+  description: "Enterprise managed investment plans with daily returns. Invest in your future with Tesla.",
 };
 
 export default function RootLayout({

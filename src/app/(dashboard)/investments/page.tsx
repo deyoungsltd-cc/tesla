@@ -4,10 +4,10 @@ import { useState } from 'react';
 import ChatWidget from '@/components/ChatWidget';
 
 const plans = [
-  { name: 'Basic', badge: 'STARTER', badgeColor: 'bg-gray-600', min: 200, max: 4999, daily: 0.5, duration: 30, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&h=300&fit=crop' },
-  { name: 'Silver', badge: 'POPULAR', badgeColor: 'bg-[#CC0000]', min: 5000, max: 9999, daily: 0.8, duration: 21, image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=300&fit=crop' },
-  { name: 'Gold', badge: 'PREMIUM', badgeColor: 'bg-amber-600', min: 10000, max: 49999, daily: 1.2, duration: 14, image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=600&h=300&fit=crop' },
-  { name: 'Platinum', badge: 'ELITE', badgeColor: 'bg-purple-600', min: 50000, max: 100000, daily: 1.8, duration: 7, image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&h=300&fit=crop' },
+  { name: 'Basic', badge: 'STARTER', badgeColor: 'bg-gray-600', min: 200, max: 4999, daily: 0.5, duration: 30, model: 'Model 3', image: 'https://cdn.motor1.com/images/mgl/3r5Xj/s1/tesla-model-3.jpg' },
+  { name: 'Silver', badge: 'POPULAR', badgeColor: 'bg-[#CC0000]', min: 5000, max: 9999, daily: 0.8, duration: 21, model: 'Model Y', image: 'https://cdn.motor1.com/images/mgl/8N3Eo/s1/tesla-model-y.jpg' },
+  { name: 'Gold', badge: 'PREMIUM', badgeColor: 'bg-amber-600', min: 10000, max: 49999, daily: 1.2, duration: 14, model: 'Model S', image: 'https://cdn.motor1.com/images/mgl/MY1YN/s1/tesla-model-s.jpg' },
+  { name: 'Platinum', badge: 'ELITE', badgeColor: 'bg-purple-600', min: 50000, max: 100000, daily: 1.8, duration: 7, model: 'Model X', image: 'https://cdn.motor1.com/images/mgl/Q0KNR/s1/tesla-model-x.jpg' },
 ];
 
 export default function InvestmentsPage() {
@@ -50,7 +50,7 @@ export default function InvestmentsPage() {
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold">{plan.name}</h3>
+                <h3 className="text-white font-semibold">{plan.name} <span className="text-gray-500 text-xs font-normal">&middot; {plan.model}</span></h3>
                 <span className="text-[#CC0000] font-bold">{plan.daily}%/day</span>
               </div>
               <p className="text-gray-500 text-xs mb-3">${plan.min.toLocaleString()} — ${plan.max.toLocaleString()} &middot; {plan.duration} days</p>
@@ -78,7 +78,7 @@ export default function InvestmentsPage() {
             </div>
             <div className="p-5">
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-white font-bold text-lg">{selectedPlan.name} Plan</h3>
+                <h3 className="text-white font-bold text-lg">{selectedPlan.name} Plan <span className="text-gray-500 text-sm font-normal">&middot; {selectedPlan.model}</span></h3>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white ${selectedPlan.badgeColor}`}>{selectedPlan.badge}</span>
               </div>
               <div className="flex items-center gap-4 text-sm text-gray-400 mb-5">

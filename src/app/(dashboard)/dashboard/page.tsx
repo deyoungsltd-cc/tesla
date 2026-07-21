@@ -64,7 +64,7 @@ export default function DashboardPage() {
 
       {/* Footer */}
       <div className="text-center pt-4">
-        <p className="text-gray-600 text-xs">TeslaPrimeCapital</p>
+        <p className="text-gray-600 text-xs">Tesla</p>
       </div>
 
       <ChatWidget />

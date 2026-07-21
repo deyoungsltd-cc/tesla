@@ -12,7 +12,7 @@ const markets = [
 
 export default function ReferralPage() {
   const [copied, setCopied] = useState(false);
-  const referralLink = 'https://teslaprimecapital.com/ref/JOHNDOE2025';
+  const referralLink = 'https://tesla.com/ref/JOHNDOE2025';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);

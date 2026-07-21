@@ -6,7 +6,7 @@ const notifications = [
   { id: 1, title: 'Investment Confirmed', message: 'Your Gold Plan investment of $25,000 has been confirmed and is now active. Daily returns will begin accruing immediately.', time: '2 hours ago', unread: true },
   { id: 2, title: 'KYC Approved', message: 'Your identity verification has been approved. You now have full access to all platform features including withdrawals.', time: '1 day ago', unread: true },
   { id: 3, title: 'Daily Profit Credited', message: 'Your daily profit of $300.00 has been credited to your account from the Gold Plan investment.', time: '2 days ago', unread: false },
-  { id: 4, title: 'Welcome to TeslaPrimeCapital', message: 'Thank you for joining TeslaPrimeCapital. Complete your KYC verification to unlock all features and start earning daily returns.', time: '5 days ago', unread: false },
+  { id: 4, title: 'Welcome to Tesla', message: 'Thank you for joining Tesla. Complete your KYC verification to unlock all features and start earning daily returns.', time: '5 days ago', unread: false },
 ];
 
 export default function NotificationsPage() {

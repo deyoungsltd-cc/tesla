@@ -6,7 +6,7 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ from: 'user' | 'support'; text: string }[]>([
-    { from: 'support', text: 'Welcome to TeslaPrimeCapital support! How can we help you today?' },
+    { from: 'support', text: 'Welcome to Tesla support! How can we help you today?' },
   ]);
 
   const handleSend = () => {
