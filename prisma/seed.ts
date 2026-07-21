@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/lib/auth';
+import * as dotenv from 'dotenv';
 
+dotenv.config({ override: true });
 const prisma = new PrismaClient();
 
 async function main() {
