@@ -27,13 +27,18 @@ export default function InvestmentsPage() {
     if (!selectedPlan || !amount || numAmount < selectedPlan.min || numAmount > selectedPlan.max) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/investments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: selectedPlan.name, amount: numAmount }),
+        headers,
+        body: JSON.stringify({ planId: selectedPlan.name.toLowerCase(), amount: numAmount, mode: 'demo' }),
       });
-      if (res.ok) { setModal(null); setAmount(''); }
-    } catch { /* ignore */ } finally { setLoading(false); }
+      const data = await res.json();
+      if (res.ok && data.success) { setModal(null); setAmount(''); }
+      else alert(data.error?.message || 'Investment failed');
+    } catch { alert('Network error'); } finally { setLoading(false); }
   };
 
   return (

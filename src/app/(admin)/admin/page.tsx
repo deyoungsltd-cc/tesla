@@ -35,6 +35,25 @@ function apiCall(url: string, options?: RequestInit) {
   });
 }
 
+const statusBadge = (status: string) => {
+  const map: Record<string, string> = {
+    active: 'bg-green-900/30 text-green-400',
+    suspended: 'bg-red-900/30 text-red-400',
+    banned: 'bg-red-900/50 text-red-300',
+    pending: 'bg-yellow-900/30 text-yellow-400',
+    pending_verification: 'bg-yellow-900/30 text-yellow-400',
+    confirmed: 'bg-green-900/30 text-green-400',
+    approved: 'bg-green-900/30 text-green-400',
+    rejected: 'bg-red-900/30 text-red-400',
+    completed: 'bg-green-900/30 text-green-400',
+    processing: 'bg-blue-900/30 text-blue-400',
+    failed: 'bg-red-900/30 text-red-400',
+    expired: 'bg-gray-700/50 text-gray-400',
+    closed: 'bg-gray-700/50 text-gray-400',
+  };
+  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[status] || 'bg-gray-700/50 text-gray-400'}`}>{status}</span>;
+};
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -42,44 +61,138 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [deposits, setDeposits] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
-  const [kycDocs, setKycDocs] = useState<any[]>([]);
+  const [kycList, setKycList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [depositFilter, setDepositFilter] = useState('');
+  const [withdrawalFilter, setWithdrawalFilter] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const fetchStats = useCallback(async () => {
     try {
       const res = await apiCall('/api/admin/stats');
       const data = await res.json();
       if (data.success) setStats(data.data);
-      else setStats({ totalUsers: 2, totalDeposits: 150000, totalInvestments: 100000, activeInvestments: 1, pendingKyc: 0, pendingWithdrawals: 0 });
-    } catch { setStats({ totalUsers: 2, totalDeposits: 150000, totalInvestments: 100000, activeInvestments: 1, pendingKyc: 0, pendingWithdrawals: 0 }); }
+    } catch (e) { console.error(e); }
   }, []);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (search = '') => {
     try {
-      const res = await apiCall('/api/admin/stats');
+      const res = await apiCall(`/api/admin/users?limit=100${search ? `&search=${search}` : ''}`);
       const data = await res.json();
-      if (data.success && data.data.recentUsers) setUsers(data.data.recentUsers);
-    } catch {}
+      if (data.success) setUsers(data.data.users);
+    } catch (e) { console.error(e); }
   }, []);
 
-  useEffect(() => { fetchStats(); fetchUsers(); }, [fetchStats, fetchUsers]);
-
-  const handleAction = async (url: string, body: any) => {
-    setLoading(true);
+  const fetchDeposits = useCallback(async (status = '') => {
     try {
-      const res = await apiCall(url, { method: 'POST', body: JSON.stringify(body) });
+      const res = await apiCall(`/api/admin/deposits?limit=100${status ? `&status=${status}` : ''}`);
       const data = await res.json();
-      if (data.success) { fetchStats(); fetchUsers(); }
-    } catch {} finally { setLoading(false); }
-  };
+      if (data.success) setDeposits(data.data.deposits);
+    } catch (e) { console.error(e); }
+  }, []);
+
+  const fetchWithdrawals = useCallback(async (status = '') => {
+    try {
+      const res = await apiCall(`/api/admin/withdrawals?limit=100${status ? `&status=${status}` : ''}`);
+      const data = await res.json();
+      if (data.success) setWithdrawals(data.data.withdrawals);
+    } catch (e) { console.error(e); }
+  }, []);
+
+  const fetchKyc = useCallback(async (status = '') => {
+    try {
+      const res = await apiCall(`/api/admin/kyc?limit=100${status ? `&status=${status}` : ''}`);
+      const data = await res.json();
+      if (data.success) setKycList(data.data.verifications);
+    } catch (e) { console.error(e); }
+  }, []);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  useEffect(() => {
+    if (activeTab === 'dashboard') { fetchStats(); fetchUsers(); }
+    if (activeTab === 'users') fetchUsers(searchTerm);
+    if (activeTab === 'deposits') fetchDeposits(depositFilter);
+    if (activeTab === 'withdrawals') fetchWithdrawals(withdrawalFilter);
+    if (activeTab === 'kyc') fetchKyc();
+  }, [activeTab, depositFilter, withdrawalFilter]);
 
   const updateUserStatus = async (userId: string, status: string) => {
-    await handleAction('/api/admin/stats', { type: 'user_status', id: userId, action: status });
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+    setActionLoading(userId);
+    try {
+      const res = await apiCall('/api/admin/users', {
+        method: 'PATCH',
+        body: JSON.stringify({ userId, action: 'status', value: status }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(`User ${status} successfully`); fetchUsers(searchTerm); fetchStats(); }
+      else showToast(data.error?.message || 'Action failed');
+    } catch { showToast('Network error'); }
+    setActionLoading(null);
   };
+
+  const handleDepositAction = async (depositId: string, action: 'approve' | 'reject') => {
+    setActionLoading(depositId);
+    const reason = action === 'reject' ? prompt('Rejection reason:') : undefined;
+    if (action === 'reject' && reason === null) { setActionLoading(null); return; }
+    try {
+      const res = await apiCall('/api/admin/deposits', {
+        method: 'PATCH',
+        body: JSON.stringify({ depositId, action, reason }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(`Deposit ${action}d`); fetchDeposits(depositFilter); fetchStats(); }
+      else showToast(data.error?.message || 'Action failed');
+    } catch { showToast('Network error'); }
+    setActionLoading(null);
+  };
+
+  const handleWithdrawalAction = async (withdrawalId: string, action: 'approve' | 'reject') => {
+    setActionLoading(withdrawalId);
+    const reason = action === 'reject' ? prompt('Rejection reason:') : undefined;
+    if (action === 'reject' && reason === null) { setActionLoading(null); return; }
+    try {
+      const res = await apiCall('/api/admin/withdrawals', {
+        method: 'PATCH',
+        body: JSON.stringify({ withdrawalId, action, reason }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(`Withdrawal ${action}d`); fetchWithdrawals(withdrawalFilter); fetchStats(); }
+      else showToast(data.error?.message || 'Action failed');
+    } catch { showToast('Network error'); }
+    setActionLoading(null);
+  };
+
+  const handleKycAction = async (verificationId: string, action: 'approve' | 'reject') => {
+    setActionLoading(verificationId);
+    const reason = action === 'reject' ? prompt('Rejection reason:') : undefined;
+    if (action === 'reject' && reason === null) { setActionLoading(null); return; }
+    try {
+      const res = await apiCall('/api/admin/kyc', {
+        method: 'PATCH',
+        body: JSON.stringify({ verificationId, action, reason }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast(`KYC ${action}d`); fetchKyc(); fetchStats(); }
+      else showToast(data.error?.message || 'Action failed');
+    } catch { showToast('Network error'); }
+    setActionLoading(null);
+  };
+
+  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchTerm); };
 
   return (
     <div className="min-h-screen bg-tesla-dark text-white flex">
+      {toast && (
+        <div className="fixed top-4 right-4 z-[100] bg-tesla-card border border-tesla-border rounded-lg px-4 py-3 text-sm shadow-xl animate-fade-in">
+          {toast}
+        </div>
+      )}
+
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-tesla-card border-r border-tesla-border flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-2 px-5 h-16 border-b border-tesla-border">
           <TeslaLogo className="w-7 h-7" />
@@ -99,6 +212,15 @@ export default function AdminPage() {
             >
               {item.icon}
               {item.label}
+              {item.key === 'deposits' && stats?.pendingDeposits > 0 && (
+                <span className="ml-auto bg-yellow-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingDeposits}</span>
+              )}
+              {item.key === 'withdrawals' && stats?.pendingWithdrawals > 0 && (
+                <span className="ml-auto bg-yellow-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingWithdrawals}</span>
+              )}
+              {item.key === 'kyc' && stats?.pendingKyc > 0 && (
+                <span className="ml-auto bg-yellow-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingKyc}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -121,25 +243,47 @@ export default function AdminPage() {
           </button>
           <h1 className="font-semibold">{navItems.find((n) => n.key === activeTab)?.label || 'Dashboard'}</h1>
         </header>
-        <div className="p-4 sm:p-6 max-w-6xl animate-fade-in">
+        <div className="p-4 sm:p-6 max-w-7xl">
 
+          {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '—', color: 'text-white' },
-                  { label: 'Total Deposits', value: `$${(stats?.totalDeposits || 0).toLocaleString()}`, color: 'text-green-400' },
-                  { label: 'Active Investments', value: stats?.activeInvestments?.toString() || '—', color: 'text-blue-400' },
-                  { label: 'Pending KYC', value: stats?.pendingKyc?.toString() || '0', color: 'text-yellow-400' },
+                  { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '—', color: 'text-white', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg> },
+                  { label: 'Total Deposits', value: `$${(stats?.totalDeposits || 0).toLocaleString()}`, color: 'text-green-400', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></svg> },
+                  { label: 'Active Investments', value: stats?.activeInvestments?.toString() || '—', color: 'text-blue-400', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
+                  { label: 'Total Investments', value: `$${(stats?.totalInvestments || 0).toLocaleString()}`, color: 'text-purple-400', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a4 4 0 0 0-8 0v2" /></svg> },
                 ].map((s, i) => (
                   <div key={i} className="bg-tesla-card border border-tesla-border rounded-xl p-4">
-                    <p className="text-gray-500 text-xs font-medium mb-1">{s.label}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-gray-500 text-xs font-medium">{s.label}</p>
+                      <span className="text-gray-600">{s.icon}</span>
+                    </div>
                     <p className={`text-lg sm:text-xl font-bold ${s.color}`}>{s.value}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Pending actions row */}
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { label: 'Pending KYC', value: stats?.pendingKyc || 0, color: 'text-yellow-400', tab: 'kyc' },
+                  { label: 'Pending Deposits', value: stats?.pendingDeposits || 0, color: 'text-green-400', tab: 'deposits' },
+                  { label: 'Pending Withdrawals', value: stats?.pendingWithdrawals || 0, color: 'text-red-400', tab: 'withdrawals' },
+                ].map((s, i) => (
+                  <button key={i} onClick={() => setActiveTab(s.tab)} className="bg-tesla-card border border-tesla-border rounded-xl p-4 text-left hover:border-gray-500 transition-colors">
+                    <p className="text-gray-500 text-xs font-medium mb-1">{s.label}</p>
+                    <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                  </button>
+                ))}
+              </div>
+
               <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
-                <h3 className="text-white font-semibold text-sm mb-4">Recent Users</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold text-sm">Recent Users</h3>
+                  <button onClick={() => setActiveTab('users')} className="text-[#CC0000] text-xs hover:underline">View All</button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead><tr className="border-b border-tesla-border">
@@ -149,16 +293,17 @@ export default function AdminPage() {
                       <th className="text-right text-gray-500 font-medium px-3 py-2">Joined</th>
                     </tr></thead>
                     <tbody>
-                      {users.map((u: any) => (
+                      {(stats?.recentUsers || users.slice(0, 5)).map((u: any) => (
                         <tr key={u.id} className="border-b border-tesla-border/50 last:border-0">
                           <td className="text-white px-3 py-2.5 font-medium">{u.profile?.firstName || '—'} {u.profile?.lastName || ''}</td>
                           <td className="text-gray-400 px-3 py-2.5 hidden sm:table-cell">{u.email}</td>
-                          <td className="px-3 py-2.5">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.status === 'active' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{u.status}</span>
-                          </td>
+                          <td className="px-3 py-2.5">{statusBadge(u.status)}</td>
                           <td className="text-gray-500 px-3 py-2.5 text-right text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                         </tr>
                       ))}
+                      {(stats?.recentUsers || users).length === 0 && (
+                        <tr><td colSpan={4} className="text-center text-gray-500 py-8">No users yet</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -166,87 +311,198 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* USERS TAB */}
           {activeTab === 'users' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-tesla-border flex items-center justify-between">
-                <h3 className="text-white font-semibold text-sm">All Users</h3>
-                <button onClick={fetchUsers} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
+            <div className="space-y-4">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="flex-1 bg-tesla-card border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000]"
+                />
+                <button type="submit" className="bg-tesla-card border border-tesla-border hover:border-gray-500 px-4 py-2.5 rounded-lg text-sm transition-colors">Search</button>
+                <button type="button" onClick={() => { setSearchTerm(''); fetchUsers(''); }} className="bg-tesla-card border border-tesla-border hover:border-gray-500 px-4 py-2.5 rounded-lg text-sm transition-colors">Clear</button>
+              </form>
+              <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-tesla-border">
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Name</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Email</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Status</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">KYC</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden lg:table-cell">Wallets</th>
+                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {users.map((u: any) => (
+                        <tr key={u.id} className="border-b border-tesla-border/50 last:border-0">
+                          <td className="text-white px-4 py-3 font-medium">{u.profile?.firstName || '—'} {u.profile?.lastName || ''}</td>
+                          <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{u.email}</td>
+                          <td className="px-4 py-3">{statusBadge(u.status)}</td>
+                          <td className="px-4 py-3 hidden md:table-cell">{statusBadge(u.kycLevel || 'LEVEL_0')}</td>
+                          <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-400">
+                            {u.wallets?.map((w: any) => `${w.type}: $${(w.balance||0).toLocaleString()}`).join(' | ') || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                            {u.status !== 'active' && (
+                              <button onClick={() => updateUserStatus(u.id, 'active')} disabled={actionLoading === u.id} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Activate</button>
+                            )}
+                            {u.status !== 'suspended' && u.status !== 'banned' && (
+                              <button onClick={() => updateUserStatus(u.id, 'suspended')} disabled={actionLoading === u.id} className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Suspend</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {users.length === 0 && <tr><td colSpan={6} className="text-center text-gray-500 py-8">No users found</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* DEPOSITS TAB */}
+          {activeTab === 'deposits' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {['', 'pending', 'pending_verification', 'confirmed', 'rejected'].map((s) => (
+                  <button key={s} onClick={() => setDepositFilter(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${depositFilter === s ? 'border-[#CC0000] text-[#CC0000]' : 'border-tesla-border text-gray-400 hover:text-white'}`}>
+                    {s || 'All'}
+                  </button>
+                ))}
+              </div>
+              <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-tesla-border">
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Amount</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Method</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Status</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">Date</th>
+                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {deposits.map((d: any) => (
+                        <tr key={d.id} className="border-b border-tesla-border/50 last:border-0">
+                          <td className="text-white px-4 py-3">
+                            <div className="font-medium">{d.user?.profile?.firstName || '—'} {d.user?.profile?.lastName || ''}</div>
+                            <div className="text-gray-500 text-xs">{d.user?.email}</div>
+                          </td>
+                          <td className="text-green-400 font-semibold px-4 py-3">${d.amount?.toLocaleString()}</td>
+                          <td className="text-gray-400 px-4 py-3 hidden sm:table-cell capitalize">{d.method?.replace('_', ' ')}</td>
+                          <td className="px-4 py-3">{statusBadge(d.status)}</td>
+                          <td className="text-gray-500 px-4 py-3 text-xs hidden md:table-cell">{new Date(d.createdAt).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                            {(d.status === 'pending' || d.status === 'pending_verification') && (
+                              <>
+                                <button onClick={() => handleDepositAction(d.id, 'approve')} disabled={actionLoading === d.id} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
+                                <button onClick={() => handleDepositAction(d.id, 'reject')} disabled={actionLoading === d.id} className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {deposits.length === 0 && <tr><td colSpan={6} className="text-center text-gray-500 py-12">No deposits found</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* WITHDRAWALS TAB */}
+          {activeTab === 'withdrawals' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {['', 'pending', 'processing', 'completed', 'rejected'].map((s) => (
+                  <button key={s} onClick={() => setWithdrawalFilter(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${withdrawalFilter === s ? 'border-[#CC0000] text-[#CC0000]' : 'border-tesla-border text-gray-400 hover:text-white'}`}>
+                    {s || 'All'}
+                  </button>
+                ))}
+              </div>
+              <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-tesla-border">
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Amount</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Destination</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3">Status</th>
+                      <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">Date</th>
+                      <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {withdrawals.map((w: any) => (
+                        <tr key={w.id} className="border-b border-tesla-border/50 last:border-0">
+                          <td className="text-white px-4 py-3">
+                            <div className="font-medium">{w.user?.profile?.firstName || '—'} {w.user?.profile?.lastName || ''}</div>
+                            <div className="text-gray-500 text-xs">{w.user?.email}</div>
+                          </td>
+                          <td className="text-red-400 font-semibold px-4 py-3">${w.amount?.toLocaleString()}</td>
+                          <td className="text-gray-400 px-4 py-3 hidden sm:table-cell capitalize">{w.destinationType}</td>
+                          <td className="px-4 py-3">{statusBadge(w.status)}</td>
+                          <td className="text-gray-500 px-4 py-3 text-xs hidden md:table-cell">{new Date(w.createdAt).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                            {w.status === 'pending' && (
+                              <>
+                                <button onClick={() => handleWithdrawalAction(w.id, 'approve')} disabled={actionLoading === w.id} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
+                                <button onClick={() => handleWithdrawalAction(w.id, 'reject')} disabled={actionLoading === w.id} className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {withdrawals.length === 0 && <tr><td colSpan={6} className="text-center text-gray-500 py-12">No withdrawals found</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* KYC TAB */}
+          {activeTab === 'kyc' && (
+            <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-tesla-border">
-                    <th className="text-left text-gray-500 font-medium px-4 py-3">Name</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3">User</th>
                     <th className="text-left text-gray-500 font-medium px-4 py-3 hidden sm:table-cell">Email</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3">Level</th>
                     <th className="text-left text-gray-500 font-medium px-4 py-3">Status</th>
-                    <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">KYC</th>
+                    <th className="text-left text-gray-500 font-medium px-4 py-3 hidden md:table-cell">Submitted</th>
                     <th className="text-right text-gray-500 font-medium px-4 py-3">Actions</th>
                   </tr></thead>
                   <tbody>
-                    {users.map((u: any) => (
-                      <tr key={u.id} className="border-b border-tesla-border/50 last:border-0">
-                        <td className="text-white px-4 py-3 font-medium">{u.profile?.firstName || '—'} {u.profile?.lastName || ''}</td>
-                        <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{u.email}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.status === 'active' ? 'bg-green-900/30 text-green-400' : u.status === 'suspended' ? 'bg-red-900/30 text-red-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{u.status}</span>
-                        </td>
-                        <td className="text-gray-400 px-4 py-3 hidden md:table-cell text-xs">{u.kycLevel || 'LEVEL_0'}</td>
-                        <td className="px-4 py-3 text-right space-x-2">
-                          {u.status !== 'active' && (
-                            <button onClick={() => updateUserStatus(u.id, 'active')} className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Activate</button>
-                          )}
-                          {u.status !== 'suspended' && (
-                            <button onClick={() => updateUserStatus(u.id, 'suspended')} className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Suspend</button>
+                    {kycList.map((k: any) => (
+                      <tr key={k.id} className="border-b border-tesla-border/50 last:border-0">
+                        <td className="text-white px-4 py-3 font-medium">{k.user?.profile?.firstName || '—'} {k.user?.profile?.lastName || ''}</td>
+                        <td className="text-gray-400 px-4 py-3 hidden sm:table-cell">{k.user?.email}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-gray-300">{k.level}</td>
+                        <td className="px-4 py-3">{statusBadge(k.status)}</td>
+                        <td className="text-gray-500 px-4 py-3 text-xs hidden md:table-cell">{k.submittedAt ? new Date(k.submittedAt).toLocaleDateString() : '—'}</td>
+                        <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                          {k.status === 'pending' && (
+                            <>
+                              <button onClick={() => handleKycAction(k.id, 'approve')} disabled={actionLoading === k.id} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Approve</button>
+                              <button onClick={() => handleKycAction(k.id, 'reject')} disabled={actionLoading === k.id} className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Reject</button>
+                            </>
                           )}
                         </td>
                       </tr>
                     ))}
-                    {users.length === 0 && <tr><td colSpan={5} className="text-center text-gray-500 py-8">No users found</td></tr>}
+                    {kycList.length === 0 && <tr><td colSpan={6} className="text-center text-gray-500 py-12">No KYC submissions found</td></tr>}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
-          {activeTab === 'deposits' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold text-sm">Pending Deposits</h3>
-                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
-              </div>
-              <div className="text-gray-500 text-sm text-center py-12">
-                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                Deposits will appear here when users submit them. Approve or reject from this panel.
-              </div>
-              <p className="text-gray-600 text-xs text-center mt-2">Deposit requests are managed in real-time from the database.</p>
-            </div>
-          )}
-
-          {activeTab === 'withdrawals' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold text-sm">Pending Withdrawals</h3>
-                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
-              </div>
-              <div className="text-gray-500 text-sm text-center py-12">
-                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                Withdrawal requests will appear here for approval.
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'kyc' && (
-            <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold text-sm">KYC Verification Queue</h3>
-                <button onClick={fetchStats} className="text-[#CC0000] text-xs hover:underline">Refresh</button>
-              </div>
-              <div className="text-gray-500 text-sm text-center py-12">
-                <svg className="mx-auto mb-3 text-gray-600" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
-                KYC submissions will appear here for review and approval.
-              </div>
-            </div>
-          )}
-
+          {/* MARKET TAB */}
           {activeTab === 'market' && (
             <div className="space-y-4">
               <h3 className="text-white font-semibold text-sm">TSLA Live Chart</h3>

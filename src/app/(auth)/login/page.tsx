@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatWidget from '@/components/ChatWidget';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function TeslaLogo({ className = 'w-10 h-10' }: { className?: string }) {
   return (
@@ -15,28 +16,28 @@ function TeslaLogo({ className = 'w-10 h-10' }: { className?: string }) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async () => {
+  const doLogin = async (loginEmail: string, loginPass: string) => {
     setError('');
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    if (!loginEmail || !loginPass) { setError('Please fill in all fields.'); return; }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.data?.token) {
-        localStorage.setItem('token', data.data.token);
-        const user = data.data.user;
-        if (user) localStorage.setItem('user', JSON.stringify(user));
-        if (user?.adminRecord || email === 'admin@tesla.com') {
+        setAuth(data.data.user, data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+        if (data.data.user?.adminRecord) {
           router.push('/admin');
         } else {
           router.push('/dashboard');
@@ -45,34 +46,7 @@ export default function LoginPage() {
         setError(data.error?.message || 'Invalid credentials. Please try again.');
       }
     } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (demoEmail: string, demoPass: string, destination: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError('');
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: demoEmail, password: demoPass }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.data?.token) {
-        localStorage.setItem('token', data.data.token);
-        const user = data.data.user;
-        if (user) localStorage.setItem('user', JSON.stringify(user));
-        router.push(destination);
-      } else {
-        setError(data.error?.message || 'Demo login failed.');
-      }
-    } catch {
-      setError('Network error.');
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -135,7 +109,7 @@ export default function LoginPage() {
           </div>
 
           <button
-            onClick={handleLogin}
+            onClick={() => doLogin(email, password)}
             disabled={loading}
             className="w-full mt-6 bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
           >
@@ -144,14 +118,14 @@ export default function LoginPage() {
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
-              onClick={() => handleDemoLogin('demo@tesla.com', 'Demo@123', '/dashboard')}
+              onClick={() => doLogin('demo@tesla.com', 'Demo@123')}
               disabled={loading}
               className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-medium py-2.5 rounded-lg transition-colors text-xs"
             >
               Demo User
             </button>
             <button
-              onClick={() => handleDemoLogin('admin@tesla.com', 'Admin@123', '/admin')}
+              onClick={() => doLogin('admin@tesla.com', 'Admin@123')}
               disabled={loading}
               className="border border-[#CC0000]/30 hover:border-[#CC0000] text-[#CC0000] hover:text-red-300 font-medium py-2.5 rounded-lg transition-colors text-xs"
             >

@@ -44,18 +44,18 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('tpc_token') : null,
+  token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
   isLoading: true,
 
   setAuth: (user, token) => {
-    if (typeof window !== 'undefined') localStorage.setItem('tpc_token', token);
+    if (typeof window !== 'undefined') localStorage.setItem('token', token);
     set({ user, token, isLoading: false });
   },
 
   setUser: (user) => set({ user }),
 
   logout: () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('tpc_token');
+    if (typeof window !== 'undefined') localStorage.removeItem('token');
     set({ user: null, token: null, isLoading: false });
   },
 

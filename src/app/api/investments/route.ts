@@ -20,9 +20,11 @@ async function handler(request: NextRequest, _context: any, user: any) {
 
     const { planId, amount, mode } = parsed.data;
 
-    const plan = await db.investmentPlan.findUnique({
-      where: { id: planId },
-    });
+    // Try by ID first, then by slug
+    let plan = await db.investmentPlan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      plan = await db.investmentPlan.findUnique({ where: { slug: planId } });
+    }
 
     if (!plan || !plan.isActive) {
       return apiError('Investment plan not found or inactive', 'PLAN_NOT_FOUND', 404);

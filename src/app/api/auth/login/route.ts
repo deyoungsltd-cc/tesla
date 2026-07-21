@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const user = await db.user.findUnique({
       where: { email },
-      include: { profile: true },
+      include: { profile: true, adminRecord: true, wallets: true },
     });
 
     if (!user) {
@@ -102,6 +102,17 @@ export async function POST(request: NextRequest) {
         kycLevel: user.kycLevel,
         emailVerified: user.emailVerified,
         twoFactorEnabled: user.twoFactorEnabled,
+        adminRecord: user.adminRecord ? {
+          role: user.adminRecord.role,
+          isSuperAdmin: user.adminRecord.isSuperAdmin,
+        } : null,
+        wallets: user.wallets?.map(w => ({
+          id: w.id,
+          type: w.type,
+          balance: w.balance,
+          availableBalance: w.availableBalance,
+          lockedBalance: w.lockedBalance,
+        })) || [],
         profile: user.profile
           ? {
               firstName: user.profile.firstName,

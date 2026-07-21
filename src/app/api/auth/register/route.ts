@@ -7,6 +7,8 @@ import { z } from 'zod';
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().min(1, 'Last name is required').optional(),
   referralCode: z.string().optional(),
 });
 
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
       return apiError(parsed.error.issues[0].message, 'VALIDATION_ERROR', 400);
     }
 
-    const { email, password, referralCode } = parsed.data;
+    const { email, password, firstName, lastName, referralCode } = parsed.data;
 
     // Check if email already exists
     const existingUser = await db.user.findUnique({ where: { email } });
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
 
       // Create profile
       await tx.profile.create({
-        data: { userId: newUser.id },
+        data: { userId: newUser.id, firstName: firstName || null, lastName: lastName || null },
       });
 
       // Create demo wallet
