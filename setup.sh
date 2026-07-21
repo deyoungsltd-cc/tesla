@@ -1,12 +1,11 @@
 #!/bin/bash
 # =============================================
-# TESLA PLATFORM - ONE-CLICK SETUP SCRIPT
+# TESLA PLATFORM - SETUP SCRIPT
 # =============================================
-# Run this ONCE on your local machine:
-#   chmod +x setup.sh
-#   ./setup.sh
-# Or on Windows (Git Bash / WSL):
-#   bash setup.sh
+# For LOCAL dev with Supabase:
+#   1. Create a Supabase project (see .env.example)
+#   2. Copy .env.example to .env and paste your DATABASE_URL
+#   3. Run: bash setup.sh
 # =============================================
 
 set -e
@@ -17,26 +16,36 @@ echo "  TESLA PLATFORM SETUP"
 echo "========================================="
 echo ""
 
-# Step 1: Install dependencies
-echo "[1/4] Installing dependencies..."
+# Check .env exists
+if [ ! -f .env ]; then
+  echo "ERROR: .env file not found!"
+  echo ""
+  echo "  1. Copy .env.example to .env:"
+  echo "     cp .env.example .env"
+  echo ""
+  echo "  2. Open .env and paste your Supabase DATABASE_URL"
+  echo "     (see .env.example for step-by-step instructions)"
+  echo ""
+  echo "  3. Run this script again"
+  exit 1
+fi
+
+echo "[1/5] Installing dependencies..."
 npm install 2>&1 | tail -3
 echo "  Done."
 echo ""
 
-# Step 2: Generate Prisma client
-echo "[2/4] Generating Prisma client..."
+echo "[2/5] Generating Prisma client..."
 npx prisma generate 2>&1 | tail -3
 echo "  Done."
 echo ""
 
-# Step 3: Push database schema (creates tables)
-echo "[3/4] Setting up database (this may take a moment)..."
-npx prisma db push 2>&1 | tail -5
+echo "[3/5] Pushing schema to Supabase (creating tables)..."
+npx prisma db push 2>&1
 echo "  Done."
 echo ""
 
-# Step 4: Seed admin + demo user + investment plans
-echo "[4/4] Seeding database with admin & demo data..."
+echo "[4/5] Seeding database (admin + demo user + plans)..."
 npx tsx prisma/seed.ts 2>&1
 echo "  Done."
 echo ""
@@ -45,8 +54,8 @@ echo "========================================="
 echo "  SETUP COMPLETE!"
 echo "========================================="
 echo ""
-echo "  Admin login:  admin@tesla.com / Admin@123"
-echo "  Demo login:   demo@tesla.com  / Demo@123"
+echo "  Admin:  admin@tesla.com / Admin@123"
+echo "  Demo:   demo@tesla.com  / Demo@123"
 echo ""
 echo "  Now run:  npm run dev"
 echo "  Then open: http://localhost:3000"
