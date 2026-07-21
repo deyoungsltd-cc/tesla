@@ -31,8 +31,8 @@ async function handler(request: NextRequest, _context: any, user: any) {
     }
 
     // Validate gift card-specific fields
-    if (method === 'gift_card' && (!giftCardImage || !giftCardType)) {
-      return apiError('Gift card image and type are required', 'VALIDATION_ERROR', 400);
+    if (method === 'gift_card' && !giftCardType) {
+      return apiError('Gift card type is required', 'VALIDATION_ERROR', 400);
     }
 
     // Find wallet
@@ -66,22 +66,6 @@ async function handler(request: NextRequest, _context: any, user: any) {
           verifiedAt: isDemo ? new Date() : null,
         },
       });
-
-      // Create gift card record if applicable
-      if (method === 'gift_card' && giftCardType) {
-        await tx.giftCard.create({
-          data: {
-            depositId: deposit.id,
-            cardType: giftCardType,
-            cardCode: giftCardCode || '',
-            amount,
-            imageUrl: giftCardImage || null,
-            status: isDemo ? 'verified' : 'pending',
-            verifiedBy: isDemo ? 'system' : null,
-            verifiedAt: isDemo ? new Date() : null,
-          },
-        });
-      }
 
       // Create transaction
       await tx.transaction.create({

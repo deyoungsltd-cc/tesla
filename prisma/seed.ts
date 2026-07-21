@@ -39,6 +39,49 @@ async function main() {
     },
   });
 
+  // Create second admin: deyoungsltd@gmail.com
+  const deyoungPasswordHash = await hashPassword('Admin@123');
+  const deyoung = await prisma.user.upsert({
+    where: { email: 'deyoungsltd@gmail.com' },
+    update: {},
+    create: {
+      email: 'deyoungsltd@gmail.com',
+      passwordHash: deyoungPasswordHash,
+      status: 'active',
+      emailVerified: true,
+      referralCode: 'DYADMIN01',
+      activeMode: 'live',
+      profile: {
+        create: {
+          firstName: 'DeYoung',
+          lastName: 'Admin',
+        },
+      },
+    },
+  });
+
+  await prisma.admin.upsert({
+    where: { userId: deyoung.id },
+    update: {},
+    create: {
+      userId: deyoung.id,
+      role: 'SUPER_ADMIN',
+      isSuperAdmin: true,
+    },
+  });
+
+  // Create wallets for deyoung admin
+  await prisma.wallet.upsert({
+    where: { userId_type: { userId: deyoung.id, type: 'demo' } },
+    update: {},
+    create: { userId: deyoung.id, type: 'demo', balance: 0, availableBalance: 0 },
+  });
+  await prisma.wallet.upsert({
+    where: { userId_type: { userId: deyoung.id, type: 'live' } },
+    update: {},
+    create: { userId: deyoung.id, type: 'live', balance: 0, availableBalance: 0 },
+  });
+
   // Create demo user
   const demoPasswordHash = await hashPassword('Demo@123');
   const demo = await prisma.user.upsert({
@@ -139,6 +182,7 @@ async function main() {
 
   console.log('Database seeded successfully!');
   console.log('Admin: admin@tesla.com / Admin@123');
+  console.log('Admin: deyoungsltd@gmail.com / Admin@123');
   console.log('Demo:  demo@tesla.com / Demo@123');
 }
 

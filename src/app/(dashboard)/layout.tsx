@@ -38,14 +38,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const title = titles[pathname] || 'Dashboard';
 
   return (
-    <div className="min-h-screen bg-tesla-dark">
-      <header className="sticky top-0 z-40 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border">
-        <div className="flex items-center justify-between h-14 px-4 max-w-4xl mx-auto">
-          <div className="flex items-center gap-3">
-            <TeslaLogo className="w-6 h-6" />
-            <span className="text-white font-semibold text-sm">{title}</span>
+    <div className="min-h-screen min-h-[100dvh] bg-tesla-dark flex flex-col">
+      <header className="sticky top-0 z-40 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border shrink-0">
+        <div className="flex items-center justify-between h-14 px-4 max-w-4xl w-full mx-auto">
+          <div className="flex items-center gap-3 min-w-0">
+            <TeslaLogo className="w-6 h-6 shrink-0" />
+            <span className="text-white font-semibold text-sm truncate">{title}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <Link href="/notifications" className="relative text-gray-400 hover:text-white transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -58,12 +58,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="px-4 py-5 pb-24 max-w-4xl mx-auto animate-fade-in min-h-[calc(100vh-8rem)]">
+      <main className="flex-1 px-4 py-5 pb-24 max-w-4xl w-full mx-auto animate-fade-in overflow-x-hidden">
         {children}
       </main>
-      {/* Bottom Nav — Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-tesla-card/95 backdrop-blur-md border-t border-tesla-border">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      {/* Bottom Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-tesla-card/95 backdrop-blur-md border-t border-tesla-border safe-bottom">
+        <div className="flex items-center justify-around h-14 md:h-16 max-w-lg mx-auto">
           {bottomNav.map((item) => {
             const active = pathname === item.href;
             return (

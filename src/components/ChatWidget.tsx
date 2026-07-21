@@ -26,10 +26,10 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="w-80 sm:w-96 bg-tesla-card border border-tesla-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
-          <div className="bg-[#CC0000] px-5 py-3 flex items-center justify-between">
+        <div className="w-[calc(100vw-2rem)] max-w-[360px] bg-tesla-card border border-tesla-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
+          <div className="bg-[#CC0000] px-4 py-3 flex items-center justify-between">
             <span className="text-white font-semibold text-sm">Support Chat</span>
             <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white transition-colors">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +37,7 @@ export default function ChatWidget() {
               </svg>
             </button>
           </div>
-          <div className="flex-1 h-64 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 h-56 md:h-64 overflow-y-auto p-3 md:p-4 space-y-3">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -58,11 +58,11 @@ export default function ChatWidget() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type a message..."
-              className="flex-1 bg-[#2a2a2a] border border-tesla-border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#CC0000] transition-colors"
+              className="flex-1 min-w-0 bg-[#2a2a2a] border border-tesla-border rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#CC0000] transition-colors"
             />
             <button
               onClick={handleSend}
-              className="bg-[#CC0000] hover:bg-[#a30000] text-white rounded-lg px-3 py-2 transition-colors"
+              className="bg-[#CC0000] hover:bg-[#a30000] text-white rounded-lg px-3 py-2 transition-colors shrink-0"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -73,14 +73,14 @@ export default function ChatWidget() {
       )}
       <button
         onClick={() => setOpen(!open)}
-        className="w-14 h-14 bg-[#CC0000] hover:bg-[#a30000] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 animate-pulse-red"
+        className="w-12 h-12 md:w-14 md:h-14 bg-[#CC0000] hover:bg-[#a30000] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-105 shrink-0"
       >
         {open ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
         )}
