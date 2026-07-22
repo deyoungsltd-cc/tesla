@@ -1,0 +1,1599 @@
+     1→# Frontend Architecture — TeslaPrimeCapital
+     2→
+     3→> **Project:** TeslaPrimeCapital — Enterprise Investment Platform  
+     4→> **Phase:** 2 — Technical Architecture  
+     5→> **Last Updated:** 2025  
+     6→> **Status:** Draft  
+     7→
+     8→---
+     9→
+    10→## Table of Contents
+    11→
+    12→1. [Architecture Overview](#1-architecture-overview)
+    13→2. [Directory Structure](#2-directory-structure)
+    14→3. [Layout System](#3-layout-system)
+    15→4. [Component Architecture](#4-component-architecture)
+    16→5. [Routing Architecture](#5-routing-architecture)
+    17→6. [Design System](#6-design-system)
+    18→7. [Data Fetching Strategy](#7-data-fetching-strategy)
+    19→8. [Form Handling](#8-form-handling)
+    20→9. [Responsive Breakpoints & Mobile Navigation](#9-responsive-breakpoints--mobile-navigation)
+    21→10. [Performance Optimizations](#10-performance-optimizations)
+    22→
+    23→---
+    24→
+    25→## 1. Architecture Overview
+    26→
+    27→TeslaPrimeCapital is built on **Next.js 14+ App Router** with React 18+, leveraging the hybrid rendering model that combines React Server Components (RSC) and Client Components for optimal performance and interactivity. The frontend serves as a single monolithic application that contains three distinct experiences: public marketing pages, an authenticated user dashboard, and an admin control panel.
+    28→
+    29→### Core Principles
+    30→
+    31→- **Server Components by Default:** Every page and component starts as a Server Component. The `'use client'` directive is added only when the component requires interactivity, browser APIs, React hooks, or client-side state management.
+    32→- **Colocation by Domain:** Components, hooks, types, and utilities are organized by feature domain rather than by technical role. This keeps related code physically close and mentally cohesive.
+    33→- **Progressive Enhancement:** The application renders meaningful HTML on the server first, then hydrates interactive features on the client. Pages remain functional even before JavaScript loads.
+    34→- **Dark-First Design:** The platform uses a dark theme exclusively. There is no light mode toggle. The Tesla red-and-black palette is applied consistently across all interfaces.
+    35→
+    36→### Technology Stack
+    37→
+    38→| Layer | Technology | Purpose |
+    39→|-------|-----------|---------|
+    40→| Framework | Next.js 14+ (App Router) | SSR, SSG, ISR, API routes, middleware |
+    41→| UI Library | React 18+ | Component rendering |
+    42→| Language | TypeScript (strict mode) | Type safety |
+    43→| Styling | Tailwind CSS 3.4+ | Utility-first CSS |
+    44→| Component Library | shadcn/ui | Accessible, composable UI primitives |
+    45→| Icons | Lucide React | Consistent icon set |
+    46→| Forms | React Hook Form + Zod | Form state management & validation |
+    47→| Data Fetching (Client) | SWR | Client-side caching, revalidation, optimistic updates |
+    48→| State Management | Zustand | Global client state (mode toggle, sidebar, UI) |
+    49→| Charts | Recharts | Data visualization (line, bar, pie) |
+    50→| Animation | Tailwind CSS + Framer Motion | Micro-interactions, page transitions |
+    51→| Font | Inter (via next/font/google) | Body text and headings |
+    52→
+    53→### Architecture Diagram
+    54→
+    55→```mermaid
+    56→graph TB
+    57→    subgraph "Browser"
+    58→        RSC["React Server Components<br/>(HTML stream)"]
+    59→        CC["Client Components<br/>(Hydrated interactivity)"]
+    60→        SWR["SWR Cache Layer<br/>(Client data)"]
+    61→        ZUSTAND["Zustand Stores<br/>(UI state)"]
+    62→    end
+    63→
+    64→    subgraph "Next.js Server"
+    65→        APP["App Router<br/>(Route Groups)"]
+    66→        MW["Middleware<br/>(Auth, Guards)"]
+    67→        API["API Route Handlers<br/>(/api/*)"]
+    68→        RSCP["Server Components<br/>(RSC Payload)"]
+    69→    end
+    70→
+    71→    subgraph "External"
+    72→        DB["Database<br/>(Prisma)"]
+    73→        AUTH["Auth Provider<br/>(NextAuth / JWT)"]
+    74→        CDN["CDN / Image CDN"]
+    75→    end
+    76→
+    77→    Browser -->|"HTTP Request"| MW
+    78→    MW -->|"Authenticated"| APP
+    79→    MW -->|"Unauthenticated → Redirect"| APP
+    80→    APP -->|"Server Render"| RSCP
+    81→    RSCP -->|"HTML Stream"| RSC
+    82→    RSC -->|"Hydration"| CC
+    83→    CC -->|"Data Requests"| SWR
+    84→    SWR -->|"GET /api/*"| API
+    85→    API -->|"Queries"| DB
+    86→    RSCP -->|"Direct Queries"| DB
+    87→    APP -->|"Auth Check"| AUTH
+    88→    RSC -->|"Image Requests"| CDN
+    89→```
+    90→
+    91→---
+    92→
+    93→## 2. Directory Structure
+    94→
+    95→```
+    96→src/
+    97→├── app/                                # Next.js App Router — pages and layouts
+    98→│   ├── layout.tsx                      # Root layout (fonts, global providers, metadata)
+    99→│   ├── loading.tsx                     # Root loading fallback
+   100→│   ├── not-found.tsx                   # Global 404 page
+   101→│   ├── error.tsx                       # Global error boundary
+   102→│   ├── globals.css                     # Tailwind directives + custom CSS variables
+   103→│   │
+   104→│   ├── (marketing)/                    # Route group — public pages
+   105→│   │   ├── layout.tsx                  # MarketingLayout: Navbar + Footer
+   106→│   │   ├── page.tsx                    # Landing page (Home)
+   107→│   │   ├── about/
+   108→│   │   │   └── page.tsx                # About page
+   109→│   │   ├── plans/
+   110→│   │   │   └── page.tsx                # Public plans listing
+   111→│   │   ├── faq/
+   112→│   │   │   └── page.tsx                # FAQ page
+   113→│   │   ├── contact/
+   114→│   │   │   └── page.tsx                # Contact page
+   115→│   │   ├── privacy-policy/
+   116→│   │   │   └── page.tsx                # Privacy policy
+   117→│   │   ├── terms-of-service/
+   118→│   │   │   └── page.tsx                # Terms of service
+   119→│   │   └── forgot-password/
+   120→│   │       └── page.tsx                # Forgot password flow
+   121→│   │
+   122→│   ├── (auth)/                         # Route group — authentication pages
+   123→│   │   ├── layout.tsx                  # AuthLayout: centered card on dark bg
+   124→│   │   ├── login/
+   125→│   │   │   └── page.tsx                # Login page
+   126→│   │   └── register/
+   127→│   │       └── page.tsx                # Registration page
+   128→│   │
+   129→│   ├── (dashboard)/                    # Route group — authenticated user pages
+   130→│   │   ├── layout.tsx                  # DashboardLayout: Sidebar + Topbar + Content
+   131→│   │   ├── dashboard/
+   132→│   │   │   ├── page.tsx                # Dashboard home (stats, charts, quick actions)
+   133→│   │   │   ├── loading.tsx             # Dashboard skeleton
+   134→│   │   │   └── error.tsx               # Dashboard error boundary
+   135→│   │   ├── plans/
+   136→│   │   │   └── page.tsx                # Investment plans with invest modal
+   137→│   │   ├── deposit/
+   138→│   │   │   └── page.tsx                # Deposit flow (crypto + gift card)
+   139→│   │   ├── withdraw/
+   140→│   │   │   └── page.tsx                # Withdrawal form with fee breakdown
+   141→│   │   ├── wallet/
+   142→│   │   │   ├── page.tsx                # Wallet overview (balances + transactions)
+   143→│   │   │   └── [transactionId]/
+   144→│   │   │       └── page.tsx            # Transaction detail view
+   145→│   │   ├── referral/
+   146→│   │   │   └── page.tsx                # Referral program (link, team, tree)
+   147→│   │   ├── profile/
+   148→│   │   │   └── page.tsx                # Profile settings + password + 2FA
+   149→│   │   ├── kyc/
+   150→│   │   │   └── page.tsx                # KYC verification + document upload
+   151→│   │   ├── notifications/
+   152→│   │   │   └── page.tsx                # Notification list + preferences
+   153→│   │   └── support/
+   154→│   │       ├── page.tsx                # Ticket list
+   155→│   │       └── [ticketId]/
+   156→│   │           └── page.tsx            # Ticket conversation thread
+   157→│   │
+   158→│   └── (admin)/                        # Route group — admin control panel
+   159→│       ├── layout.tsx                  # AdminLayout: AdminSidebar + Topbar + Content
+   160→│       ├── admin/
+   161→│       │   ├── page.tsx                # Admin dashboard (stats, charts, activity)
+   162→│       │   ├── loading.tsx
+   163→│       │   ├── error.tsx
+   164→│       │   ├── users/
+   165→│       │   │   └── page.tsx            # User management (DataTable)
+   166→│       │   ├── users/[userId]/
+   167→│       │   │   └── page.tsx            # User detail panel
+   168→│       │   ├── kyc/
+   169→│       │   │   └── page.tsx            # KYC review queue
+   170→│       │   ├── deposits/
+   171→│       │   │   └── page.tsx            # Deposit management + gift card verification
+   172→│       │   ├── withdrawals/
+   173→│       │   │   └── page.tsx            # Withdrawal approval/rejection
+   174→│       │   ├── plans/
+   175→│       │   │   └── page.tsx            # Plan CRUD
+   176→│       │   ├── settings/
+   177→│       │   │   └── page.tsx            # Platform settings + feature flags
+   178→│       │   ├── audit-logs/
+   179→│       │   │   └── page.tsx            # Audit log viewer with filters
+   180→│       │   └── reports/
+   181→│       │       └── page.tsx            # Reports and analytics + export
+   182→│       └── api/                        # API Route Handlers (co-located or top-level)
+   183→│           ├── auth/
+   184→│           │   ├── login/route.ts
+   185→│           │   ├── register/route.ts
+   186→│           │   └── [...nextauth]/route.ts
+   187→│           ├── plans/route.ts
+   188→│           ├── deposits/route.ts
+   189→│           ├── withdrawals/route.ts
+   190→│           ├── wallet/route.ts
+   191→│           ├── notifications/route.ts
+   192→│           ├── kyc/route.ts
+   193→│           ├── referral/route.ts
+   194→│           ├── support/route.ts
+   195→│           └── admin/
+   196→│               ├── users/route.ts
+   197→│               ├── kyc/route.ts
+   198→│               ├── deposits/route.ts
+   199→│               ├── withdrawals/route.ts
+   200→│               ├── plans/route.ts
+   201→│               ├── settings/route.ts
+   202→│               ├── audit-logs/route.ts
+   203→│               └── reports/route.ts
+   204→│
+   205→├── components/                         # All React components
+   206→│   ├── ui/                             # shadcn/ui primitives + base components
+   207→│   │   ├── button.tsx
+   208→│   │   ├── input.tsx
+   209→│   │   ├── select.tsx
+   210→│   │   ├── textarea.tsx
+   211→│   │   ├── checkbox.tsx
+   212→│   │   ├── radio-group.tsx
+   213→│   │   ├── switch.tsx
+   214→│   │   ├── card.tsx
+   215→│   │   ├── badge.tsx
+   216→│   │   ├── avatar.tsx
+   217→│   │   ├── dialog.tsx
+   218→│   │   ├── sheet.tsx
+   219→│   │   ├── dropdown-menu.tsx
+   220→│   │   ├── tabs.tsx
+   221→│   │   ├── accordion.tsx
+   222→│   │   ├── tooltip.tsx
+   223→│   │   ├── alert.tsx
+   224→│   │   ├── progress.tsx
+   225→│   │   ├── skeleton.tsx
+   226→│   │   ├── separator.tsx
+   227→│   │   ├── scroll-area.tsx
+   228→│   │   ├── table.tsx
+   229→│   │   ├── pagination.tsx
+   230→│   │   ├── form.tsx
+   231→│   │   ├── label.tsx
+   232→│   │   ├── chart.tsx
+   233→│   │   ├── data-table.tsx
+   234→│   │   ├── file-upload.tsx
+   235→│   │   ├── search-input.tsx
+   236→│   │   ├── copy-button.tsx
+   237→│   │   ├── loading-spinner.tsx
+   238→│   │   ├── empty-state.tsx
+   239→│   │   ├── stat-card.tsx
+   240→│   │   ├── countdown-timer.tsx
+   241→│   │   ├── qr-code.tsx
+   242→│   │   ├── fee-breakdown.tsx
+   243→│   │   └── icon-button.tsx
+   244→│   │
+   245→│   ├── layout/                         # Layout shell components
+   246→│   │   ├── header.tsx                  # Public page header (Navbar)
+   247→│   │   ├── footer.tsx                  # Public page footer
+   248→│   │   ├── sidebar.tsx                 # Dashboard sidebar navigation
+   249→│   │   ├── admin-sidebar.tsx           # Admin sidebar navigation
+   250→│   │   ├── topbar.tsx                  # Dashboard top bar (mode toggle, notifications, avatar)
+   251→│   │   ├── admin-topbar.tsx            # Admin top bar
+   252→│   │   ├── demo-live-toggle.tsx        # Demo/Live mode switch
+   253→│   │   ├── mobile-nav.tsx              # Mobile bottom navigation bar
+   254→│   │   └── breadcrumb.tsx              # Breadcrumb navigation
+   255→│   │
+   256→│   ├── auth/                           # Authentication components
+   257→│   │   ├── login-form.tsx
+   258→│   │   ├── register-form.tsx
+   259→│   │   ├── otp-input.tsx
+   260→│   │   ├── forgot-password-form.tsx
+   261→│   │   ├── social-login-buttons.tsx
+   262→│   │   └── password-strength-indicator.tsx
+   263→│   │
+   264→│   ├── dashboard/                      # Dashboard page components
+   265→│   │   ├── dashboard-stats.tsx
+   266→│   │   ├── quick-actions.tsx
+   267→│   │   ├── active-investments-list.tsx
+   268→│   │   ├── recent-transactions.tsx
+   269→│   │   └── earnings-chart.tsx
+   270→│   │
+   271→│   ├── plans/                          # Investment plan components
+   272→│   │   ├── plan-card.tsx
+   273→│   │   ├── plan-grid.tsx
+   274→│   │   ├── plan-details.tsx
+   275→│   │   ├── plan-comparison-table.tsx
+   276→│   │   └── invest-modal.tsx
+   277→│   │
+   278→│   ├── deposit/                        # Deposit flow components
+   279→│   │   ├── deposit-mode-selector.tsx
+   280→│   │   ├── crypto-deposit.tsx
+   281→│   │   ├── crypto-address-display.tsx
+   282→│   │   ├── gift-card-deposit.tsx
+   283→│   │   ├── gift-card-upload.tsx
+   284→│   │   ├── gift-card-preview.tsx
+   285→│   │   └── deposit-status-tracker.tsx
+   286→│   │
+   287→│   ├── withdraw/                       # Withdrawal components
+   288→│   │   ├── withdrawal-form.tsx
+   289→│   │   ├── fee-breakdown.tsx
+   290→│   │   ├── withdrawal-confirmation.tsx
+   291→│   │   └── withdrawal-history.tsx
+   292→│   │
+   293→│   ├── wallet/                         # Wallet components
+   294→│   │   ├── balance-display.tsx
+   295→│   │   ├── transaction-list.tsx
+   296→│   │   ├── transaction-item.tsx
+   297→│   │   ├── transaction-detail.tsx
+   298→│   │   └── wallet-overview.tsx
+   299→│   │
+   300→│   ├── referral/                       # Referral program components
+   301→│   │   ├── referral-link-card.tsx
+   302→│   │   ├── referral-stats-card.tsx
+   303→│   │   ├── team-table.tsx
+   304→│   │   ├── binary-tree-view.tsx
+   305→│   │   ├── binary-tree-chart.tsx
+   306→│   │   └── commission-history.tsx
+   307→│   │
+   308→│   ├── profile/                        # User profile components
+   309→│   │   ├── profile-form.tsx
+   310→│   │   ├── change-password-form.tsx
+   311→│   │   ├── two-factor-setup.tsx
+   312→│   │   ├── two-factor-backup-codes.tsx
+   313→│   │   └── session-list.tsx
+   314→│   │
+   315→│   ├── kyc/                            # KYC verification components
+   316→│   │   ├── kyc-form.tsx
+   317→│   │   ├── kyc-level-indicator.tsx
+   318→│   │   ├── document-upload.tsx
+   319→│   │   ├── document-upload-card.tsx
+   320→│   │   └── kyc-status.tsx
+   321→│   │
+   322→│   ├── notifications/                  # Notification components
+   323→│   │   ├── notification-bell.tsx
+   324→│   │   ├── notification-dropdown.tsx
+   325→│   │   ├── notification-list.tsx
+   326→│   │   ├── notification-item.tsx
+   327→│   │   └── notification-preferences.tsx
+   328→│   │
+   329→│   ├── support/                        # Support/ticket components
+   330→│   │   ├── ticket-list.tsx
+   331→│   │   ├── ticket-detail.tsx
+   332→│   │   ├── message-form.tsx
+   333→│   │   ├── message-thread.tsx
+   334→│   │   └── ticket-status-badge.tsx
+   335→│   │
+   336→│   ├── charts/                         # Chart wrapper components
+   337→│   │   ├── line-chart.tsx
+   338→│   │   ├── bar-chart.tsx
+   339→│   │   └── pie-chart.tsx
+   340→│   │
+   341→│   ├── feedback/                       # User feedback components
+   342→│   │   ├── toast.tsx
+   343→│   │   └── toast-provider.tsx
+   344→│   │
+   345→│   └── admin/                          # Admin-specific components
+   346→│       ├── admin-data-table.tsx
+   347→│       ├── user-detail-modal.tsx
+   348→│       ├── user-detail-panel.tsx
+   349→│       ├── kyc-review-card.tsx
+   350→│       ├── document-viewer.tsx
+   351→│       ├── gift-card-verify-modal.tsx
+   352→│       ├── withdrawal-detail-panel.tsx
+   353→│       ├── plan-form.tsx
+   354→│       ├── permission-matrix.tsx
+   355→│       ├── feature-flag-toggle.tsx
+   356→│       ├── activity-feed.tsx
+   357→│       └── export-button.tsx
+   358→│
+   359→├── lib/                                # Utilities and helpers
+   360→│   ├── api-client.ts                   # Typed fetch wrapper for API calls
+   361→│   ├── utils.ts                        # General utilities (cn, formatDate, formatCurrency)
+   362→│   ├── validations/                    # Zod schemas
+   363→│   │   ├── auth.ts
+   364→│   │   ├── deposit.ts
+   365→│   │   ├── withdrawal.ts
+   366→│   │   ├── kyc.ts
+   367→│   │   ├── profile.ts
+   368→│   │   ├── support.ts
+   369→│   │   └── admin.ts
+   370→│   └── constants.ts                    # App-wide constants (routes, limits, etc.)
+   371→│
+   372→├── hooks/                              # Custom React hooks
+   373→│   ├── use-auth.ts                     # Authentication state and actions
+   374→│   ├── use-mode.ts                     # Demo/Live mode state
+   375→│   ├── use-sidebar.ts                  # Sidebar collapse/expand state
+   376→│   ├── use-media-query.ts             # Responsive breakpoint detection
+   377→│   ├── use-debounce.ts                # Debounced value hook
+   378→│   ├── use-copy-to-clipboard.ts       # Clipboard API hook
+   379→│   ├── use-notification-polling.ts    # Notification polling hook
+   380→│   └── use-api.ts                     # SWR-powered data fetching hook
+   381→│
+   382→├── stores/                             # Zustand state stores
+   383→│   ├── mode-store.ts                   # Demo/Live mode toggle state
+   384→│   ├── sidebar-store.ts               # Sidebar collapsed/expanded state
+   385→│   ├── ui-store.ts                     # General UI state (modals, toasts)
+   386→│   └── notification-store.ts           # Notification state
+   387→│
+   388→├── types/                              # TypeScript type definitions
+   389→│   ├── user.ts
+   390→│   ├── plan.ts
+   391→│   ├── investment.ts
+   392→│   ├── transaction.ts
+   393→│   ├── deposit.ts
+   394→│   ├── withdrawal.ts
+   395→│   ├── kyc.ts
+   396→│   ├── referral.ts
+   397→│   ├── notification.ts
+   398→│   ├── support.ts
+   399→│   └── admin.ts
+   400→│
+   401→├── styles/                             # Custom style extensions
+   402→│   └── animations.ts                   # Shared Tailwind animation keyframes
+   403→│
+   404→├── public/                             # Static assets
+   405→│   ├── images/
+   406→│   │   ├── logo.svg
+   407→│   │   ├── logo-icon.svg
+   408→│   │   └── hero-bg.webp
+   409→│   └── favicon.ico
+   410→│
+   411→├── tailwind.config.ts                  # Tailwind configuration with Tesla palette
+   412→├── next.config.mjs                     # Next.js configuration
+   413→├── tsconfig.json                       # TypeScript strict configuration
+   414→├── .env.local                          # Environment variables
+   415→└── middleware.ts                        # Next.js middleware (auth, guards)
+   416→```
+   417→
+   418→---
+   419→
+   420→## 3. Layout System
+   421→
+   422→The application uses four distinct layout shells, each defined as a `layout.tsx` within a Next.js route group. Layouts nest naturally: the root layout wraps all pages, and each route group layout wraps its child pages.
+   423→
+   424→### 3.1 Root Layout
+   425→
+   426→The root layout (`app/layout.tsx`) applies to every page in the application. It is a Server Component that sets up:
+   427→
+   428→- HTML `<html>` element with `lang="en"` and `class="dark"` (permanent dark mode)
+   429→- `<body>` with the Inter font loaded via `next/font/google`
+   430→- Global providers: `Toaster` (toast notifications), `TooltipProvider` (shadcn/ui tooltips)
+   431→- Metadata configuration: title template, description, Open Graph tags
+   432→
+   433→### 3.2 Marketing Layout
+   434→
+   435→```mermaid
+   436→graph TB
+   437→    subgraph "MarketingLayout — (marketing)/layout.tsx"
+   438→        NL["<Navbar /> (Client)<br/>Logo | Nav Links | Login/Register"]
+   439→        MAIN1["<main className='min-h-screen' /><br/>Page Content (children)"]
+   440→        FT["<Footer /><br/>Links | Legal | Social"]
+   441→    end
+   442→    NL --> MAIN1 --> FT
+   443→
+   444→    style NL fill:#1a1a1a,stroke:#CC0000,color:#fff
+   445→    style MAIN1 fill:#0A0A0A,stroke:#333,color:#fff
+   446→    style FT fill:#1a1a1a,stroke:#333,color:#ccc
+   447→```
+   448→
+   449→**Route Group:** `(marketing)/`  
+   450→**Type:** Server Component  
+   451→**Pages:** Home (`/`), About, Plans (public), FAQ, Contact, Privacy Policy, Terms of Service, Forgot Password
+   452→
+   453→**Structure:**
+   454→- **Navbar** (Client Component): Sticky top navigation with logo, desktop nav links, Login (outlined) and Register (primary red) buttons, and a mobile hamburger menu. Applies a backdrop blur effect on scroll.
+   455→- **Main Content Area:** Full-width `<main>` with `min-h-screen` and `pt-16` (accounting for fixed navbar height). Children rendered here.
+   456→- **Footer** (Server Component): Multi-column footer with platform links, legal links, social media icons, and copyright.
+   457→
+   458→**Key Behavior:**
+   459→- Navbar links use `next/link` for client-side navigation with active state highlighting via `usePathname()`.
+   460→- On mobile (< 768px), the hamburger icon opens a full-screen `<Sheet>` (slide-in drawer) containing all navigation links and CTA buttons.
+   461→
+   462→### 3.3 Auth Layout
+   463→
+   464→```mermaid
+   465→graph TB
+   466→    subgraph "AuthLayout — (auth)/layout.tsx"
+   467→        BG["Full-viewport dark background<br/>Subtle radial gradient"]
+   468→        CARD["Centered Card Container<br/>max-w-md w-full"]
+   469→        LOGO["<Logo />"]
+   470→        FORM["Form Content (children)<br/>LoginForm / RegisterForm"]
+   471→        LINKS["Footer Links<br/>'Don't have an account?' / 'Already have an account?'"]
+   472→    end
+   473→    BG --> CARD --> LOGO --> FORM --> LINKS
+   474→
+   475→    style BG fill:#0A0A0A,stroke:#333,color:#fff
+   476→    style CARD fill:#141414,stroke:#CC0000,color:#fff
+   477→    style LOGO fill:#141414,stroke:none,color:#CC0000
+   478→    style FORM fill:#141414,stroke:none,color:#fff
+   479→    style LINKS fill:#141414,stroke:none,color:#999
+   480→```
+   481→
+   482→**Route Group:** `(auth)/`  
+   483→**Type:** Server Component  
+   484→**Pages:** Login (`/login`), Register (`/register`)
+   485→
+   486→**Structure:**
+   487→- Full-viewport flex container with `items-center justify-center` centering.
+   488→- Dark background with a subtle radial gradient (`bg-gradient-to-br from-[#0A0A0A] via-[#111] to-[#0A0A0A]`).
+   489→- Centered card container with `max-w-md w-full` dimensions and a dark card background (`bg-[#141414]`) with a subtle border.
+   490→- TeslaPrimeCapital logo centered at the top of the card.
+   491→- Form content rendered as children.
+   492→- Footer links for toggling between login and register.
+   493→
+   494→### 3.4 Dashboard Layout
+   495→
+   496→```mermaid
+   497→graph TB
+   498→    subgraph "DashboardLayout — (dashboard)/layout.tsx"
+   499→        subgraph "Desktop (≥1024px)"
+   500→            direction LR
+   501→            SB["<Sidebar /><br/>Collapsible navigation<br/>256px / 72px"]
+   502→            subgraph "Content Area"
+   503→                TB["<Topbar /><br/>Hamburger | DemoLiveToggle | Notifications | Avatar"]
+   504→                BC["<Breadcrumb />"]
+   505→                MAIN2["<main /><br/>Page Content (children)"]
+   506→            end
+   507→        end
+   508→        subgraph "Mobile (<1024px)"
+   509→            MN["<MobileNav /> (Bottom)<br/>5 icon tabs"]
+   510→            MAIN3["<main /><br/>Page Content (full-width)"]
+   511→            TB2["<Topbar /><br/>Hamburger | ModeToggle | Bell"]
+   512→        end
+   513→    end
+   514→    SB --> TB --> BC --> MAIN2
+   515→
+   516→    style SB fill:#111,stroke:#222,color:#fff
+   517→    style TB fill:#1a1a1a,stroke:#222,color:#fff
+   518→    style BC fill:none,stroke:none,color:#999
+   519→    style MAIN2 fill:#0A0A0A,stroke:none,color:#fff
+   520→    style MN fill:#111,stroke:#CC0000,color:#fff
+   521→    style MAIN3 fill:#0A0A0A,stroke:none,color:#fff
+   522→```
+   523→
+   524→**Route Group:** `(dashboard)/`  
+   525→**Type:** Client Component (requires `'use client'` for sidebar collapse state)  
+   526→**Pages:** Dashboard Home, Plans, Deposit, Withdraw, Wallet, Referral, Profile, KYC, Notifications, Support
+   527→
+   528→**Structure:**
+   529→- **Sidebar** (Client Component): Left sidebar (256px expanded, 72px collapsed) with navigation links grouped by category. Navigation items include: Dashboard, Plans, Deposit, Withdraw, Wallet, Referral, KYC, Support, Profile. Each link has a Lucide icon. Active link shows a red left border indicator. Collapse toggle button at the bottom. Logout button at the very bottom. On mobile, the sidebar transforms into a `<Sheet>` drawer overlay triggered by the hamburger icon.
+   530→- **Topbar** (Client Component): Horizontal bar spanning the content area. Contains: mobile hamburger toggle (left), page title or breadcrumb (left), `<DemoLiveToggle>` (center, prominent), `<NotificationBell>` (right), user avatar dropdown (right) with links to Profile, Settings, and Logout.
+   531→- **Breadcrumb** (Server Component): Shows current location path (e.g., Dashboard > Wallet > Transaction Detail).
+   532→- **Main Content Area:** Scrollable content area with `p-6` padding on desktop, `p-4` on mobile.
+   533→
+   534→### 3.5 Admin Layout
+   535→
+   536→```mermaid
+   537→graph TB
+   538→    subgraph "AdminLayout — (admin)/layout.tsx"
+   539→        subgraph "Desktop (≥1024px)"
+   540→            direction LR
+   541→            ASB["<AdminSidebar /><br/>Grouped admin navigation<br/>256px / 72px"]
+   542→            subgraph "Admin Content Area"
+   543→                ATB["<AdminTopbar /><br/>Admin Badge | Hamburger | Notifications | Avatar"]
+   544→                ABC["<Breadcrumb />"]
+   545→            AMAIN["<main /><br/>Admin Page Content (children)"]
+   546→            end
+   547→        end
+   548→    end
+   549→    ASB --> ATB --> ABC --> AMAIN
+   550→
+   551→    style ASB fill:#111,stroke:#CC0000,color:#fff
+   552→    style ATB fill:#1a1a1a,stroke:#222,color:#fff
+   553→    style ABC fill:none,stroke:none,color:#999
+   554→    style AMAIN fill:#0A0A0A,stroke:none,color:#fff
+   555→```
+   556→
+   557→**Route Group:** `(admin)/`  
+   558→**Type:** Client Component  
+   559→**Pages:** Admin Dashboard, Users, KYC, Deposits, Withdrawals, Plans, Settings, Audit Logs, Reports
+   560→
+   561→**Structure:**
+   562→- **AdminSidebar** (Client Component): Left sidebar with navigation grouped into labeled sections:
+   563→  - **Overview:** Dashboard
+   564→  - **Management:** Users, KYC, Deposits, Withdrawals, Plans
+   565→  - **Operations:** Referrals, Support
+   566→  - **Analytics:** Reports, Audit Logs
+   567→  - **Configuration:** Settings, Roles & Permissions
+   568→- **AdminTopbar** (Client Component): Similar to user topbar but includes an "Admin" badge indicator. No Demo/Live toggle.
+   569→- **Breadcrumb + Main Content:** Same pattern as Dashboard layout.
+   570→
+   571→### Layout Composition Diagram
+   572→
+   573→```mermaid
+   574→graph TD
+   575→    ROOT["Root Layout<br/>app/layout.tsx<br/>(HTML, fonts, providers)"]
+   576→
+   577→    ROOT --> MKTG["MarketingLayout<br/>(marketing)/layout.tsx<br/>Navbar + Footer"]
+   578→    ROOT --> AUTH_L["AuthLayout<br/>(auth)/layout.tsx<br/>Centered card"]
+   579→    ROOT --> DASH_L["DashboardLayout<br/>(dashboard)/layout.tsx<br/>Sidebar + Topbar"]
+   580→    ROOT --> ADMIN_L["AdminLayout<br/>(admin)/layout.tsx<br/>AdminSidebar + Topbar"]
+   581→
+   582→    MKTG --> HOME["/ — Landing"]
+   583→    MKTG --> ABOUT["/about"]
+   584→    MKTG --> PLANS_P["/plans (public)"]
+   585→    MKTG --> FAQ["/faq"]
+   586→    MKTG --> CONTACT["/contact"]
+   587→
+   588→    AUTH_L --> LOGIN["/login"]
+   589→    AUTH_L --> REGISTER["/register"]
+   590→
+   591→    DASH_L --> DASH["/dashboard"]
+   592→    DASH_L --> D_PLANS["/plans"]
+   593→    DASH_L --> DEPOSIT["/deposit"]
+   594→    DASH_L --> WITHDRAW["/withdraw"]
+   595→    DASH_L --> WALLET["/wallet"]
+   596→    DASH_L --> REFERRAL["/referral"]
+   597→    DASH_L --> PROFILE["/profile"]
+   598→    DASH_L --> KYC["/kyc"]
+   599→    DASH_L --> NOTIF["/notifications"]
+   600→    DASH_L --> SUPPORT["/support"]
+   601→
+   602→    ADMIN_L --> A_DASH["/admin"]
+   603→    ADMIN_L --> A_USERS["/admin/users"]
+   604→    ADMIN_L --> A_KYC["/admin/kyc"]
+   605→    ADMIN_L --> A_DEP["/admin/deposits"]
+   606→    ADMIN_L --> A_WIT["/admin/withdrawals"]
+   607→    ADMIN_L --> A_PLANS["/admin/plans"]
+   608→    ADMIN_L --> A_SET["/admin/settings"]
+   609→    ADMIN_L --> A_AUDIT["/admin/audit-logs"]
+   610→    ADMIN_L --> A_REP["/admin/reports"]
+   611→
+   612→    style ROOT fill:#CC0000,stroke:#990000,color:#fff
+   613→    style MKTG fill:#1a1a1a,stroke:#CC0000,color:#fff
+   614→    style AUTH_L fill:#1a1a1a,stroke:#CC0000,color:#fff
+   615→    style DASH_L fill:#1a1a1a,stroke:#CC0000,color:#fff
+   616→    style ADMIN_L fill:#1a1a1a,stroke:#CC0000,color:#fff
+   617→```
+   618→
+   619→---
+   620→
+   621→## 4. Component Architecture
+   622→
+   623→### 4.1 Server Components vs Client Components
+   624→
+   625→The App Router renders Server Components on the server and streams HTML to the client. Client Components (marked with `'use client'`) hydrate on the client to add interactivity. The following matrix defines the boundary for each route:
+   626→
+   627→| Route / Page | Page Type | Key Client Components | Key Server Components |
+   628→|---|---|---|---|
+   629→| `/` (Landing) | Server | `Navbar`, `MobileMenu`, hero CTA buttons | `Hero`, `Features`, `PlanCards`, `Footer`, `TrustIndicators` |
+   630→| `/login`, `/register` | Server | `LoginForm`, `RegisterForm`, `OTPInput`, `PasswordStrengthIndicator` | `AuthLayout`, `SocialLoginButtons` (static) |
+   631→| `/dashboard` | Server | `QuickActions`, `ActiveInvestmentsList`, `EarningsChart` | `DashboardStats`, `RecentTransactions` |
+   632→| `/plans` | Server | `PlanCard` (hover effects), `InvestModal` | `PlanGrid`, `PlanDetails` |
+   633→| `/deposit` | Client | `DepositModeSelector`, `CryptoDeposit`, `GiftCardDeposit`, `GiftCardUpload`, `DepositStatusTracker` | — |
+   634→| `/withdraw` | Client | `WithdrawalForm`, `FeeBreakdown`, `WithdrawalConfirmation` | — |
+   635→| `/wallet` | Server | `TransactionList` (filtering/pagination) | `BalanceDisplay`, `TransactionItem`, `TransactionDetail` |
+   636→| `/referral` | Client | `BinaryTreeView`, `BinaryTreeChart`, `ReferralLinkCard` (copy), `TeamTable` | `ReferralStatsCard` |
+   637→| `/kyc` | Client | `KYCForm`, `DocumentUploadCard`, `DocumentUpload` | `KYCLevelIndicator` |
+   638→| `/profile` | Client | `ProfileForm`, `ChangePasswordForm`, `TwoFactorSetup` | — |
+   639→| `/notifications` | Client | `NotificationList`, `NotificationItem`, `NotificationPreferences` | — |
+   640→| `/support` | Client | `TicketList`, `TicketDetail`, `MessageForm`, `MessageThread` | — |
+   641→| `/admin/*` | Client | `AdminDataTable`, `PlanForm`, `KYCReviewCard`, `UserDetailPanel`, `ExportButton` | `ActivityFeed` (static portions) |
+   642→
+   643→### 4.2 Component Composition Patterns
+   644→
+   645→**Container / Presenter Pattern:**
+   646→Each domain feature page follows a container/presenter split. The page component (Server Component) acts as the container: it fetches data on the server, then passes it as props to presenter components.
+   647→
+   648→```
+   649→// Pattern: Server Component fetches, Client Component renders
+   650→// app/(dashboard)/wallet/page.tsx (Server Component)
+   651→async function WalletPage() {
+   652→  const balances = await getBalances(userId);
+   653→  const transactions = await getTransactions(userId, { page: 1 });
+   654→
+   655→  return (
+   656→    <div>
+   657→      <BalanceDisplay available={balances.available} pending={balances.pending} />
+   658→      <TransactionListClient initialData={transactions} />
+   659→    </div>
+   660→  );
+   661→}
+   662→
+   663→// components/wallet/transaction-list.tsx (Client Component)
+   664→'use client';
+   665→function TransactionListClient({ initialData }) {
+   666→  const { data } = useSWR('/api/wallet/transactions', { fallbackData: initialData });
+   667→  // ... filtering, pagination, interactive features
+   668→}
+   669→```
+   670→
+   671→**Compound Component Pattern:**
+   672→Complex UI elements like `DataTable`, `Tabs`, and `Accordion` use the compound component pattern with React Context for shared state:
+   673→
+   674→```tsx
+   675→<DataTable data={users} columns={columns}>
+   676→  <DataTable.Toolbar>
+   677→    <SearchInput onSearch={handleSearch} />
+   678→    <Button>Export</Button>
+   679→  </DataTable.Toolbar>
+   680→  <DataTable.Body />
+   681→  <DataTable.Pagination />
+   682→</DataTable>
+   683→```
+   684→
+   685→**Composition with Children:**
+   686→Layout components accept `children` for flexible content injection. Shell components (Card, Dialog, Sheet) follow this pattern extensively.
+   687→
+   688→### 4.3 Shared Component Library Strategy
+   689→
+   690→The component library is organized in two tiers:
+   691→
+   692→**Tier 1 — UI Primitives (`components/ui/`):**
+   693→These are foundational, reusable components built on top of shadcn/ui. They have no business logic and are styled exclusively with Tailwind utilities and CSS variables. All props are typed with exported TypeScript interfaces. Examples: `Button`, `Input`, `Card`, `Badge`, `Dialog`, `Tabs`, `DataTable`.
+   694→
+   695→**Tier 2 — Domain Components (`components/<domain>/`):**
+   696→These are feature-specific components that compose UI primitives and contain business logic via custom hooks. They are organized by domain: `auth/`, `dashboard/`, `plans/`, `deposit/`, `withdraw/`, `wallet/`, `referral/`, `profile/`, `kyc/`, `notifications/`, `support/`, `admin/`.
+   697→
+   698→### Component Tree Diagram (Dashboard Home)
+   699→
+   700→```mermaid
+   701→graph TD
+   702→    PAGE["Dashboard Page<br/>(Server Component)"]
+   703→    STATS["DashboardStats<br/>(Server Component)"]
+   704→    QA["QuickActions<br/>(Client Component)"]
+   705→    AI["ActiveInvestmentsList<br/>(Client Component)"]
+   706→    AIC["ActiveInvestmentCard<br/>(Client Component) x N"]
+   707→    RT["RecentTransactions<br/>(Server Component)"]
+   708→    TI["TransactionItem<br/>(Server Component) x N"]
+   709→    EC["EarningsChart<br/>(Client Component)"]
+   710→    LC["LineChart<br/>(Client Component)"]
+   711→
+   712→    PAGE --> STATS
+   713→    PAGE --> QA
+   714→    PAGE --> AI
+   715→    PAGE --> RT
+   716→    PAGE --> EC
+   717→
+   718→    AI --> AIC
+   719→    RT --> TI
+   720→    EC --> LC
+   721→
+   722→    STATS --> SC1["StatCard: Total Balance"]
+   723→    STATS --> SC2["StatCard: Active Investments"]
+   724→    STATS --> SC3["StatCard: Total Earnings"]
+   725→    STATS --> SC4["StatCard: Pending Returns"]
+   726→
+   727→    AIC --> PB["ProgressBar"]
+   728→    AIC --> CT["CountdownTimer"]
+   729→    AIC --> BG["Badge"]
+   730→
+   731→    TI --> BG2["Badge"]
+   732→
+   733→    style PAGE fill:#CC0000,stroke:#990000,color:#fff
+   734→    style STATS fill:#222,stroke:#444,color:#fff
+   735→    style QA fill:#222,stroke:#444,color:#fff
+   736→    style AI fill:#222,stroke:#444,color:#fff
+   737→    style RT fill:#222,stroke:#444,color:#fff
+   738→    style EC fill:#222,stroke:#444,color:#fff
+   739→```
+   740→
+   741→---
+   742→
+   743→## 5. Routing Architecture
+   744→
+   745→### 5.1 Route Groups and Their Purposes
+   746→
+   747→Next.js App Router route groups (directories wrapped in parentheses) allow logical grouping of routes without affecting the URL structure:
+   748→
+   749→| Route Group | URL Prefix | Purpose | Auth Required |
+   750→|---|---|---|---|
+   751→| `(marketing)` | `/` | Public-facing pages (landing, about, FAQ, etc.) | No |
+   752→| `(auth)` | `/login`, `/register` | Authentication flows | No (redirects if logged in) |
+   753→| `(dashboard)` | `/dashboard`, `/plans`, `/deposit`, etc. | Authenticated user experience | Yes |
+   754→| `(admin)` | `/admin`, `/admin/users`, etc. | Admin control panel | Yes + Admin role |
+   755→
+   756→### 5.2 Middleware for Auth Protection
+   757→
+   758→The `middleware.ts` file at the project root runs on every request (except static assets and `_next` internals). It implements a layered authentication and authorization system:
+   759→
+   760→```typescript
+   761→// middleware.ts — Pseudocode
+   762→import { NextResponse } from 'next/server';
+   763→import type { NextRequest } from 'next/server';
+   764→
+   765→export function middleware(request: NextRequest) {
+   766→  const { pathname } = request.nextUrl;
+   767→  const sessionToken = request.cookies.get('session-token')?.value;
+   768→
+   769→  // Public routes — no auth needed
+   770→  const publicRoutes = ['/', '/about', '/plans', '/faq', '/contact',
+   771→    '/privacy-policy', '/terms-of-service', '/login', '/register',
+   772→    '/forgot-password'];
+   773→  if (publicRoutes.some(r => pathname === r || pathname.startsWith(r + '/'))) {
+   774→    // If already logged in and trying to access auth pages, redirect to dashboard
+   775→    if (sessionToken && ['/login', '/register'].includes(pathname)) {
+   776→      return NextResponse.redirect(new URL('/dashboard', request.url));
+   777→    }
+   778→    return NextResponse.next();
+   779→  }
+   780→
+   781→  // All other routes require authentication
+   782→  if (!sessionToken) {
+   783→    const loginUrl = new URL('/login', request.url);
+   784→    loginUrl.searchParams.set('callbackUrl', pathname);
+   785→    return NextResponse.redirect(loginUrl);
+   786→  }
+   787→
+   788→  // Admin routes require admin role — verified server-side in layout
+   789→  // (middleware has limited access to session data; role check in page/layout)
+   790→  if (pathname.startsWith('/admin')) {
+   791→    // Attach header for server-side role verification
+   792→    const requestHeaders = new Headers(request.headers);
+   793→    requestHeaders.set('x-require-admin', 'true');
+   794→    return NextResponse.next({ request: { headers: requestHeaders } });
+   795→  }
+   796→
+   797→  return NextResponse.next();
+   798→}
+   799→
+   800→export const config = {
+   801→  matcher: ['/((?!_next/static|_next/image|favicon.ico|images/).*)'],
+   802→};
+   803→```
+   804→
+   805→### 5.3 Route Guards for KYC, 2FA, and Role-Based Access
+   806→
+   807→Beyond the middleware auth check, additional guards are implemented at the layout and page level:
+   808→
+   809→**KYC Guard:**
+   810→Certain pages (Deposit, Withdraw, Plans above Level 0 limits) check the user's KYC level before rendering. If the user's KYC level is insufficient, a blocking banner is displayed with a link to the KYC page. This is implemented as a Server Component that reads the user's KYC status from the session or database.
+   811→
+   812→**2FA Guard:**
+   813→Sensitive actions (withdrawal, profile changes) check if 2FA is enabled. If not, an informational banner encourages the user to enable 2FA (non-blocking for P1 features, blocking for P0 security features like withdrawals in Live mode).
+   814→
+   815→**Role-Based Access Control (Admin):**
+   816→Admin routes are protected at two levels:
+   817→1. **Middleware:** Verifies the session token exists.
+   818→2. **Admin Layout (`(admin)/layout.tsx`):** Server-side database query verifies the user's role is `ADMIN` or `SUPER_ADMIN`. If not, the user is redirected to `/dashboard` with an "Access Denied" toast.
+   819→
+   820→### 5.4 Loading States and Error Boundaries
+   821→
+   822→Each route segment supports `loading.tsx` and `error.tsx` files for granular loading and error handling:
+   823→
+   824→| Route | Loading State | Error Boundary |
+   825→|---|---|---|
+   826→| Root (`app/`) | Global spinner | Global error page with "Go Home" CTA |
+   827→| `(marketing)/` | Page-level skeletons (hero shimmer, card skeletons) | Inherited from root |
+   828→| `(auth)/` | Minimal (auth forms are instant) | Inherited from root |
+   829→| `(dashboard)/` | Dashboard skeleton: 4 StatCard skeletons, chart skeleton, table skeleton | Dashboard-specific error with retry button |
+   830→| `(dashboard)/wallet/` | Balance skeleton + 5 TransactionItem skeletons | Inherited from dashboard |
+   831→| `(dashboard)/deposit/` | Mode selector skeleton | Deposit-specific error with retry |
+   832→| `(admin)/` | Admin dashboard skeleton: stat cards + chart | Admin error with "Return to Dashboard" link |
+   833→| `(admin)/users/` | DataTable skeleton (table variant) | Inherited from admin |
+   834→
+   835→**Loading Pattern:**
+   836→```tsx
+   837→// app/(dashboard)/dashboard/loading.tsx
+   838→export default function DashboardLoading() {
+   839→  return (
+   840→    <div className="space-y-6">
+   841→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+   842→        <Skeleton variant="card" count={4} />
+   843→      </div>
+   844→      <Skeleton variant="chart" height={300} />
+   845→      <Skeleton variant="table" rows={5} />
+   846→    </div>
+   847→  );
+   848→}
+   849→```
+   850→
+   851→**Error Pattern:**
+   852→```tsx
+   853→// app/(dashboard)/dashboard/error.tsx
+   854→'use client';
+   855→export default function DashboardError({ error, reset }) {
+   856→  return (
+   857→    <EmptyState
+   858→      icon={<AlertTriangle className="h-12 w-12 text-red-500" />}
+   859→      title="Something went wrong"
+   860→      description="We couldn't load your dashboard data. Please try again."
+   861→      action={{ label: 'Try Again', onClick: reset }}
+   862→    />
+   863→  );
+   864→}
+   865→```
+   866→
+   867→---
+   868→
+   869→## 6. Design System
+   870→
+   871→### 6.1 Tailwind Configuration — Tesla Red/Black Palette
+   872→
+   873→```typescript
+   874→// tailwind.config.ts
+   875→import type { Config } from 'tailwindcss';
+   876→
+   877→const config: Config = {
+   878→  darkMode: 'class',
+   879→  content: ['./src/**/*.{ts,tsx}'],
+   880→  theme: {
+   881→    extend: {
+   882→      colors: {
+   883→        // Tesla-inspired palette
+   884→        tesla: {
+   885→          red: '#CC0000',
+   886→          'red-hover': '#E60000',
+   887→          'red-muted': 'rgba(204, 0, 0, 0.15)',
+   888→          black: '#0A0A0A',
+   889→          'black-light': '#111111',
+   890→          'black-card': '#141414',
+   891→          'black-elevated': '#1A1A1A',
+   892→          'black-border': '#222222',
+   893→          'black-input': '#1E1E1E',
+   894→        },
+   895→        // Semantic aliases
+   896→        background: '#0A0A0A',
+   897→        foreground: '#F5F5F5',
+   898→        muted: {
+   899→          DEFAULT: '#888888',
+   900→          foreground: '#AAAAAA',
+   901→        },
+   902→        border: '#222222',
+   903→        input: '#1E1E1E',
+   904→        ring: '#CC0000',
+   905→        primary: {
+   906→          DEFAULT: '#CC0000',
+   907→          foreground: '#FFFFFF',
+   908→          hover: '#E60000',
+   909→        },
+   910→        secondary: {
+   911→          DEFAULT: '#1A1A1A',
+   912→          foreground: '#F5F5F5',
+   913→        },
+   914→        destructive: {
+   915→          DEFAULT: '#CC0000',
+   916→          foreground: '#FFFFFF',
+   917→        },
+   918→        success: '#22C55E',
+   919→        warning: '#F59E0B',
+   920→        error: '#EF4444',
+   921→        info: '#3B82F6',
+   922→      },
+   923→      fontFamily: {
+   924→        sans: ['Inter', 'system-ui', 'sans-serif'],
+   925→      },
+   926→      borderRadius: {
+   927→        lg: '0.75rem',
+   928→        md: '0.5rem',
+   929→        sm: '0.375rem',
+   930→      },
+   931→      keyframes: {
+   932→        'accordion-down': {
+   933→          from: { height: '0' },
+   934→          to: { height: 'var(--radix-accordion-content-height)' },
+   935→        },
+   936→        'accordion-up': {
+   937→          from: { height: 'var(--radix-accordion-content-height)' },
+   938→          to: { height: '0' },
+   939→        },
+   940→        'shimmer': {
+   941→          '100%': { transform: 'translateX(100%)' },
+   942→        },
+   943→        'slide-in-right': {
+   944→          from: { transform: 'translateX(100%)' },
+   945→          to: { transform: 'translateX(0)' },
+   946→        },
+   947→        'slide-out-right': {
+   948→          from: { transform: 'translateX(0)' },
+   949→          to: { transform: 'translateX(100%)' },
+   950→        },
+   951→        'fade-in': {
+   952→          from: { opacity: '0' },
+   953→          to: { opacity: '1' },
+   954→        },
+   955→      },
+   956→      animation: {
+   957→        'accordion-down': 'accordion-down 0.2s ease-out',
+   958→        'accordion-up': 'accordion-up 0.2s ease-out',
+   959→        'shimmer': 'shimmer 2s infinite',
+   960→        'slide-in-right': 'slide-in-right 0.3s ease-out',
+   961→        'slide-out-right': 'slide-out-right 0.3s ease-in',
+   962→        'fade-in': 'fade-in 0.2s ease-out',
+   963→      },
+   964→    },
+   965→  },
+   966→  plugins: [require('tailwindcss-animate')],
+   967→};
+   968→export default config;
+   969→```
+   970→
+   971→### 6.2 Typography Scale
+   972→
+   973→All text uses the **Inter** font family. Headings use bold (700) or semibold (600) weights. Body text uses regular (400) weight.
+   974→
+   975→| Element | Size | Weight | Line Height | Tailwind Classes |
+   976→|---|---|---|---|---|
+   977→| H1 (Page Title) | 2.25rem (36px) | 700 | 1.2 | `text-4xl font-bold tracking-tight` |
+   978→| H2 (Section Title) | 1.5rem (24px) | 600 | 1.3 | `text-2xl font-semibold` |
+   979→| H3 (Card Title) | 1.25rem (20px) | 600 | 1.4 | `text-xl font-semibold` |
+   980→| H4 (Subsection) | 1.125rem (18px) | 600 | 1.4 | `text-lg font-semibold` |
+   981→| Body Large | 1.125rem (18px) | 400 | 1.6 | `text-lg` |
+   982→| Body (Default) | 1rem (16px) | 400 | 1.5 | `text-base` |
+   983→| Body Small | 0.875rem (14px) | 400 | 1.5 | `text-sm` |
+   984→| Caption | 0.75rem (12px) | 400 | 1.5 | `text-xs text-muted` |
+   985→| Code / Monospace | 0.875rem (14px) | 400 | 1.5 | `text-sm font-mono` |
+   986→
+   987→### 6.3 Spacing System
+   988→
+   989→The spacing system uses Tailwind's default scale (based on 4px increments), extended with custom values for the platform's layout needs:
+   990→
+   991→| Token | Value | Usage |
+   992→|---|---|---|
+   993→| `1` | 4px | Icon gaps, inline spacing |
+   994→| `2` | 8px | Tight component padding |
+   995→| `3` | 12px | Component internal spacing |
+   996→| `4` | 16px | Standard padding, card padding (mobile) |
+   997→| `5` | 20px | Comfortable padding |
+   998→| `6` | 24px | Section spacing, card padding (desktop), page padding |
+   999→| `8` | 32px | Section gaps |
+  1000→| `10` | 40px | Large section gaps |
+  1001→| `12` | 48px | Section dividers |
+  1002→| `16` | 64px | Page section vertical spacing |
+  1003→| `20` | 80px | Hero section padding |
+  1004→| `24` | 96px | Major section separators |
+  1005→
+  1006→### 6.4 Component Variants
+  1007→
+  1008→#### Button Variants
+  1009→
+  1010→| Variant | Background | Text | Border | Hover |
+  1011→|---|---|---|---|---|
+  1012→| `primary` | `bg-tesla-red` | `text-white` | none | `bg-tesla-red-hover` |
+  1013→| `secondary` | `bg-tesla-black-elevated` | `text-white` | `border-tesla-black-border` | `bg-tesla-black-border` |
+  1014→| `ghost` | `transparent` | `text-white` | none | `bg-white/10` |
+  1015→| `outline` | `transparent` | `text-white` | `border-tesla-black-border` | `bg-white/5` |
+  1016→| `danger` | `bg-transparent` | `text-tesla-red` | `border-tesla-red` | `bg-tesla-red-muted` |
+  1017→
+  1018→**Sizes:** `sm` (h-8, px-3, text-sm), `md` (h-10, px-4, text-sm), `lg` (h-12, px-6, text-base)
+  1019→
+  1020→**States:** Default → Hover → Active (scale-95) → Focus (ring-2 ring-tesla-red/50) → Disabled (opacity-50 cursor-not-allowed) → Loading (spinner, pointer-events-none)
+  1021→
+  1022→#### Card Variants
+  1023→
+  1024→| Variant | Background | Border | Shadow |
+  1025→|---|---|---|---|
+  1026→| `default` | `bg-tesla-black-card` | `border border-tesla-black-border` | none |
+  1027→| `elevated` | `bg-tesla-black-card` | none | `shadow-lg shadow-black/20` |
+  1028→| `outlined` | `transparent` | `border border-tesla-black-border` | none |
+  1029→| `interactive` | `bg-tesla-black-card` | `border border-tesla-black-border` | hover: `shadow-lg`, hover: `border-tesla-red/30` |
+  1030→
+  1031→#### Input Variants
+  1032→
+  1033→| State | Background | Border | Ring |
+  1034→|---|---|---|---|
+  1035→| Default | `bg-tesla-black-input` | `border-tesla-black-border` | none |
+  1036→| Focus | `bg-tesla-black-input` | `border-tesla-red` | `ring-2 ring-tesla-red/20` |
+  1037→| Error | `bg-tesla-black-input` | `border-error` | `ring-2 ring-error/20` |
+  1038→| Disabled | `bg-tesla-black-card` | `border-tesla-black-border` | none, `opacity-50` |
+  1039→
+  1040→#### Badge Variants
+  1041→
+  1042→| Variant | Background | Text | Dot Color |
+  1043→|---|---|---|---|
+  1044→| `success` | `bg-success/15` | `text-success` | `bg-success` |
+  1045→| `warning` | `bg-warning/15` | `text-warning` | `bg-warning` |
+  1046→| `error` | `bg-error/15` | `text-error` | `bg-error` |
+  1047→| `info` | `bg-info/15` | `text-info` | `bg-info` |
+  1048→| `neutral` | `bg-white/10` | `text-muted` | `bg-muted` |
+  1049→
+  1050→### 6.5 Dark Theme as Default
+  1051→
+  1052→The application is dark-only. The `<html>` element always has `class="dark"`. There is no light mode toggle. All color tokens in Tailwind are defined for the dark context. shadcn/ui CSS variables are overridden in `globals.css`:
+  1053→
+  1054→```css
+  1055→/* app/globals.css */
+  1056→@tailwind base;
+  1057→@tailwind components;
+  1058→@tailwind utilities;
+  1059→
+  1060→@layer base {
+  1061→  :root {
+  1062→    --background: 222 47% 4%;        /* #0A0A0A */
+  1063→    --foreground: 0 0% 96%;          /* #F5F5F5 */
+  1064→    --card: 220 14% 8%;              /* #141414 */
+  1065→    --card-foreground: 0 0% 96%;
+  1066→    --popover: 220 14% 10%;          /* #1A1A1A */
+  1067→    --popover-foreground: 0 0% 96%;
+  1068→    --primary: 0 100% 40%;           /* #CC0000 */
+  1069→    --primary-foreground: 0 0% 100%;
+  1070→    --secondary: 220 14% 10%;
+  1071→    --secondary-foreground: 0 0% 96%;
+  1072→    --muted: 220 14% 16%;            /* #222222 */
+  1073→    --muted-foreground: 0 0% 53%;    /* #888888 */
+  1074→    --accent: 220 14% 12%;
+  1075→    --accent-foreground: 0 0% 96%;
+  1076→    --destructive: 0 84% 60%;
+  1077→    --destructive-foreground: 0 0% 100%;
+  1078→    --border: 220 14% 13%;
+  1079→    --input: 220 14% 12%;
+  1080→    --ring: 0 100% 40%;
+  1081→    --radius: 0.5rem;
+  1082→  }
+  1083→}
+  1084→```
+  1085→
+  1086→---
+  1087→
+  1088→## 7. Data Fetching Strategy
+  1089→
+  1090→### 7.1 Server Components — Direct Database Queries
+  1091→
+  1092→Server Components in the App Router can directly import and call Prisma (or any database client) without going through API routes. This reduces latency by eliminating an HTTP hop:
+  1093→
+  1094→```typescript
+  1095→// app/(dashboard)/dashboard/page.tsx (Server Component)
+  1096→import { prisma } from '@/lib/prisma';
+  1097→import { getServerSession } from '@/lib/auth';
+  1098→import { DashboardStats } from '@/components/dashboard/dashboard-stats';
+  1099→
+  1100→export default async function DashboardPage() {
+  1101→  const session = await getServerSession();
+  1102→  const userId = session.user.id;
+  1103→
+  1104→  // Direct DB query — no API call needed
+  1105→  const [balance, activeInvestments, recentTransactions] = await Promise.all([
+  1106→    prisma.wallet.findUnique({ where: { userId } }),
+  1107→    prisma.investment.findMany({
+  1108→      where: { userId, status: 'ACTIVE' },
+  1109→      include: { plan: true },
+  1110→    }),
+  1111→    prisma.transaction.findMany({
+  1112→      where: { userId },
+  1113→      take: 10,
+  1114→      orderBy: { createdAt: 'desc' },
+  1115→    }),
+  1116→  ]);
+  1117→
+  1118→  return (
+  1119→    <div className="space-y-6">
+  1120→      <DashboardStats balance={balance} investments={activeInvestments} />
+  1121→      {/* ... more server-rendered sections */}
+  1122→    </div>
+  1123→  );
+  1124→}
+  1125→```
+  1126→
+  1127→**Use Cases for Server-Side Fetching:**
+  1128→- Dashboard stats and summary data
+  1129→- Plan listings (public and authenticated)
+  1130→- Wallet balances
+  1131→- KYC status and level
+  1132→- Profile information
+  1133→- Admin data tables (initial page load)
+  1134→- Any data needed for initial SSR/SSG
+  1135→
+  1136→### 7.2 Client Components — SWR for Data Fetching
+  1137→
+  1138→Client Components that need dynamic data (search, filter, pagination, real-time updates) use SWR with a custom `useApi` hook:
+  1139→
+  1140→```typescript
+  1141→// hooks/use-api.ts
+  1142→import useSWR from 'swr';
+  1143→import { apiClient } from '@/lib/api-client';
+  1144→
+  1145→export function useApi<T>(url: string | null, options?: SWRConfiguration) {
+  1146→  const { data, error, isLoading, mutate } = useSWR<T>(
+  1147→    url,
+  1148→    (url: string) => apiClient.get<T>(url),
+  1149→    {
+  1150→      revalidateOnFocus: false,
+  1151→      dedupingInterval: 5000,
+  1152→      errorRetryCount: 3,
+  1153→      ...options,
+  1154→    }
+  1155→  );
+  1156→
+  1157→  return { data, error, isLoading, mutate };
+  1158→}
+  1159→```
+  1160→
+  1161→```typescript
+  1162→// lib/api-client.ts — Typed fetch wrapper
+  1163→class ApiClient {
+  1164→  private baseUrl: string;
+  1165→
+  1166→  constructor(baseUrl: string = '/api') {
+  1167→    this.baseUrl = baseUrl;
+  1168→  }
+  1169→
+  1170→  async get<T>(path: string, params?: Record<string, string>): Promise<T> {
+  1171→    const url = new URL(path, window.location.origin);
+  1172→    if (params) {
+  1173→      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  1174→    }
+  1175→    const res = await fetch(url.toString(), {
+  1176→      headers: { 'Content-Type': 'application/json' },
+  1177→      credentials: 'include',
+  1178→    });
+  1179→    if (!res.ok) {
+  1180→      const error = await res.json().catch(() => ({}));
+  1181→      throw new ApiError(res.status, error.message || 'Request failed');
+  1182→    }
+  1183→    return res.json();
+  1184→  }
+  1185→
+  1186→  async post<T>(path: string, body: unknown): Promise<T> {
+  1187→    const res = await fetch(`${this.baseUrl}${path}`, {
+  1188→      method: 'POST',
+  1189→      headers: { 'Content-Type': 'application/json' },
+  1190→      credentials: 'include',
+  1191→      body: JSON.stringify(body),
+  1192→    });
+  1193→    if (!res.ok) {
+  1194→      const error = await res.json().catch(() => ({}));
+  1195→      throw new ApiError(res.status, error.message || 'Request failed');
+  1196→    }
+  1197→    return res.json();
+  1198→  }
+  1199→
+  1200→  // put, patch, delete methods follow the same pattern
+  1201→}
+  1202→
+  1203→export const apiClient = new ApiClient();
+  1204→```
+  1205→
+  1206→**Usage Example:**
+  1207→```typescript
+  1208→// components/wallet/transaction-list.tsx
+  1209→'use client';
+  1210→import { useApi } from '@/hooks/use-api';
+  1211→import type { Transaction } from '@/types/transaction';
+  1212→
+  1213→export function TransactionList({ initialData }: { initialData: Transaction[] }) {
+  1214→  const { data, isLoading, mutate } = useApi<PaginatedResponse<Transaction>>(
+  1215→    '/api/wallet/transactions?page=1&limit=20',
+  1216→    { fallbackData: { data: initialData, total: initialData.length, page: 1 } }
+  1217→  );
+  1218→
+  1219→  // ... render transactions with pagination
+  1220→}
+  1221→```
+  1222→
+  1223→### 7.3 Optimistic Updates
+  1224→
+  1225→For actions where immediate UI feedback improves UX (marking notifications as read, toggling settings), optimistic updates are applied before the server response:
+  1226→
+  1227→```typescript
+  1228→// Example: Mark notification as read (optimistic)
+  1229→async function markAsRead(notificationId: string) {
+  1230→  // Optimistically update local data
+  1231→  mutate(
+  1232→    '/api/notifications',
+  1233→    (current) => ({
+  1234→      ...current,
+  1235→      data: current.data.map((n) =>
+  1236→        n.id === notificationId ? { ...n, read: true } : n
+  1237→      ),
+  1238→    }),
+  1239→    false // do not revalidate yet
+  1240→  );
+  1241→
+  1242→  try {
+  1243→    await apiClient.post(`/api/notifications/${notificationId}/read`);
+  1244→    mutate('/api/notifications'); // revalidate with server data
+  1245→  } catch (error) {
+  1246→    mutate('/api/notifications'); // rollback on error
+  1247→    toast.error('Failed to mark as read');
+  1248→  }
+  1249→}
+  1250→```
+  1251→
+  1252→### 7.4 Loading Skeletons
+  1253→
+  1254→Every data-dependent component has a corresponding skeleton state. The `Skeleton` component supports multiple variants that match the shape of the real content:
+  1255→
+  1256→```tsx
+  1257→// Skeleton usage in a transaction list
+  1258→{isLoading ? (
+  1259→  <div className="space-y-3">
+  1260→    {Array.from({ length: 5 }).map((_, i) => (
+  1261→      <div key={i} className="flex items-center gap-4 p-4">
+  1262→        <Skeleton variant="circle" width={40} height={40} />
+  1263→        <div className="flex-1 space-y-2">
+  1264→          <Skeleton variant="text" width="60%" />
+  1265→          <Skeleton variant="text" width="40%" height={12} />
+  1266→        </div>
+  1267→        <Skeleton variant="text" width={80} />
+  1268→      </div>
+  1269→    ))}
+  1270→  </div>
+  1271→) : (
+  1272→  transactions.map((tx) => <TransactionItem key={tx.id} transaction={tx} />)
+  1273→)}
+  1274→```
+  1275→
+  1276→---
+  1277→
+  1278→## 8. Form Handling
+  1279→
+  1280→### 8.1 React Hook Form + Zod Validation
+  1281→
+  1282→All forms in the application use React Hook Form for state management and Zod for schema-based validation. This combination provides:
+  1283→
+  1284→- **Type inference:** Zod schemas generate TypeScript types automatically.
+  1285→- **Declarative validation:** Validation rules are defined once in the schema and used everywhere.
+  1286→- **Performance:** React Hook Form minimizes re-renders by using uncontrolled inputs.
+  1287→- **Accessibility:** Built-in support for `aria-invalid`, `aria-describedby`, and error association.
+  1288→
+  1289→```typescript
+  1290→// lib/validations/auth.ts
+  1291→import { z } from 'zod';
+  1292→
+  1293→export const loginSchema = z.object({
+  1294→  email: z.string().email('Please enter a valid email address'),
+  1295→  password: z.string().min(1, 'Password is required'),
+  1296→  twoFactorCode: z.string().optional(),
+  1297→});
+  1298→
+  1299→export const registerSchema = z.object({
+  1300→  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  1301→  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  1302→  email: z.string().email('Please enter a valid email address'),
+  1303→  password: z
+  1304→    .string()
+  1305→    .min(8, 'Password must be at least 8 characters')
+  1306→    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  1307→    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  1308→    .regex(/[0-9]/, 'Password must contain at least one number'),
+  1309→  confirmPassword: z.string(),
+  1310→  referralCode: z.string().optional(),
+  1311→}).refine((data) => data.password === data.confirmPassword, {
+  1312→  message: 'Passwords do not match',
+  1313→  path: ['confirmPassword'],
+  1314→});
+  1315→
+  1316→export type LoginFormData = z.infer<typeof loginSchema>;
+  1317→export type RegisterFormData = z.infer<typeof registerSchema>;
+  1318→```
+  1319→
+  1320→### 8.2 Form Component Pattern
+  1321→
+  1322→Each form follows a consistent pattern using shadcn/ui's `<Form>` component (built on React Hook Form + Zod integration):
+  1323→
+  1324→```tsx
+  1325→// components/auth/login-form.tsx
+  1326→'use client';
+  1327→import { useForm } from 'react-hook-form';
+  1328→import { zodResolver } from '@hookform/resolvers/zod';
+  1329→import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
+  1330→import { Button } from '@/components/ui/button';
+  1331→import { Input } from '@/components/ui/input';
+  1332→import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+  1333→
+  1334→export function LoginForm() {
+  1335→  const form = useForm<LoginFormData>({
+  1336→    resolver: zodResolver(loginSchema),
+  1337→    defaultValues: { email: '', password: '' },
+  1338→  });
+  1339→
+  1340→  async function onSubmit(data: LoginFormData) {
+  1341→    await apiClient.post('/api/auth/login', data);
+  1342→    window.location.href = '/dashboard'; // full navigation to refresh session
+  1343→  }
+  1344→
+  1345→  return (
+  1346→    <Form {...form}>
+  1347→      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+  1348→        <FormField
+  1349→          control={form.control}
+  1350→          name="email"
+  1351→          render={({ field }) => (
+  1352→            <FormItem>
+  1353→              <FormLabel>Email Address</FormLabel>
+  1354→              <FormControl>
+  1355→                <Input type="email" placeholder="you@example.com" {...field} />
+  1356→              </FormControl>
+  1357→              <FormMessage />
+  1358→            </FormItem>
+  1359→          )}
+  1360→        />
+  1361→        <FormField
+  1362→          control={form.control}
+  1363→          name="password"
+  1364→          render={({ field }) => (
+  1365→            <FormItem>
+  1366→              <FormLabel>Password</FormLabel>
+  1367→              <FormControl>
+  1368→                <Input type="password" placeholder="••••••••" {...field} />
+  1369→              </FormControl>
+  1370→              <FormMessage />
+  1371→            </FormItem>
+  1372→          )}
+  1373→        />
+  1374→        <Button type="submit" className="w-full" loading={form.formState.isSubmitting}>
+  1375→          Sign In
+  1376→        </Button>
+  1377→      </form>
+  1378→    </Form>
+  1379→  );
+  1380→}
+  1381→```
+  1382→
+  1383→### 8.3 Error Display Patterns
+  1384→
+  1385→Form validation errors follow a consistent visual pattern:
+  1386→
+  1387→1. **Field-Level Errors:** Displayed directly below the input field in red text (`text-error text-sm`). Shown via `<FormMessage />` from shadcn/ui. The input border also turns red (`border-error`) when it has an error.
+  1388→2. **Form-Level Errors:** Displayed at the top of the form as an `<Alert variant="error">`. Used for server-side validation errors (e.g., "Email already registered", "Invalid credentials").
+  1389→3. **Success Feedback:** After successful form submission, a success toast is shown and the user is redirected or the form is reset.
+  1390→4. **Loading State:** The submit button shows a spinner (`loading={isSubmitting}`) and all inputs are disabled during submission to prevent double-submit.
+  1391→
+  1392→---
+  1393→
+  1394→## 9. Responsive Breakpoints & Mobile Navigation
+  1395→
+  1396→### 9.1 Breakpoint System
+  1397→
+  1398→The application uses Tailwind's default breakpoints, with a mobile-first approach:
+  1399→
+  1400→| Breakpoint | Min Width | Target Devices | Sidebar | Navigation |
+  1401→|---|---|---|---|---|
+  1402→| Default | 0px | Mobile phones (< 640px) | Hidden (drawer) | Bottom nav bar |
+  1403→| `sm` | 640px | Large phones / small tablets | Hidden (drawer) | Bottom nav bar |
+  1404→| `md` | 768px | Tablets | Hidden (drawer) | Hamburger menu |
+  1405→| `lg` | 1024px | Laptops / small desktops | Visible (collapsible) | Sidebar links |
+  1406→| `xl` | 1280px | Desktops | Visible (expanded) | Sidebar links |
+  1407→| `2xl` | 1536px | Large desktops | Visible (expanded) | Sidebar links |
+  1408→
+  1409→### 9.2 Mobile Bottom Navigation Bar
+  1410→
+  1411→On screens below 1024px (`lg` breakpoint), a fixed bottom navigation bar replaces the sidebar for quick access to the most-used dashboard pages:
+  1412→
+  1413→```tsx
+  1414→// components/layout/mobile-nav.tsx
+  1415→'use client';
+  1416→import { usePathname } from 'next/navigation';
+  1417→import { Home, Wallet, ArrowDownCircle, Users, User } from 'lucide-react';
+  1418→
+  1419→const navItems = [
+  1420→  { href: '/dashboard', label: 'Dashboard', icon: Home },
+  1421→  { href: '/deposit', label: 'Deposit', icon: ArrowDownCircle },
+  1422→  { href: '/wallet', label: 'Wallet', icon: Wallet },
+  1423→  { href: '/referral', label: 'Referral', icon: Users },
+  1424→  { href: '/profile', label: 'Profile', icon: User },
+  1425→];
+  1426→
+  1427→export function MobileNav() {
+  1428→  const pathname = usePathname();
+  1429→
+  1430→  return (
+  1431→    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-tesla-black-elevated border-t border-tesla-black-border">
+  1432→      <div className="flex items-center justify-around h-16">
+  1433→        {navItems.map((item) => {
+  1434→          const isActive = pathname.startsWith(item.href);
+  1435→          return (
+  1436→            <Link
+  1437→              key={item.href}
+  1438→              href={item.href}
+  1439→              className={`flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors
+  1440→                ${isActive ? 'text-tesla-red' : 'text-muted hover:text-foreground'}`}
+  1441→            >
+  1442→              <item.icon className="h-5 w-5" />
+  1443→              <span>{item.label}</span>
+  1444→            </Link>
+  1445→          );
+  1446→        })}
+  1447→      </div>
+  1448→    </nav>
+  1449→  );
+  1450→}
+  1451→```
+  1452→
+  1453→### 9.3 Mobile Sidebar Drawer
+  1454→
+  1455→On screens below 1024px, the sidebar is hidden by default. The hamburger icon in the topbar opens a `<Sheet>` (slide-in drawer from the left) containing the full sidebar navigation:
+  1456→
+  1457→- **Trigger:** Hamburger icon (`Menu` from Lucide) in the topbar.
+  1458→- **Behavior:** Slides in from the left with a dark backdrop overlay. Closes on backdrop click, close button, or navigation link click.
+  1459→- **Content:** Full sidebar navigation links with icons, identical to the desktop sidebar.
+  1460→- **Animation:** `slide-in-right` keyframe (300ms ease-out).
+  1461→
+  1462→### 9.4 Responsive Table Behavior
+  1463→
+  1464→Data tables on mobile use horizontal scrolling with a sticky first column:
+  1465→
+  1466→```tsx
+  1467→<div className="w-full overflow-x-auto">
+  1468→  <Table>
+  1469→    <TableHeader>
+  1470→      <TableRow>
+  1471→        <TableHead className="sticky left-0 bg-tesla-black-card z-10">User</TableHead>
+  1472→        <TableHead>Email</TableHead>
+  1473→        <TableHead>Status</TableHead>
+  1474→        <TableHead>Balance</TableHead>
+  1475→        <TableHead>Actions</TableHead>
+  1476→      </TableRow>
+  1477→    </TableHeader>
+  1478→    {/* ... */}
+  1479→  </Table>
+  1480→</div>
+  1481→```
+  1482→
+  1483→### 9.5 Responsive Grid Patterns
+  1484→
+  1485→| Component | Mobile | Tablet (md) | Desktop (lg) |
+  1486→|---|---|---|---|
+  1487→| Dashboard StatCards | 1 column (stacked) | 2 columns | 4 columns |
+  1488→| Plan Cards | 1 column (stacked) | 2 columns | 3-4 columns |
+  1489→| Admin StatCards | 2 columns | 2 columns | 4 columns |
+  1490→| Support Ticket List | Full width | Full width | 2/3 width + detail panel |
+  1491→| Referral Stats | 2 columns | 2 columns | 4 columns |
+  1492→
+  1493→---
+  1494→
+  1495→## 10. Performance Optimizations
+  1496→
+  1497→### 10.1 Code Splitting Per Route
+  1498→
+  1499→Next.js App Router automatically code-splits each route segment. Each `page.tsx` and its imported components are bundled into a separate JavaScript chunk that is only loaded when the user navigates to that route.
+  1500→
+  1501→**Additional code splitting strategies:**
+  1502→
+  1503→- **Dynamic Imports for Heavy Components:** Components that use large libraries (charts, binary tree visualization, document viewer) are loaded with `next/dynamic` and `ssr: false`:
+  1504→  ```typescript
+  1505→  import dynamic from 'next/dynamic';
+  1506→  const BinaryTreeChart = dynamic(
+  1507→    () => import('@/components/charts/binary-tree-chart').then((m) => m.BinaryTreeChart),
+  1508→    { ssr: false, loading: () => <Skeleton variant="chart" height={400} /> }
+  1509→  );
+  1510→  ```
+  1511→- **Route Preloading:** `next/link` automatically prefetches the JavaScript for linked pages when they enter the viewport (on hover for desktop, on mount for mobile), ensuring instant navigation.
+  1512→
+  1513→### 10.2 Image Optimization
+  1514→
+  1515→All images use `next/image` for automatic optimization:
+  1516→
+  1517→```tsx
+  1518→import Image from 'next/image';
+  1519→
+  1520→<Image
+  1521→  src="/images/hero-bg.webp"
+  1522→  alt="TeslaPrimeCapital platform visualization"
+  1523→  fill
+  1524→  className="object-cover"
+  1525→  priority // for above-the-fold images (LCP)
+  1526→  sizes="100vw"
+  1527→  quality={85}
+  1528→/>
+  1529→```
+  1530→
+  1531→**Image guidelines:**
+  1532→- Use WebP format for all raster images.
+  1533→- Provide `priority` for the largest above-the-fold image (LCP optimization).
+  1534→- Specify `sizes` for responsive images to prevent downloading oversized files.
+  1535→- Team member photos and avatars use `next/image` with `placeholder="blur"` and a blurDataURL.
+  1536→- Logo uses an SVG file imported as a React component (no `next/image` needed).
+  1537→
+  1538→### 10.3 Bundle Size Management
+  1539→
+  1540→**Tree Shaking:**
+  1541→- Import Lucide icons individually: `import { Home, Wallet } from 'lucide-react'` (not `import * as Icons`).
+  1542→- Import only needed Recharts components: `import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'`.
+  1543→
+  1544→**Bundle Analysis:**
+  1545→- Use `@next/bundle-analyzer` in development to monitor bundle size.
+  1546→- Target: < 200KB initial JavaScript for marketing pages, < 300KB for dashboard pages (excluding charts).
+  1547→
+  1548→**Font Loading:**
+  1549→- Inter is loaded via `next/font/google` which automatically:
+  1550→  - Self-hosts the font files (no external request).
+  1551→  - Applies `font-display: swap` for FOIT/FOUT prevention.
+  1552→  - Injects `@font-face` declarations with preloaded files.
+  1553→
+  1554→```typescript
+  1555→// app/layout.tsx
+  1556→import { Inter } from 'next/font/google';
+  1557→const inter = Inter({
+  1558→  subsets: ['latin'],
+  1559→  display: 'swap',
+  1560→  variable: '--font-inter',
+  1561→});
+  1562→```
+  1563→
+  1564→### 10.4 Rendering Strategy Per Route
+  1565→
+  1566→| Route | Rendering | Rationale |
+  1567→|---|---|---|
+  1568→| `/` (Landing) | SSG (Static) | Public content, rarely changes, fastest TTFB |
+  1569→| `/about`, `/faq`, `/contact` | SSG (Static) | Static content pages |
+  1570→| `/plans` (public) | ISR (revalidate: 300) | Plan data changes infrequently, stale-while-revalidate |
+  1571→| `/login`, `/register` | SSR | Needs fresh CSRF tokens, rate-limit state |
+  1572→| `/dashboard` | SSR | User-specific data, must be fresh |
+  1573→| `/wallet`, `/deposit`, `/withdraw` | SSR | Financial data, must be fresh |
+  1574→| `/admin/*` | SSR | Admin data, must be fresh |
+  1575→
+  1576→### 10.5 Caching Strategy
+  1577→
+  1578→- **Static Assets:** Cache-Control `public, max-age=31536000, immutable` (content-hashed by Next.js).
+  1579→- **Static Pages:** Cache-Control `public, s-maxage=3600, stale-while-revalidate=86400`.
+  1580→- **Dynamic Pages:** Cache-Control `private, no-cache, no-store, must-revalidate`.
+  1581→- **API Responses:** SWR handles client-side caching with `dedupingInterval: 5000` (5 seconds).
+  1582→- **Image CDN:** Next.js Image Optimization caches transformed images at the edge.
+  1583→
+  1584→### 10.6 Performance Budgets
+  1585→
+  1586→| Metric | Target | Measurement |
+  1587→|---|---|---|
+  1588→| Lighthouse Performance Score | ≥ 90 | Lighthouse CI in pipeline |
+  1589→| Largest Contentful Paint (LCP) | < 2.5s | Web Vitals |
+  1590→| First Input Delay (FID) | < 100ms | Web Vitals |
+  1591→| Cumulative Layout Shift (CLS) | < 0.1 | Web Vitals |
+  1592→| Time to Interactive (TTI) | < 2s (P95) | Lighthouse |
+  1593→| Total Blocking Time (TBT) | < 200ms | Lighthouse |
+  1594→| Initial JS Bundle (marketing) | < 200KB | Bundle Analyzer |
+  1595→| Initial JS Bundle (dashboard) | < 300KB | Bundle Analyzer |
+  1596→
+  1597→---
+  1598→
+  1599→*End of Frontend Architecture Document — Phase 2*

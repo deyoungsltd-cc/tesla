@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { hashPassword, generateReferralCode, generateToken } from '@/lib/auth';
+import { hashPassword, generateReferralCode, generateToken, generateOtpCode } from '@/lib/auth';
 import { apiResponse, apiError } from '@/lib/api-helpers';
+import { sendVerificationEmail } from '@/lib/email';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -97,11 +98,23 @@ export async function POST(request: NextRequest) {
       return newUser;
     });
 
-    const token = generateToken({ userId: user.id, email: user.email });
+    // Send verification email with OTP stored in DB
+    try {
+      const otp = generateOtpCode();
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          verificationCode: otp,
+          verificationCodeExpires: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+      await sendVerificationEmail(email, otp, `${firstName || ''} ${lastName || ''}`.trim() || undefined);
+    } catch (emailErr) {
+      console.error('Failed to send verification email (non-blocking):', emailErr);
+    }
 
     return apiResponse(
       {
-        token,
         user: {
           id: user.id,
           email: user.email,
@@ -109,8 +122,10 @@ export async function POST(request: NextRequest) {
           referralCode: user.referralCode,
           activeMode: user.activeMode,
           kycLevel: user.kycLevel,
+          emailVerified: user.emailVerified,
           createdAt: user.createdAt,
         },
+        message: 'Account created. Please verify your email to continue.',
       },
       201
     );

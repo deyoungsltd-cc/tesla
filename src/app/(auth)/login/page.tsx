@@ -20,21 +20,35 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const doLogin = async (loginEmail: string, loginPass: string) => {
+  // Load saved email
+  useState(() => {
+    const saved = localStorage.getItem('remembered_email');
+    if (saved) { setEmail(saved); setRememberMe(true); }
+  });
+
+  const doLogin = async () => {
     setError('');
-    if (!loginEmail || !loginPass) { setError('Please fill in all fields.'); return; }
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPass }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.data?.token) {
+        // Save remembered email
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email);
+        } else {
+          localStorage.removeItem('remembered_email');
+        }
+
         setAuth(data.data.user, data.data.token);
         localStorage.setItem('user', JSON.stringify(data.data.user));
         if (data.data.user?.adminRecord) {
@@ -52,13 +66,17 @@ export default function LoginPage() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') doLogin();
+  };
+
   return (
     <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <TeslaLogo className="w-12 h-12 mx-auto mb-4" />
+          <TeslaLogo className="w-14 h-14 mx-auto mb-5" />
           <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
-          <p className="text-gray-400 text-sm mt-1">Sign in to your Tesla account</p>
+          <p className="text-gray-400 text-sm mt-1">Sign in to your Tesla Prime Capital account</p>
         </div>
 
         <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 sm:p-8">
@@ -75,7 +93,9 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="you@example.com"
+                autoComplete="email"
                 className="w-full bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
               />
             </div>
@@ -86,7 +106,9 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   className="w-full bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-3 pr-11 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
                 />
                 <button
@@ -104,40 +126,60 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-3 text-right">
-            <a href="#" className="text-[#CC0000] text-sm hover:underline">Forgot password?</a>
+          <div className="mt-3 flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="accent-[#CC0000] w-3.5 h-3.5"
+              />
+              <span className="text-gray-400 text-xs">Remember me</span>
+            </label>
+            <Link href="#" className="text-[#CC0000] text-xs hover:underline">Forgot password?</Link>
           </div>
 
           <button
-            onClick={() => doLogin(email, password)}
+            onClick={doLogin}
             disabled={loading}
-            className="w-full mt-6 bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+            className="w-full mt-6 bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-50 text-white font-semibold py-3.5 rounded-lg transition-colors text-sm"
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Signing In...
+              </span>
+            ) : 'Sign In'}
           </button>
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => doLogin('demo@tesla.com', 'Demo@123')}
-              disabled={loading}
-              className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-medium py-2.5 rounded-lg transition-colors text-xs"
-            >
-              Demo User
-            </button>
-            <button
-              onClick={() => doLogin('admin@tesla.com', 'Admin@123')}
-              disabled={loading}
-              className="border border-[#CC0000]/30 hover:border-[#CC0000] text-[#CC0000] hover:text-red-300 font-medium py-2.5 rounded-lg transition-colors text-xs"
-            >
-              Admin Panel
-            </button>
+          {/* Security badges */}
+          <div className="mt-5 pt-4 border-t border-tesla-border">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span className="text-[10px]">256-bit SSL</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span className="text-[10px]">Secured</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <span className="text-[10px]">24/7 Support</span>
+              </div>
+            </div>
           </div>
 
-          <p className="text-center text-gray-500 text-sm mt-6">
+          <p className="text-center text-gray-500 text-sm mt-5">
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="text-[#CC0000] hover:underline font-medium">Sign Up</Link>
+            <Link href="/register" className="text-[#CC0000] hover:underline font-medium">Create Account</Link>
           </p>
         </div>
+
+        {/* Copyright footer */}
+        <p className="text-center text-gray-700 text-[10px] mt-6">
+          &copy; {new Date().getFullYear()} Tesla Prime Capital. All rights reserved.
+        </p>
       </div>
       <ChatWidget />
     </div>

@@ -1,0 +1,1085 @@
+     1→# Page Inventory — Enterprise Investment Platform
+     2→
+     3→> **Project:** Managed Investment Plan Platform  
+     4→> **Phase:** 1 — Requirements & Specification  
+     5→> **Last Updated:** 2025
+     6→
+     7→---
+     8→
+     9→## 1. Public Pages (Unauthenticated)
+    10→
+    11→### / (Home)
+    12→
+    13→| Field | Value |
+    14→|-------|-------|
+    15→| **Route** | `/` |
+    16→| **Auth Required** | No |
+    17→| **Required Role(s)** | N/A |
+    18→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+    19→| **Description** | Primary landing page for the platform |
+    20→
+    21→**Key Components:**
+    22→- Navbar (logo, nav links, Login/Register buttons)
+    23→- Hero section (headline, subheadline, CTA buttons — "Get Started" and "View Plans")
+    24→- Features overview section (key platform features in a grid)
+    25→- Investment plan highlights section (plan cards with key details)
+    26→- Trust indicators section (user count, total invested, security badges)
+    27→- Testimonials or social proof section
+    28→- Newsletter signup section (email input)
+    29→- Footer (links, legal, social media)
+    30→
+    31→**Related API Endpoints:** `GET /api/plans` (public plan data), `POST /api/newsletter`
+    32→
+    33→---
+    34→
+    35→### /about
+    36→
+    37→| Field | Value |
+    38→|-------|-------|
+    39→| **Route** | `/about` |
+    40→| **Auth Required** | No |
+    41→| **Required Role(s)** | N/A |
+    42→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+    43→| **Description** | Company information page |
+    44→
+    45→**Key Components:**
+    46→- Navbar
+    47→- Hero banner with page title
+    48→- Company story section (narrative text)
+    49→- Mission and vision section
+    50→- Team section (team member cards with photos and roles)
+    51→- Platform statistics section (animated counters)
+    52→- CTA section (invite to register)
+    53→- Footer
+    54→
+    55→**Related API Endpoints:** None (static content, or `GET /api/content/about` if CMS-managed)
+    56→
+    57→---
+    58→
+    59→### /plans
+    60→
+    61→| Field | Value |
+    62→|-------|-------|
+    63→| **Route** | `/plans` |
+    64→| **Auth Required** | No |
+    65→| **Required Role(s)** | N/A |
+    66→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+    67→| **Description** | Investment plan showcase with comparison |
+    68→
+    69→**Key Components:**
+    70→- Navbar
+    71→- Page header ("Investment Plans")
+    72→- Plan cards (4 cards: Basic, Silver, Gold, Platinum)
+    73→  - Each card: plan name, min/max investment, duration, expected return, feature highlights
+    74→  - CTA button ("Invest Now" — links to register if not logged in, or to investment flow if logged in)
+    75→- Plan comparison table (side-by-side feature comparison)
+    76→- FAQ section (plan-related questions)
+    77→- CTA section
+    78→- Footer
+    79→
+    80→**Related API Endpoints:** `GET /api/plans`
+    81→
+    82→---
+    83→
+    84→### /faq
+    85→
+    86→| Field | Value |
+    87→|-------|-------|
+    88→| **Route** | `/faq` |
+    89→| **Auth Required** | No |
+    90→| **Required Role(s)** | N/A |
+    91→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+    92→| **Description** | Frequently asked questions |
+    93→
+    94→**Key Components:**
+    95→- Navbar
+    96→- Page header ("Frequently Asked Questions")
+    97→- Search bar (filters FAQ items)
+    98→- Category tabs (General, Account, Deposits, Investments, Withdrawals, Referrals, Security)
+    99→- Accordion-style FAQ items (question as trigger, answer as expandable content)
+   100→- CTA section ("Still have questions? Contact Support")
+   101→- Footer
+   102→
+   103→**Related API Endpoints:** `GET /api/faq` or static content
+   104→
+   105→---
+   106→
+   107→### /contact
+   108→
+   109→| Field | Value |
+   110→|-------|-------|
+   111→| **Route** | `/contact` |
+   112→| **Auth Required** | No |
+   113→| **Required Role(s)** | N/A |
+   114→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   115→| **Description** | Contact information and form |
+   116→
+   117→**Key Components:**
+   118→- Navbar
+   119→- Page header ("Contact Us")
+   120→- Contact form (name, email, subject, message, submit button)
+   121→- Contact information sidebar (email address, working hours, location/region)
+   122→- Map or office location section (if applicable)
+   123→- Footer
+   124→
+   125→**Related API Endpoints:** `POST /api/contact`
+   126→
+   127→---
+   128→
+   129→### /privacy-policy
+   130→
+   131→| Field | Value |
+   132→|-------|-------|
+   133→| **Route** | `/privacy-policy` |
+   134→| **Auth Required** | No |
+   135→| **Required Role(s)** | N/A |
+   136→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   137→| **Description** | Privacy policy legal page |
+   138→
+   139→**Key Components:**
+   140→- Navbar
+   141→- Page header ("Privacy Policy")
+   142→- Legal text content (structured with headings, paragraphs, lists)
+   143→- Last updated date
+   144→- Table of contents (sticky sidebar on desktop)
+   145→- Footer
+   146→
+   147→**Related API Endpoints:** None (static or CMS content)
+   148→
+   149→---
+   150→
+   151→### /terms-of-service
+   152→
+   153→| Field | Value |
+   154→|-------|-------|
+   155→| **Route** | `/terms-of-service` |
+   156→| **Auth Required** | No |
+   157→| **Required Role(s)** | N/A |
+   158→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   159→| **Description** | Terms of service legal page |
+   160→
+   161→**Key Components:**
+   162→- Navbar
+   163→- Page header ("Terms of Service")
+   164→- Legal text content (structured with headings, paragraphs, lists)
+   165→- Last updated date
+   166→- Table of contents (sticky sidebar on desktop)
+   167→- Footer
+   168→
+   169→**Related API Endpoints:** None (static or CMS content)
+   170→
+   171→---
+   172→
+   173→### /login
+   174→
+   175→| Field | Value |
+   176→|-------|-------|
+   177→| **Route** | `/login` |
+   178→| **Auth Required** | No |
+   179→| **Required Role(s)** | N/A |
+   180→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   181→| **Description** | User login page |
+   182→
+   183→**Key Components:**
+   184→- AuthLayout (centered card)
+   185→- Logo and "Welcome Back" heading
+   186→- Email input field
+   187→- Password input field (with show/hide toggle)
+   188→- "Remember Me" checkbox
+   189→- "Sign In" button (primary, full width)
+   190→- "Forgot Password?" link
+   191→- "Don't have an account? Register" link
+   192→- 2FA step (conditional): TOTP code input, "Verify" button
+   193→- Error/alert messages area
+   194→
+   195→**Related API Endpoints:** `POST /api/auth/login`, `POST /api/auth/2fa/verify`
+   196→
+   197→---
+   198→
+   199→### /register
+   200→
+   201→| Field | Value |
+   202→|-------|-------|
+   203→| **Route** | `/register` |
+   204→| **Auth Required** | No |
+   205→| **Required Role(s)** | N/A |
+   206→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   207→| **Description** | User registration page |
+   208→
+   209→**Key Components:**
+   210→- AuthLayout (centered card)
+   211→- Logo and "Create Account" heading
+   212→- Full name input field
+   213→- Email input field
+   214→- Password input field (with strength indicator)
+   215→- Confirm password input field
+   216→- Referral code input field (optional, with info tooltip)
+   217→- Terms of service checkbox with link
+   218→- "Create Account" button (primary, full width)
+   219→- "Already have an account? Sign In" link
+   220→- Error/validation messages
+   221→
+   222→**Related API Endpoints:** `POST /api/auth/register`
+   223→
+   224→---
+   225→
+   226→### /forgot-password
+   227→
+   228→| Field | Value |
+   229→|-------|-------|
+   230→| **Route** | `/forgot-password` |
+   231→| **Auth Required** | No |
+   232→| **Required Role(s)** | N/A |
+   233→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   234→| **Description** | Password reset flow (multi-step) |
+   235→
+   236→**Key Components:**
+   237→- AuthLayout (centered card)
+   238→- **Step 1 — Email Input:** Email field, "Send Reset Code" button, "Back to Login" link
+   239→- **Step 2 — OTP Verification:** OTP input (6 digits), "Verify" button, "Resend Code" link with cooldown timer
+   240→- **Step 3 — New Password:** New password field, confirm password field, "Reset Password" button
+   241→- Progress indicator showing current step
+   242→- Success state with link to login
+   243→
+   244→**Related API Endpoints:** `POST /api/auth/forgot-password`, `POST /api/auth/verify-otp`, `POST /api/auth/reset-password`
+   245→
+   246→---
+   247→
+   248→### /verify-email
+   249→
+   250→| Field | Value |
+   251→|-------|-------|
+   252→| **Route** | `/verify-email` |
+   253→| **Auth Required** | No |
+   254→| **Required Role(s)** | N/A |
+   255→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   256→| **Description** | Email verification page (post-registration) |
+   257→
+   258→**Key Components:**
+   259→- AuthLayout (centered card)
+   260→- Logo and "Verify Your Email" heading
+   261→- Instructional text ("We've sent a 6-digit code to your email")
+   262→- OTP input (6 individual digit inputs with auto-focus)
+   263→- "Verify" button
+   264→- "Resend Code" link with 60-second cooldown timer
+   265→- Success state: checkmark animation, "Email verified!" message, "Continue to Login" button
+   266→- Error state: "Invalid or expired code" with retry option
+   267→
+   268→**Related API Endpoints:** `POST /api/auth/verify-email`, `POST /api/auth/resend-otp`
+   269→
+   270→---
+   271→
+   272→## 2. Authenticated User Pages
+   273→
+   274→### /dashboard
+   275→
+   276→| Field | Value |
+   277→|-------|-------|
+   278→| **Route** | `/dashboard` |
+   279→| **Auth Required** | Yes |
+   280→| **Required Role(s)** | User, Admin, KYC Officer, Support Agent |
+   281→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   282→| **Description** | Main user dashboard with portfolio overview |
+   283→
+   284→**Key Components:**
+   285→- DashboardLayout (sidebar, top bar, content)
+   286→- ModeToggle (Demo / Live — prominent, always visible)
+   287→- StatCard — Total Balance (Demo/Live)
+   288→- StatCard — Active Investments count
+   289→- StatCard — Total Earnings
+   290→- StatCard — Referral Earnings
+   291→- LineChart — portfolio performance over time
+   292→- Active Investments list (top 3-5, with "View All" link)
+   293→- Recent Transactions list (top 5-10, with "View All" link)
+   294→- Quick Action buttons (Deposit, Invest, Withdraw, Refer)
+   295→
+   296→**Related API Endpoints:** `GET /api/dashboard/summary`, `GET /api/dashboard/chart-data`, `GET /api/investments?status=active&limit=5`, `GET /api/transactions?limit=10`
+   297→
+   298→---
+   299→
+   300→### /dashboard/investments
+   301→
+   302→| Field | Value |
+   303→|-------|-------|
+   304→| **Route** | `/dashboard/investments` |
+   305→| **Auth Required** | Yes |
+   306→| **Required Role(s)** | User |
+   307→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   308→| **Description** | Active investments tracking and investment history |
+   309→
+   310→**Key Components:**
+   311→- DashboardLayout
+   312→- Tabs — "Active Investments" | "Investment History"
+   313→- **Active Investments Tab:**
+   314→  - List of ActiveInvestmentCard components (plan name, amount, progress bar, expected return, countdown timer, maturity date)
+   315→  - EmptyState if no active investments
+   316→- **Investment History Tab:**
+   317→  - DataTable (plan, amount, return, start date, end date, status)
+   318→  - Filters (status, date range, plan type)
+   319→  - Sort options
+   320→  - Export button (CSV/PDF)
+   321→  - Pagination
+   322→
+   323→**Related API Endpoints:** `GET /api/investments?status=active`, `GET /api/investments?status=completed`, `GET /api/investments/export`
+   324→
+   325→---
+   326→
+   327→### /dashboard/wallet
+   328→
+   329→| Field | Value |
+   330→|-------|-------|
+   331→| **Route** | `/dashboard/wallet` |
+   332→| **Auth Required** | Yes |
+   333→| **Required Role(s)** | User |
+   334→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   335→| **Description** | Wallet overview with balance and transaction history |
+   336→
+   337→**Key Components:**
+   338→- DashboardLayout
+   339→- ModeToggle
+   340→- BalanceDisplay — Demo balance (available + pending)
+   341→- BalanceDisplay — Live balance (available + pending)
+   342→- Total Portfolio Value card
+   343→- Action buttons — "Deposit" and "Withdraw"
+   344→- Tabs — "All Transactions" | "Deposits" | "Withdrawals" | "Commissions"
+   345→- TransactionItem list (icon, description, amount, date, status badge)
+   346→- Pagination
+   347→- Filters (date range, type, status)
+   348→
+   349→**Related API Endpoints:** `GET /api/wallet/balance`, `GET /api/transactions`, `GET /api/transactions?type=deposit`, `GET /api/transactions?type=withdrawal`, `GET /api/transactions?type=commission`
+   350→
+   351→---
+   352→
+   353→### /dashboard/deposit
+   354→
+   355→| Field | Value |
+   356→|-------|-------|
+   357→| **Route** | `/dashboard/deposit` |
+   358→| **Auth Required** | Yes |
+   359→| **Required Role(s)** | User |
+   360→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   361→| **Description** | Deposit method selection page |
+   362→
+   363→**Key Components:**
+   364→- DashboardLayout
+   365→- ModeToggle (gift card only in Live mode)
+   366→- Page header ("Deposit Funds")
+   367→- Two method selection cards:
+   368→  - Cryptocurrency deposit card (icon, description, "Deposit Crypto" button)
+   369→  - Gift Card deposit card (icon, description, "Upload Gift Card" button — with "Live Only" badge)
+   370→- Recent deposit history (summary)
+   371→
+   372→**Related API Endpoints:** `GET /api/deposits/recent`
+   373→
+   374→---
+   375→
+   376→### /dashboard/deposit/crypto
+   377→
+   378→| Field | Value |
+   379→|-------|-------|
+   380→| **Route** | `/dashboard/deposit/crypto` |
+   381→| **Auth Required** | Yes |
+   382→| **Required Role(s)** | User |
+   383→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   384→| **Description** | Cryptocurrency deposit flow |
+   385→
+   386→**Key Components:**
+   387→- DashboardLayout
+   388→- ModeToggle
+   389→- Breadcrumb (Dashboard > Deposit > Cryptocurrency)
+   390→- Cryptocurrency selector (BTC, ETH, USDT — with network options where applicable)
+   391→- Wallet address display (text, with CopyButton)
+   392→- QRCode display (for wallet address)
+   393→- Minimum deposit amount notice
+   394→- Network confirmation info
+   395→- Pending crypto deposits list (if any, showing confirmation progress)
+   396→
+   397→**Related API Endpoints:** `GET /api/deposit/crypto/address?coin=BTC&network=bitcoin`, `GET /api/deposit/crypto/pending`
+   398→
+   399→---
+   400→
+   401→### /dashboard/deposit/gift-card
+   402→
+   403→| Field | Value |
+   404→|-------|-------|
+   405→| **Route** | `/dashboard/deposit/gift-card` |
+   406→| **Auth Required** | Yes |
+   407→| **Required Role(s)** | User |
+   408→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   409→| **Description** | Gift card deposit upload flow |
+   410→
+   411→**Key Components:**
+   412→- DashboardLayout
+   413→- Breadcrumb (Dashboard > Deposit > Gift Card)
+   414→- "Live Mode Only" info alert
+   415→- Form:
+   416→  - Card brand Select dropdown (Amazon, Google Play, Apple, etc.)
+   417→  - Card value input (numeric)
+   418→  - Card code input (masked)
+   419→  - FileUpload zone (screenshot/photo, JPG/PNG, max 5MB, with preview)
+   420→- "Submit Deposit" button
+   421→- Submission confirmation modal/success state
+   422→- Pending gift card deposits list (status tracking)
+   423→
+   424→**Related API Endpoints:** `POST /api/deposit/gift-card`, `GET /api/deposits?type=gift_card&status=pending`
+   425→
+   426→---
+   427→
+   428→### /dashboard/withdraw
+   429→
+   430→| Field | Value |
+   431→|-------|-------|
+   432→| **Route** | `/dashboard/withdraw` |
+   433→| **Auth Required** | Yes |
+   434→| **Required Role(s)** | User |
+   435→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   436→| **Description** | Withdrawal request page |
+   437→
+   438→**Key Components:**
+   439→- DashboardLayout
+   440→- Breadcrumb (Dashboard > Withdraw)
+   441→- Available balance display
+   442→- Amount input (with max button)
+   443→- FeeBreakdown component:
+   444→  - Gross amount
+   445→  - Withdrawal fee (21%)
+   446→  - Net amount (highlighted)
+   447→- Withdrawal method selection (cryptocurrency, wallet address input)
+   448→- 2FA code input (if 2FA enabled, conditional)
+   449→- "Request Withdrawal" button
+   450→- ConfirmDialog (review details before submission)
+   451→- Recent withdrawals list (status tracking)
+   452→
+   453→**Related API Endpoints:** `GET /api/wallet/balance`, `POST /api/withdrawals`, `GET /api/withdrawals?status=pending`
+   454→
+   455→---
+   456→
+   457→### /dashboard/referrals
+   458→
+   459→| Field | Value |
+   460→|-------|-------|
+   461→| **Route** | `/dashboard/referrals` |
+   462→| **Auth Required** | Yes |
+   463→| **Required Role(s)** | User |
+   464→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   465→| **Description** | Referral program page with link, stats, and binary tree |
+   466→
+   467→**Key Components:**
+   468→- DashboardLayout
+   469→- Breadcrumb (Dashboard > Referrals)
+   470→- ReferralLinkCard (referral code, full link, CopyButton, share buttons)
+   471→- ReferralStatsCard (total referrals, active referrals, total commissions earned)
+   472→- Tabs — "Commission History" | "Binary Tree"
+   473→- **Commission History Tab:**
+   474→  - DataTable (referred user, amount, type [direct/binary], status, date)
+   475→  - Filters (type, status, date range)
+   476→  - Weekly binary summary card (left leg volume, right leg volume, bonus amount)
+   477→- **Binary Tree Tab:**
+   478→  - BinaryTreeChart (visual tree with left/right legs)
+   479→  - Team volume per leg display
+   480→  - Weakest leg indicator
+   481→  - Search within tree
+   482→
+   483→**Related API Endpoints:** `GET /api/referrals/code`, `GET /api/referrals/stats`, `GET /api/referrals/commissions`, `GET /api/referrals/tree`, `GET /api/referrals/binary-summary`
+   484→
+   485→---
+   486→
+   487→### /dashboard/kyc
+   488→
+   489→| Field | Value |
+   490→|-------|-------|
+   491→| **Route** | `/dashboard/kyc` |
+   492→| **Auth Required** | Yes |
+   493→| **Required Role(s)** | User |
+   494→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   495→| **Description** | KYC verification page |
+   496→
+   497→**Key Components:**
+   498→- DashboardLayout
+   499→- Breadcrumb (Dashboard > KYC Verification)
+   500→- KYCLevelIndicator (current level, progress bar to next level, limits per level)
+   501→- Document upload sections (one per required document type):
+   502→  - DocumentUploadCard (document type name, requirements list, upload zone, status badge)
+   503→  - Supported formats and max size notice
+   504→- Verification status timeline (submitted → under review → approved/rejected)
+   505→- Rejection reason display (if rejected, with re-upload prompt)
+   506→
+   507→**Related API Endpoints:** `GET /api/kyc/status`, `POST /api/kyc/upload`, `GET /api/kyc/documents`
+   508→
+   509→---
+   510→
+   511→### /dashboard/profile
+   512→
+   513→| Field | Value |
+   514→|-------|-------|
+   515→| **Route** | `/dashboard/profile` |
+   516→| **Auth Required** | Yes |
+   517→| **Required Role(s)** | User |
+   518→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   519→| **Description** | User profile and account settings |
+   520→
+   521→**Key Components:**
+   522→- DashboardLayout
+   523→- Breadcrumb (Dashboard > Profile)
+   524→- Tabs — "Personal Info" | "Security" | "Preferences"
+   525→- **Personal Info Tab:**
+   526→  - Form: full name, email (read-only or editable with verification), phone number
+   527→  - Avatar display with change option
+   528→  - "Save Changes" button
+   529→- **Security Tab:**
+   530→  - Change Password form (current password, new password, confirm)
+   531→  - 2FA management (status, enable/disable, backup codes)
+   532→- **Preferences Tab:**
+   533→  - Language selector
+   534→  - Currency preference
+   535→  - Notification preferences link
+   536→
+   537→**Related API Endpoints:** `GET /api/user/profile`, `PUT /api/user/profile`, `PUT /api/user/password`, `POST /api/user/2fa/enable`, `POST /api/user/2fa/disable`, `GET /api/user/preferences`, `PUT /api/user/preferences`
+   538→
+   539→---
+   540→
+   541→### /dashboard/notifications
+   542→
+   543→| Field | Value |
+   544→|-------|-------|
+   545→| **Route** | `/dashboard/notifications` |
+   546→| **Auth Required** | Yes |
+   547→| **Required Role(s)** | User |
+   548→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   549→| **Description** | Full notification center |
+   550→
+   551→**Key Components:**
+   552→- DashboardLayout
+   553→- Breadcrumb (Dashboard > Notifications)
+   554→- Filter tabs — "All" | "Unread" | "Financial" | "Security" | "Account" | "Referral" | "System"
+   555→- "Mark All as Read" button
+   556→- NotificationItem list (icon, title, message, timestamp, read/unread indicator, click action)
+   557→- Pagination (or infinite scroll)
+   558→- EmptyState if no notifications
+   559→
+   560→**Related API Endpoints:** `GET /api/notifications`, `PUT /api/notifications/:id/read`, `PUT /api/notifications/read-all`, `DELETE /api/notifications/:id`
+   561→
+   562→---
+   563→
+   564→### /dashboard/support
+   565→
+   566→| Field | Value |
+   567→|-------|-------|
+   568→| **Route** | `/dashboard/support` |
+   569→| **Auth Required** | Yes |
+   570→| **Required Role(s)** | User |
+   571→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   572→| **Description** | Support ticket management |
+   573→
+   574→**Key Components:**
+   575→- DashboardLayout
+   576→- Breadcrumb (Dashboard > Support)
+   577→- "Create New Ticket" button
+   578→- Ticket list (DataTable):
+   579→  - Columns: Ticket ID, Subject, Category, Status (open/in progress/closed), Last Updated
+   580→  - Click to open ticket conversation view
+   581→  - Filters (status, category)
+   582→- **Ticket Conversation View (nested route `/dashboard/support/:id`):**
+   583→  - Ticket details header (ID, subject, category, status, created date)
+   584→  - Message thread (chronological, user and support messages)
+   585→  - Message input area (text + file attachment)
+   586→  - "Close Ticket" button
+   587→
+   588→**Related API Endpoints:** `GET /api/tickets`, `POST /api/tickets`, `GET /api/tickets/:id`, `POST /api/tickets/:id/messages`, `PUT /api/tickets/:id/close`
+   589→
+   590→---
+   591→
+   592→### /dashboard/security
+   593→
+   594→| Field | Value |
+   595→|-------|-------|
+   596→| **Route** | `/dashboard/security` |
+   597→| **Auth Required** | Yes |
+   598→| **Required Role(s)** | User |
+   599→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   600→| **Description** | Account security settings and session management |
+   601→
+   602→**Key Components:**
+   603→- DashboardLayout
+   604→- Breadcrumb (Dashboard > Security)
+   605→- **Active Sessions Section:**
+   606→  - List of sessions (device, browser, IP, location, timestamp, "Current Session" badge)
+   607→  - "Revoke" button per session (except current)
+   608→  - "Revoke All Other Sessions" button
+   609→- **2FA Section:**
+   610→  - Current 2FA status (enabled/disabled)
+   611→  - Enable 2FA flow (QR code, TOTP verification, backup codes display)
+   612→  - Disable 2FA flow (TOTP + email OTP verification)
+   613→- **Security Log Section:**
+   614→  - Recent security events (login, password change, 2FA toggle, session revocation)
+   615→  - Filter by event type and date
+   616→
+   617→**Related API Endpoints:** `GET /api/user/sessions`, `DELETE /api/user/sessions/:id`, `DELETE /api/user/sessions/others`, `GET /api/user/security-log`
+   618→
+   619→---
+   620→
+   621→## 3. Admin Pages (Role-Protected)
+   622→
+   623→### /admin
+   624→
+   625→| Field | Value |
+   626→|-------|-------|
+   627→| **Route** | `/admin` |
+   628→| **Auth Required** | Yes |
+   629→| **Required Role(s)** | Admin, Super Admin |
+   630→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   631→| **Description** | Admin dashboard overview |
+   632→
+   633→**Key Components:**
+   634→- AdminLayout (admin sidebar, top bar, content)
+   635→- StatCard — Total Users (with growth %)
+   636→- StatCard — Total Deposits
+   637→- StatCard — Pending Withdrawals (with link to queue)
+   638→- StatCard — Pending KYC (with link to queue)
+   639→- StatCard — Platform Balance
+   640→- LineChart — deposit/withdrawal trends (7d/30d/90d)
+   641→- BarChart — user registrations over time
+   642→- PieChart — investment distribution by plan
+   643→- Recent activity feed (latest 10 actions)
+   644→- Quick action cards (Review KYC, Process Withdrawals, View Deposits)
+   645→
+   646→**Related API Endpoints:** `GET /api/admin/dashboard/stats`, `GET /api/admin/dashboard/charts`, `GET /api/admin/dashboard/recent-activity`
+   647→
+   648→---
+   649→
+   650→### /admin/users
+   651→
+   652→| Field | Value |
+   653→|-------|-------|
+   654→| **Route** | `/admin/users` |
+   655→| **Auth Required** | Yes |
+   656→| **Required Role(s)** | Admin, Super Admin |
+   657→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   658→| **Description** | User management page |
+   659→
+   660→**Key Components:**
+   661→- AdminLayout
+   662→- Breadcrumb (Admin > Users)
+   663→- SearchInput (search by name, email, referral code)
+   664→- Filters (status, KYC level, registration date range, role)
+   665→- DataTable:
+   666→  - Columns: Avatar, Name, Email, KYC Level, Balance, Status, Joined, Actions
+   667→  - Row actions: View, Edit, Ban/Unban, Impersonate (Super Admin)
+   668→- User Detail Panel (slide-out or modal):
+   669→  - Personal info, KYC status, wallet balances, investments, transactions, referrals
+   670→  - Edit form for name, email, KYC level override
+   671→  - Ban/Unban with reason field
+   672→- Pagination
+   673→
+   674→**Related API Endpoints:** `GET /api/admin/users`, `GET /api/admin/users/:id`, `PUT /api/admin/users/:id`, `POST /api/admin/users/:id/ban`, `POST /api/admin/users/:id/unban`, `POST /api/admin/users/:id/impersonate`
+   675→
+   676→---
+   677→
+   678→### /admin/kyc
+   679→
+   680→| Field | Value |
+   681→|-------|-------|
+   682→| **Route** | `/admin/kyc` |
+   683→| **Auth Required** | Yes |
+   684→| **Required Role(s)** | KYC Officer, Admin, Super Admin |
+   685→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   686→| **Description** | KYC document review queue |
+   687→
+   688→**Key Components:**
+   689→- AdminLayout
+   690→- Breadcrumb (Admin > KYC Review)
+   691→- Tabs — "Pending" | "Approved" | "Rejected"
+   692→- Pending count badge
+   693→- DataTable (pending tab):
+   694→  - Columns: User (name, email), Document Type, Submitted Date, Status
+   695→  - Click to open review
+   696→- Document Review Panel:
+   697→  - User info sidebar
+   698→  - DocumentViewer (full-resolution image/PDF)
+   699→  - Approve button (green)
+   700→  - Reject button (red) with required reason field
+   701→  - Internal notes field
+   702→- Pagination
+   703→
+   704→**Related API Endpoints:** `GET /api/admin/kyc?status=pending`, `PUT /api/admin/kyc/:id/approve`, `PUT /api/admin/kyc/:id/reject`
+   705→
+   706→---
+   707→
+   708→### /admin/deposits
+   709→
+   710→| Field | Value |
+   711→|-------|-------|
+   712→| **Route** | `/admin/deposits` |
+   713→| **Auth Required** | Yes |
+   714→| **Required Role(s)** | Admin, Super Admin |
+   715→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   716→| **Description** | Deposit monitoring and gift card verification |
+   717→
+   718→**Key Components:**
+   719→- AdminLayout
+   720→- Breadcrumb (Admin > Deposits)
+   721→- Tabs — "All Deposits" | "Crypto Deposits" | "Gift Card Pending" | "Gift Card Completed"
+   722→- StatCards — Total Deposits (today/week/month), Pending Gift Cards count
+   723→- DataTable:
+   724→  - Columns: User, Type (Crypto/Gift Card), Amount, Status, Date, Actions
+   725→  - Crypto rows: transaction hash, confirmations count
+   726→  - Gift Card rows: "Verify" action button
+   727→- Gift Card Verification Modal:
+   728→  - Uploaded image (DocumentViewer)
+   729→  - Card details (brand, value, code)
+   730→  - Verify & Credit / Reject buttons
+   731→  - Notes field
+   732→- Filters (type, status, date range, user)
+   733→- Export button
+   734→
+   735→**Related API Endpoints:** `GET /api/admin/deposits`, `PUT /api/admin/deposits/gift-card/:id/verify`, `PUT /api/admin/deposits/gift-card/:id/reject`
+   736→
+   737→---
+   738→
+   739→### /admin/withdrawals
+   740→
+   741→| Field | Value |
+   742→|-------|-------|
+   743→| **Route** | `/admin/withdrawals` |
+   744→| **Auth Required** | Yes |
+   745→| **Required Role(s)** | Admin, Super Admin |
+   746→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   747→| **Description** | Withdrawal processing queue |
+   748→
+   749→**Key Components:**
+   750→- AdminLayout
+   751→- Breadcrumb (Admin > Withdrawals)
+   752→- Tabs — "Pending" | "Processing" | "Completed" | "Rejected"
+   753→- Pending count badge
+   754→- StatCards — Pending amount, Processed today, Total withdrawn
+   755→- DataTable:
+   756→  - Columns: User, KYC Level, Requested Amount, Fee (21%), Net Amount, Wallet Address, Requested Date, Status, Actions
+   757→  - Row actions: Approve, Reject
+   758→- Withdrawal Detail Panel:
+   759→  - Full user details and KYC status
+   760→  - Fee breakdown
+   761→  - Approve button (with tx hash input on completion)
+   762→  - Reject button with reason field
+   763→  - Processing notes
+   764→- Filters (status, date range, amount range)
+   765→
+   766→**Related API Endpoints:** `GET /api/admin/withdrawals`, `PUT /api/admin/withdrawals/:id/approve`, `PUT /api/admin/withdrawals/:id/reject`, `PUT /api/admin/withdrawals/:id/complete`
+   767→
+   768→---
+   769→
+   770→### /admin/plans
+   771→
+   772→| Field | Value |
+   773→|-------|-------|
+   774→| **Route** | `/admin/plans` |
+   775→| **Auth Required** | Yes |
+   776→| **Required Role(s)** | Super Admin |
+   777→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   778→| **Description** | Investment plan management (CRUD) |
+   779→
+   780→**Key Components:**
+   781→- AdminLayout
+   782→- Breadcrumb (Admin > Investment Plans)
+   783→- "Create New Plan" button
+   784→- DataTable:
+   785→  - Columns: Plan Name, Min, Max, Duration, Return Rate, Status, Investors Count, Actions
+   786→  - Row actions: Edit, Enable/Disable, Delete (if no active investments)
+   787→- Plan Form (modal or separate page):
+   788→  - Name, min amount, max amount, duration, return rate, description, features
+   789→  - Enable/disable toggle
+   790→  - Save/Cancel buttons
+   791→
+   792→**Related API Endpoints:** `GET /api/admin/plans`, `POST /api/admin/plans`, `PUT /api/admin/plans/:id`, `DELETE /api/admin/plans/:id`, `PUT /api/admin/plans/:id/toggle`
+   793→
+   794→---
+   795→
+   796→### /admin/referrals
+   797→
+   798→| Field | Value |
+   799→|-------|-------|
+   800→| **Route** | `/admin/referrals` |
+   801→| **Auth Required** | Yes |
+   802→| **Required Role(s)** | Admin, Super Admin |
+   803→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   804→| **Description** | Referral program management and commission oversight |
+   805→
+   806→**Key Components:**
+   807→- AdminLayout
+   808→- Breadcrumb (Admin > Referrals)
+   809→- StatCards — Total Referrals, Active Referral Networks, Total Commissions Paid
+   810→- Referral overview chart (referral growth over time)
+   811→- DataTable — top referrers (user, total referrals, total commissions, binary tree depth)
+   812→- Commission adjustment panel (Super Admin only):
+   813→  - Search user, view commission history
+   814→  - Adjust commission with reason (audit logged)
+   815→- Referral dispute section:
+   816→  - List of open disputes
+   817→  - Resolution form
+   818→
+   819→**Related API Endpoints:** `GET /api/admin/referrals/overview`, `GET /api/admin/referrals/top-referrers`, `GET /api/admin/referrals/commissions/:userId`, `POST /api/admin/referrals/commissions/adjust`
+   820→
+   821→---
+   822→
+   823→### /admin/support
+   824→
+   825→| Field | Value |
+   826→|-------|-------|
+   827→| **Route** | `/admin/support` |
+   828→| **Auth Required** | Yes |
+   829→| **Required Role(s)** | Support Agent, Admin, Super Admin |
+   830→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   831→| **Description** | Support ticket management |
+   832→
+   833→**Key Components:**
+   834→- AdminLayout
+   835→- Breadcrumb (Admin > Support)
+   836→- Tabs — "Open" | "In Progress" | "Closed" | "My Tickets"
+   837→- StatCards — Open tickets, Avg response time, Tickets today
+   838→- DataTable:
+   839→  - Columns: Ticket ID, User, Subject, Category, Assigned To, Status, Last Updated, Actions
+   840→  - Row actions: View, Assign, Close, Delete
+   841→- Ticket Detail View:
+   842→  - User info sidebar
+   843→  - Full message thread
+   844→  - Reply input area (text + internal note toggle + file attachment)
+   845→  - Assign to agent dropdown
+   846→  - Close ticket button
+   847→  - Escalate button
+   848→
+   849→**Related API Endpoints:** `GET /api/admin/tickets`, `GET /api/admin/tickets/:id`, `POST /api/admin/tickets/:id/reply`, `PUT /api/admin/tickets/:id/assign`, `PUT /api/admin/tickets/:id/close`, `DELETE /api/admin/tickets/:id`
+   850→
+   851→---
+   852→
+   853→### /admin/reports
+   854→
+   855→| Field | Value |
+   856→|-------|-------|
+   857→| **Route** | `/admin/reports` |
+   858→| **Auth Required** | Yes |
+   859→| **Required Role(s)** | Admin, Super Admin |
+   860→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   861→| **Description** | Platform reports and analytics |
+   862→
+   863→**Key Components:**
+   864→- AdminLayout
+   865→- Breadcrumb (Admin > Reports)
+   866→- Tabs — "Financial" | "Users" | "System"
+   867→- **Financial Tab:**
+   868→  - Date range selector
+   869→  - Revenue summary (deposits, withdrawals, fees collected, net revenue)
+   870→  - Charts: deposit/withdrawal trends, fee revenue, plan distribution
+   871→  - Export button (CSV/PDF)
+   872→- **Users Tab:**
+   873→  - User growth chart
+   874→  - KYC completion rate
+   875→  - User engagement metrics
+   876→  - Export button
+   877→- **System Tab:**
+   878→  - System health metrics
+   879→  - API response times
+   880→  - Error rates
+   881→
+   882→**Related API Endpoints:** `GET /api/admin/reports/financial`, `GET /api/admin/reports/users`, `GET /api/admin/reports/system`, `GET /api/admin/reports/export`
+   883→
+   884→---
+   885→
+   886→### /admin/audit-logs
+   887→
+   888→| Field | Value |
+   889→|-------|-------|
+   890→| **Route** | `/admin/audit-logs` |
+   891→| **Auth Required** | Yes |
+   892→| **Required Role(s)** | Admin, Super Admin |
+   893→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   894→| **Description** | System audit log viewer |
+   895→
+   896→**Key Components:**
+   897→- AdminLayout
+   898→- Breadcrumb (Admin > Audit Logs)
+   899→- Filters: user search, action type dropdown, date range, status (success/failure)
+   900→- SearchInput (search within log descriptions)
+   901→- DataTable:
+   902→  - Columns: Timestamp, User (name + email), Action, Description, IP Address, Status
+   903→  - Click row for full detail
+   904→- Pagination with page size selector (25, 50, 100)
+   905→- Export button (CSV)
+   906→
+   907→**Related API Endpoints:** `GET /api/admin/audit-logs`, `GET /api/admin/audit-logs/export`
+   908→
+   909→---
+   910→
+   911→### /admin/settings
+   912→
+   913→| Field | Value |
+   914→|-------|-------|
+   915→| **Route** | `/admin/settings` |
+   916→| **Auth Required** | Yes |
+   917→| **Required Role(s)** | Admin (view), Super Admin (update restricted fields) |
+   918→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   919→| **Description** | System configuration and settings |
+   920→
+   921→**Key Components:**
+   922→- AdminLayout
+   923→- Breadcrumb (Admin > Settings)
+   924→- Tabs/Sections:
+   925→  - **General:** Platform name, logo upload, maintenance mode toggle, registration enabled toggle
+   926→  - **Fees (Super Admin):** Withdrawal fee percentage (default 21%), minimum withdrawal amount
+   927→  - **Email:** Resend API key (masked), from email, from name, test email button
+   928→  - **Feature Flags:** enable/disable specific features (gift card deposits, referral program, 2FA, etc.)
+   929→- "Save Settings" button per section
+   930→- Confirmation modal for critical changes (fee updates, maintenance mode)
+   931→
+   932→**Related API Endpoints:** `GET /api/admin/settings`, `PUT /api/admin/settings`, `POST /api/admin/settings/test-email`
+   933→
+   934→---
+   935→
+   936→### /admin/roles
+   937→
+   938→| Field | Value |
+   939→|-------|-------|
+   940→| **Route** | `/admin/roles` |
+   941→| **Auth Required** | Yes |
+   942→| **Required Role(s)** | Super Admin |
+   943→| **Responsive** | Yes — Mobile / Tablet / Desktop |
+   944→| **Description** | Role and permission management |
+   945→
+   946→**Key Components:**
+   947→- AdminLayout
+   948→- Breadcrumb (Admin > Roles & Permissions)
+   949→- Role list (cards or table): Super Admin, Admin, KYC Officer, Support Agent, User
+   950→- Permission matrix view (roles as columns, permissions as rows, toggle switches)
+   951→- Edit permission modal (per role)
+   952→- "Save Changes" button
+   953→
+   954→**Related API Endpoints:** `GET /api/admin/roles`, `PUT /api/admin/roles/:id/permissions`
+   955→
+   956→---
+   957→
+   958→## 4. Error Pages
+   959→
+   960→### /404 — Not Found
+   961→
+   962→| Field | Value |
+   963→|-------|-------|
+   964→| **Route** | `/404` (or catch-all `*`) |
+   965→| **Auth Required** | No |
+   966→| **Required Role(s)** | N/A |
+   967→| **Responsive** | Yes |
+   968→| **Description** | Displayed when a requested page does not exist |
+   969→
+   970→**Key Components:**
+   971→- Centered layout
+   972→- Error illustration or icon
+   973→- "404 — Page Not Found" heading
+   974→- Description text
+   975→- "Back to Home" button
+   976→- "Contact Support" link
+   977→
+   978→---
+   979→
+   980→### /500 — Server Error
+   981→
+   982→| Field | Value |
+   983→|-------|-------|
+   984→| **Route** | `/500` |
+   985→| **Auth Required** | No |
+   986→| **Required Role(s)** | N/A |
+   987→| **Responsive** | Yes |
+   988→| **Description** | Displayed when an unexpected server error occurs |
+   989→
+   990→**Key Components:**
+   991→- Centered layout
+   992→- Error illustration or icon
+   993→- "500 — Server Error" heading
+   994→- "Something went wrong on our end. Please try again later." description
+   995→- "Retry" button
+   996→- "Back to Home" button
+   997→
+   998→---
+   999→
+  1000→### /403 — Forbidden
+  1001→
+  1002→| Field | Value |
+  1003→|-------|-------|
+  1004→| **Route** | `/403` |
+  1005→| **Auth Required** | No (redirected to this page) |
+  1006→| **Required Role(s)** | N/A |
+  1007→| **Responsive** | Yes |
+  1008→| **Description** | Displayed when a user attempts to access a resource without permission |
+  1009→
+  1010→**Key Components:**
+  1011→- Centered layout
+  1012→- Lock icon
+  1013→- "403 — Access Denied" heading
+  1014→- "You don't have permission to access this page." description
+  1015→- "Back to Dashboard" button
+  1016→- "Contact Support" link
+  1017→
+  1018→---
+  1019→
+  1020→### /maintenance — Planned Maintenance
+  1021→
+  1022→| Field | Value |
+  1023→|-------|-------|
+  1024→| **Route** | `/maintenance` |
+  1025→| **Auth Required** | No |
+  1026→| **Required Role(s)** | N/A |
+  1027→| **Responsive** | Yes |
+  1028→| **Description** | Displayed when the platform is under planned maintenance |
+  1029→
+  1030→**Key Components:**
+  1031→- Centered layout
+  1032→- Maintenance illustration or icon
+  1033→- "Under Maintenance" heading
+  1034→- Description with estimated return time
+  1035→- "We'll be back soon" message
+  1036→- Optional: email notification signup for when maintenance is complete
+  1037→
+  1038→---
+  1039→
+  1040→## 5. Page Specifications Summary
+  1041→
+  1042→| Page | Auth | Role(s) | Mobile | Tablet | Desktop | Key API Endpoints |
+  1043→|------|------|---------|--------|--------|---------|-------------------|
+  1044→| `/` | No | N/A | ✓ | ✓ | ✓ | `GET /api/plans` |
+  1045→| `/about` | No | N/A | ✓ | ✓ | ✓ | — |
+  1046→| `/plans` | No | N/A | ✓ | ✓ | ✓ | `GET /api/plans` |
+  1047→| `/faq` | No | N/A | ✓ | ✓ | ✓ | `GET /api/faq` |
+  1048→| `/contact` | No | N/A | ✓ | ✓ | ✓ | `POST /api/contact` |
+  1049→| `/privacy-policy` | No | N/A | ✓ | ✓ | ✓ | — |
+  1050→| `/terms-of-service` | No | N/A | ✓ | ✓ | ✓ | — |
+  1051→| `/login` | No | N/A | ✓ | ✓ | ✓ | `POST /api/auth/login` |
+  1052→| `/register` | No | N/A | ✓ | ✓ | ✓ | `POST /api/auth/register` |
+  1053→| `/forgot-password` | No | N/A | ✓ | ✓ | ✓ | `POST /api/auth/forgot-password` |
+  1054→| `/verify-email` | No | N/A | ✓ | ✓ | ✓ | `POST /api/auth/verify-email` |
+  1055→| `/dashboard` | Yes | User+ | ✓ | ✓ | ✓ | `GET /api/dashboard/summary` |
+  1056→| `/dashboard/investments` | Yes | User | ✓ | ✓ | ✓ | `GET /api/investments` |
+  1057→| `/dashboard/wallet` | Yes | User | ✓ | ✓ | ✓ | `GET /api/wallet/balance` |
+  1058→| `/dashboard/deposit` | Yes | User | ✓ | ✓ | ✓ | `GET /api/deposits/recent` |
+  1059→| `/dashboard/deposit/crypto` | Yes | User | ✓ | ✓ | ✓ | `GET /api/deposit/crypto/address` |
+  1060→| `/dashboard/deposit/gift-card` | Yes | User | ✓ | ✓ | ✓ | `POST /api/deposit/gift-card` |
+  1061→| `/dashboard/withdraw` | Yes | User | ✓ | ✓ | ✓ | `POST /api/withdrawals` |
+  1062→| `/dashboard/referrals` | Yes | User | ✓ | ✓ | ✓ | `GET /api/referrals/stats` |
+  1063→| `/dashboard/kyc` | Yes | User | ✓ | ✓ | ✓ | `GET /api/kyc/status` |
+  1064→| `/dashboard/profile` | Yes | User | ✓ | ✓ | ✓ | `GET /api/user/profile` |
+  1065→| `/dashboard/notifications` | Yes | User | ✓ | ✓ | ✓ | `GET /api/notifications` |
+  1066→| `/dashboard/support` | Yes | User | ✓ | ✓ | ✓ | `GET /api/tickets` |
+  1067→| `/dashboard/security` | Yes | User | ✓ | ✓ | ✓ | `GET /api/user/sessions` |
+  1068→| `/admin` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/dashboard/stats` |
+  1069→| `/admin/users` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/users` |
+  1070→| `/admin/kyc` | Yes | KYC Officer+ | ✓ | ✓ | ✓ | `GET /api/admin/kyc` |
+  1071→| `/admin/deposits` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/deposits` |
+  1072→| `/admin/withdrawals` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/withdrawals` |
+  1073→| `/admin/plans` | Yes | Super Admin | ✓ | ✓ | ✓ | `GET /api/admin/plans` |
+  1074→| `/admin/referrals` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/referrals/overview` |
+  1075→| `/admin/support` | Yes | Support Agent+ | ✓ | ✓ | ✓ | `GET /api/admin/tickets` |
+  1076→| `/admin/reports` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/reports/*` |
+  1077→| `/admin/audit-logs` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/audit-logs` |
+  1078→| `/admin/settings` | Yes | Admin+ | ✓ | ✓ | ✓ | `GET /api/admin/settings` |
+  1079→| `/admin/roles` | Yes | Super Admin | ✓ | ✓ | ✓ | `GET /api/admin/roles` |
+  1080→| `/404` | No | N/A | ✓ | ✓ | ✓ | — |
+  1081→| `/500` | No | N/A | ✓ | ✓ | ✓ | — |
+  1082→| `/403` | No | N/A | ✓ | ✓ | ✓ | — |
+  1083→| `/maintenance` | No | N/A | ✓ | ✓ | ✓ | — |
+  1084→
+  1085→*End of Page Inventory Document — Phase 1*

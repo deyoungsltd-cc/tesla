@@ -1,0 +1,740 @@
+    51→    51→      ref={ref}
+    52→    52→      className={className}
+    53→    53→      style={{
+    54→    54→        opacity: isVisible ? 1 : 0,
+    55→    55→        transform: isVisible ? 'translateY(0) translateX(0)' : transforms[direction],
+    56→    56→        transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+    57→    57→      }}
+    58→    58→    >
+    59→    59→      {children}
+    60→    60→    </div>
+    61→    61→  );
+    62→    62→}
+    63→    63→
+    64→    64→// ─── Data ───────────────────────────────────────────────────────────────────
+    65→    65→
+    66→    66→const NAV_LINKS = [
+    67→    67→  { label: 'Home', href: '#' },
+    68→    68→  { label: 'Plans', href: '#plans' },
+    69→    69→  { label: 'About', href: '#why-us' },
+    70→    70→  { label: 'FAQ', href: '#faq' },
+    71→    71→  { label: 'Contact', href: '#footer' },
+    72→    72→];
+    73→    73→
+    74→    74→const INVESTMENT_PLANS = [
+    75→    75→  {
+    76→    76→    name: 'Basic',
+    77→    77→    image: '/images/model-y.jpg',
+    78→    78→    priceRange: '$200 – $4,999',
+    79→    79→    dailyReturn: '0.5%',
+    80→    80→    duration: '30 Days',
+    81→    81→    premium: false,
+    82→    82→  },
+    83→    83→  {
+    84→    84→    name: 'Silver',
+    85→    85→    image: '/images/model-x.jpg',
+    86→    86→    priceRange: '$5,000 – $24,999',
+    87→    87→    dailyReturn: '1.0%',
+    88→    88→    duration: '45 Days',
+    89→    89→    premium: false,
+    90→    90→  },
+    91→    91→  {
+    92→    92→    name: 'Gold',
+    93→    93→    image: '/images/model-3.jpg',
+    94→    94→    priceRange: '$25,000 – $99,999',
+    95→    95→    dailyReturn: '1.5%',
+    96→    96→    duration: '60 Days',
+    97→    97→    premium: false,
+    98→    98→  },
+    99→    99→  {
+   100→   100→    name: 'Platinum',
+   101→   101→    image: '/images/model-s.jpg',
+   102→   102→    priceRange: '$100,000+',
+   103→   103→    dailyReturn: '2.0%',
+   104→   104→    duration: '90 Days',
+   105→   105→    premium: true,
+   106→   106→  },
+   107→   107→];
+   108→   108→
+   109→   109→const FEATURES = [
+   110→   110→  {
+   111→   111→    title: 'Guaranteed Returns',
+   112→   112→    description: 'Earn consistent daily returns on every investment plan, paid directly to your account balance.',
+   113→   113→    icon: (
+   114→   114→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   115→   115→        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+   116→   116→      </svg>
+   117→   117→    ),
+   118→   118→  },
+   119→   119→  {
+   120→   120→    title: 'Bank-Grade Security',
+   121→   121→    description: 'Military-grade AES-256 encryption and multi-layer security protocols protect every transaction.',
+   122→   122→    icon: (
+   123→   123→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   124→   124→        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+   125→   125→      </svg>
+   126→   126→    ),
+   127→   127→  },
+   128→   128→  {
+   129→   129→    title: 'Crypto Payments',
+   130→   130→    description: 'Seamless deposits and withdrawals via Bitcoin, Ethereum, and USDT with instant confirmation.',
+   131→   131→    icon: (
+   132→   132→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   133→   133→        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
+   134→   134→      </svg>
+   135→   135→    ),
+   136→   136→  },
+   137→   137→  {
+   138→   138→    title: 'Instant Withdrawals',
+   139→   139→    description: 'Request withdrawals at any time. Processing completes within 24–48 hours directly to your wallet.',
+   140→   140→    icon: (
+   141→   141→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   142→   142→        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+   143→   143→      </svg>
+   144→   144→    ),
+   145→   145→  },
+   146→   146→  {
+   147→   147→    title: 'Referral Rewards',
+   148→   148→    description: 'Earn a 10% commission on every deposit made by your direct referrals. No limits on earnings.',
+   149→   149→    icon: (
+   150→   150→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   151→   151→        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+   152→   152→      </svg>
+   153→   153→    ),
+   154→   154→  },
+   155→   155→  {
+   156→   156→    title: '24/7 Support',
+   157→   157→    description: 'Dedicated support team available around the clock via live chat, email, and support tickets.',
+   158→   158→    icon: (
+   159→   159→      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   160→   160→        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+   161→   161→      </svg>
+   162→   162→    ),
+   163→   163→  },
+   164→   164→];
+   165→   165→
+   166→   166→const STEPS = [
+   167→   167→  {
+   168→   168→    number: '01',
+   169→   169→    title: 'Create Your Account',
+   170→   170→    description: 'Sign up in under 2 minutes and complete identity verification to get started.',
+   171→   171→  },
+   172→   172→  {
+   173→   173→    number: '02',
+   174→   174→    title: 'Choose Your Plan',
+   175→   175→    description: 'Select from our range of premium investment tiers that match your financial goals.',
+   176→   176→  },
+   177→   177→  {
+   178→   178→    number: '03',
+   179→   179→    title: 'Start Earning',
+   180→   180→    description: 'Deposit funds and watch your daily returns accumulate in real-time on your dashboard.',
+   181→   181→  },
+   182→   182→];
+   183→   183→
+   184→   184→const TESTIMONIALS = [
+   185→   185→  {
+   186→   186→    quote: "The daily returns are exactly as advertised. I've been investing for 6 months and the platform has been incredibly reliable. Withdrawals process without any issues.",
+   187→   187→    name: 'Michael R.',
+   188→   188→    role: 'Verified Investor',
+   189→   189→    stars: 5,
+   190→   190→  },
+   191→   191→  {
+   192→   192→    quote: "Customer support is outstanding. Any questions I had were answered within minutes. The KYC process was smooth and the dashboard is easy to navigate.",
+   193→   193→    name: 'Sarah K.',
+   194→   194→    role: 'Premium Investor',
+   195→   195→    stars: 5,
+   196→   196→  },
+   197→   197→  {
+   198→   198→    quote: "I started with the Basic plan and upgraded to Gold within a month. The returns speak for themselves. This is the most transparent platform I've used.",
+   199→   199→    name: 'David L.',
+   200→   200→    role: 'Active Investor',
+   201→   201→    stars: 5,
+   202→   202→  },
+   203→   203→];
+   204→   204→
+   205→   205→const FAQ_ITEMS = [
+   206→   206→  {
+   207→   207→    question: 'How do I get started with TeslaPrimeCapital?',
+   208→   208→    answer: 'Creating an account takes less than 2 minutes. Click "Get Started" on our homepage, provide your email and set a password, complete the KYC verification, then choose an investment plan and fund your account using crypto or bank transfer.',
+   209→   209→  },
+   210→   210→  {
+   211→   211→    question: 'What payment methods do you accept?',
+   212→   212→    answer: 'We accept Bitcoin (BTC), Ethereum (ETH), and USDT (TRC20/ERC20) for deposits and withdrawals. All transactions are processed on-chain with confirmation typically completing within 10–30 minutes.',
+   213→   213→  },
+   214→   214→  {
+   215→   215→    question: 'How are daily returns calculated and paid?',
+   216→   216→    answer: 'Daily returns are calculated as a fixed percentage of your active investment balance at 00:00 UTC each day. Returns are credited directly to your account balance and available for withdrawal or reinvestment.',
+   217→   217→  },
+   218→   218→  {
+   219→   219→    question: 'What is the withdrawal process and fee?',
+   220→   220→    answer: 'Withdrawals can be requested from your dashboard at any time. Processing takes 24–48 hours. Withdrawal fees vary by plan tier: Basic 2%, Silver 1.5%, Gold 1%, and Platinum 0.5%.',
+   221→   221→  },
+   222→   222→  {
+   223→   223→    question: 'Is my investment secure on this platform?',
+   224→   224→    answer: 'All funds are protected by AES-256 encryption, multi-signature cold wallet storage, and real-time monitoring. We maintain full reserves and undergo regular third-party security audits.',
+   225→   225→  },
+   226→   226→  {
+   227→   227→    question: 'How does the referral program work?',
+   228→   228→    answer: 'Share your unique referral link with others. When they register and make a deposit, you earn a 10% commission on their deposit amount. There is no cap on referral earnings, and commissions are paid instantly.',
+   229→   229→  },
+   230→   230→];
+   231→   231→
+   232→   232→const STATS = [
+   233→   233→  { value: '$10,250,000+', label: 'Total Investments' },
+   234→   234→  { value: '15,847', label: 'Active Investors' },
+   235→   235→  { value: '$2,450,000+', label: 'Total Returns Paid' },
+   236→   236→  { value: '4.9/5', label: 'User Rating' },
+   237→   237→];
+   238→   238→
+   239→   239→const FOOTER_LINKS = {
+   240→   240→  Company: ['About Us', 'Careers', 'Press', 'Blog'],
+   241→   241→  Investment: ['Plans', 'Pricing', 'Returns Calculator', 'Risk Disclosure'],
+   242→   242→  Support: ['Help Center', 'Live Chat', 'Email Support', 'FAQ'],
+   243→   243→  Legal: ['Terms of Service', 'Privacy Policy', 'AML Policy', 'Cookie Policy'],
+   244→   244→};
+   245→   245→
+   246→   246→// ─── FAQ Accordion Item ─────────────────────────────────────────────────────
+   247→   247→function FaqItem({ question, answer, isOpen, onClick }: { question: string; answer: string; isOpen: boolean; onClick: () => void }) {
+   248→   248→  return (
+   249→   249→    <div className="border-b border-gray-200">
+   250→   250→      <button
+   251→   251→        onClick={onClick}
+   252→   252→        className="w-full flex items-center justify-between py-5 text-left hover:text-red-700 transition-colors cursor-pointer"
+   253→   253→        aria-expanded={isOpen}
+   254→   254→      >
+   255→   255→        <span className="text-[15px] font-medium text-gray-900 pr-4">{question}</span>
+   256→   256→        <svg
+   257→   257→          className={`w-5 h-5 flex-shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+   258→   258→          fill="none"
+   259→   259→          viewBox="0 0 24 24"
+   260→   260→          strokeWidth={2}
+   261→   261→          stroke="currentColor"
+   262→   262→        >
+   263→   263→          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+   264→   264→        </svg>
+   265→   265→      </button>
+   266→   266→      <div
+   267→   267→        className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-60 pb-5' : 'max-h-0'}`}
+   268→   268→      >
+   269→   269→        <p className="text-sm leading-relaxed text-gray-500">{answer}</p>
+   270→   270→      </div>
+   271→   271→    </div>
+   272→   272→  );
+   273→   273→}
+   274→   274→
+   275→   275→// ─── Star Rating ────────────────────────────────────────────────────────────
+   276→   276→function StarRating({ count }: { count: number }) {
+   277→   277→  return (
+   278→   278→    <div className="flex gap-0.5">
+   279→   279→      {Array.from({ length: 5 }).map((_, i) => (
+   280→   280→        <svg
+   281→   281→          key={i}
+   282→   282→          className={`w-4 h-4 ${i < count ? 'text-amber-400' : 'text-gray-300'}`}
+   283→   283→          fill="currentColor"
+   284→   284→          viewBox="0 0 20 20"
+   285→   285→        >
+   286→   286→          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+   287→   287→        </svg>
+   288→   288→      ))}
+   289→   289→    </div>
+   290→   290→  );
+   291→   291→}
+   292→   292→
+   293→   293→// ─── Main Page ──────────────────────────────────────────────────────────────
+   294→   294→export default function HomePage() {
+   295→   295→  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+   296→   296→  const [openFaq, setOpenFaq] = useState<number | null>(null);
+   297→   297→  const [scrolled, setScrolled] = useState(false);
+   298→   298→
+   299→   299→  useEffect(() => {
+   300→   300→    const handleScroll = () => setScrolled(window.scrollY > 10);
+   301→   301→    window.addEventListener('scroll', handleScroll, { passive: true });
+   302→   302→    return () => window.removeEventListener('scroll', handleScroll);
+   303→   303→  }, []);
+   304→   304→
+   305→   305→  return (
+   306→   306→    <div className="min-h-screen bg-white text-gray-900">
+   307→   307→      {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
+   308→   308→      <nav
+   309→   309→        className={`sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b transition-shadow duration-300 ${
+   310→   310→          scrolled ? 'border-gray-200 shadow-sm' : 'border-transparent'
+   311→   311→        }`}
+   312→   312→      >
+   313→   313→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   314→   314→          <div className="flex items-center justify-between h-16">
+   315→   315→            {/* Logo */}
+   316→   316→            <a href="#" className="flex items-center gap-2.5 flex-shrink-0">
+   317→   317→              <div className="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center">
+   318→   318→                <span className="text-white font-bold text-sm">T</span>
+   319→   319→              </div>
+   320→   320→              <div className="flex items-baseline">
+   321→   321→                <span className="font-bold text-lg tracking-tight text-gray-900">TESLA</span>
+   322→   322→                <span className="text-lg font-light tracking-tight text-gray-900">PrimeCapital</span>
+   323→   323→              </div>
+   324→   324→            </a>
+   325→   325→
+   326→   326→            {/* Desktop Nav Links */}
+   327→   327→            <div className="hidden md:flex items-center gap-8">
+   328→   328→              {NAV_LINKS.map((link) => (
+   329→   329→                <a
+   330→   330→                  key={link.label}
+   331→   331→                  href={link.href}
+   332→   332→                  className="text-sm font-medium text-gray-600 hover:text-red-700 transition-colors"
+   333→   333→                >
+   334→   334→                  {link.label}
+   335→   335→                </a>
+   336→   336→              ))}
+   337→   337→            </div>
+   338→   338→
+   339→   339→            {/* Desktop CTA */}
+   340→   340→            <div className="hidden md:flex items-center gap-3">
+   341→   341→              <a
+   342→   342→                href="/login"
+   343→   343→                className="text-sm font-medium text-gray-700 hover:text-gray-900 px-3 py-2 transition-colors"
+   344→   344→              >
+   345→   345→                Sign In
+   346→   346→              </a>
+   347→   347→              <a
+   348→   348→                href="/register"
+   349→   349→                className="text-sm font-medium text-white bg-red-700 hover:bg-red-800 px-5 py-2.5 rounded-lg transition-colors"
+   350→   350→              >
+   351→   351→                Get Started
+   352→   352→              </a>
+   353→   353→            </div>
+   354→   354→
+   355→   355→            {/* Mobile Menu Button */}
+   356→   356→            <button
+   357→   357→              className="md:hidden p-2 text-gray-600 hover:text-gray-900 cursor-pointer"
+   358→   358→              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+   359→   359→              aria-label="Toggle menu"
+   360→   360→            >
+   361→   361→              {mobileMenuOpen ? (
+   362→   362→                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   363→   363→                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+   364→   364→                </svg>
+   365→   365→              ) : (
+   366→   366→                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+   367→   367→                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+   368→   368→                </svg>
+   369→   369→              )}
+   370→   370→            </button>
+   371→   371→          </div>
+   372→   372→        </div>
+   373→   373→
+   374→   374→        {/* Mobile Menu */}
+   375→   375→        {mobileMenuOpen && (
+   376→   376→          <div className="md:hidden border-t border-gray-100 bg-white">
+   377→   377→            <div className="px-4 py-4 space-y-1">
+   378→   378→              {NAV_LINKS.map((link) => (
+   379→   379→                <a
+   380→   380→                  key={link.label}
+   381→   381→                  href={link.href}
+   382→   382→                  onClick={() => setMobileMenuOpen(false)}
+   383→   383→                  className="block px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-red-700 hover:bg-gray-50 rounded-lg transition-colors"
+   384→   384→                >
+   385→   385→                  {link.label}
+   386→   386→                </a>
+   387→   387→              ))}
+   388→   388→              <div className="pt-3 mt-3 border-t border-gray-100 space-y-2">
+   389→   389→                <a
+   390→   390→                  href="/login"
+   391→   391→                  className="block text-center px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+   392→   392→                >
+   393→   393→                  Sign In
+   394→   394→                </a>
+   395→   395→                <a
+   396→   396→                  href="/register"
+   397→   397→                  className="block text-center px-3 py-2.5 text-sm font-medium text-white bg-red-700 hover:bg-red-800 rounded-lg transition-colors"
+   398→   398→                >
+   399→   399→                  Get Started
+   400→   400→                </a>
+   401→   401→              </div>
+   402→   402→            </div>
+   403→   403→          </div>
+   404→   404→        )}
+   405→   405→      </nav>
+   406→   406→
+   407→   407→      {/* ── HERO SECTION ──────────────────────────────────────────────────── */}
+   408→   408→      <section className="relative bg-gray-950 overflow-hidden">
+   409→   409→        <div className="absolute inset-0">
+   410→   410→          <Image
+   411→   411→            src="/images/cybertruck.jpg"
+   412→   412→            alt="Tesla Cybertruck"
+   413→   413→            fill
+   414→   414→            className="object-cover object-center opacity-40"
+   415→   415→            priority
+   416→   416→          />
+   417→   417→          <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/80 to-gray-950/40" />
+   418→   418→        </div>
+   419→   419→        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
+   420→   420→          <div className="max-w-2xl">
+   421→   421→            <FadeIn delay={0}>
+   422→   422→              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
+   423→   423→                Drive Your Investments Forward
+   424→   424→              </h1>
+   425→   425→            </FadeIn>
+   426→   426→            <FadeIn delay={0.15}>
+   427→   427→              <p className="mt-6 text-lg sm:text-xl text-gray-300 leading-relaxed max-w-xl">
+   428→   428→                Premium managed investment plans backed by Tesla&apos;s innovation. Earn guaranteed daily returns with institutional-grade security.
+   429→   429→              </p>
+   430→   430→            </FadeIn>
+   431→   431→            <FadeIn delay={0.3}>
+   432→   432→              <div className="mt-8 flex flex-wrap gap-4">
+   433→   433→                <a
+   434→   434→                  href="/register"
+   435→   435→                  className="inline-flex items-center px-7 py-3.5 bg-red-700 hover:bg-red-800 text-white text-sm font-semibold rounded-lg transition-colors"
+   436→   436→                >
+   437→   437→                  Start Investing
+   438→   438→                </a>
+   439→   439→                <a
+   440→   440→                  href="#plans"
+   441→   441→                  className="inline-flex items-center px-7 py-3.5 border border-white/30 hover:border-white/60 text-white text-sm font-semibold rounded-lg transition-colors"
+   442→   442→                >
+   443→   443→                  Learn More
+   444→   444→                </a>
+   445→   445→              </div>
+   446→   446→            </FadeIn>
+   447→   447→            <FadeIn delay={0.45}>
+   448→   448→              <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3">
+   449→   449→                {[
+   450→   450→                  { value: '$10M+', label: 'Assets Managed' },
+   451→   451→                  { value: '15,000+', label: 'Investors' },
+   452→   452→                  { value: '99.9%', label: 'Uptime' },
+   453→   453→                ].map((item) => (
+   454→   454→                  <div key={item.label} className="flex items-center gap-2">
+   455→   455→                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+   456→   456→                    <span className="text-sm text-gray-400">
+   457→   457→                      <span className="text-white font-semibold">{item.value}</span>{' '}
+   458→   458→                      {item.label}
+   459→   459→                    </span>
+   460→   460→                  </div>
+   461→   461→                ))}
+   462→   462→              </div>
+   463→   463→            </FadeIn>
+   464→   464→          </div>
+   465→   465→        </div>
+   466→   466→      </section>
+   467→   467→
+   468→   468→      {/* ── INVESTMENT PLANS ──────────────────────────────────────────────── */}
+   469→   469→      <section id="plans" className="py-20 sm:py-24 bg-gray-50">
+   470→   470→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   471→   471→          <FadeIn>
+   472→   472→            <div className="text-center max-w-2xl mx-auto">
+   473→   473→              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+   474→   474→                Investment Plans
+   475→   475→              </h2>
+   476→   476→              <p className="mt-4 text-gray-500 text-lg">
+   477→   477→                Choose the plan that fits your investment goals. All plans offer guaranteed daily returns with full capital protection.
+   478→   478→              </p>
+   479→   479→            </div>
+   480→   480→          </FadeIn>
+   481→   481→
+   482→   482→          <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   483→   483→            {INVESTMENT_PLANS.map((plan, idx) => (
+   484→   484→              <FadeIn key={plan.name} delay={idx * 0.1}>
+   485→   485→                <div
+   486→   486→                  className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full ${
+   487→   487→                    plan.premium ? 'ring-2 ring-red-700 relative' : 'border border-gray-200'
+   488→   488→                  }`}
+   489→   489→                >
+   490→   490→                  {plan.premium && (
+   491→   491→                    <div className="absolute top-4 right-4 z-10 bg-red-700 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+   492→   492→                      Popular
+   493→   493→                    </div>
+   494→   494→                  )}
+   495→   495→                  <div className="relative h-48 overflow-hidden bg-gray-100">
+   496→   496→                    <Image
+   497→   497→                      src={plan.image}
+   498→   498→                      alt={`Tesla ${plan.name === 'Basic' ? 'Model Y' : plan.name === 'Silver' ? 'Model X' : plan.name === 'Gold' ? 'Model 3' : 'Model S'}`}
+   499→   499→                      fill
+   500→   500→                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+   501→   501→                    />
+   502→   502→                  </div>
+   503→   503→                  <div className="p-5 flex flex-col flex-1">
+   504→   504→                    <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+   505→   505→                    <p className="mt-1 text-sm text-gray-400">{plan.priceRange}</p>
+   506→   506→                    <div className="mt-4 space-y-2.5 flex-1">
+   507→   507→                      <div className="flex items-center justify-between">
+   508→   508→                        <span className="text-sm text-gray-500">Daily Returns</span>
+   509→   509→                        <span className="text-sm font-bold text-red-700">{plan.dailyReturn}</span>
+   510→   510→                      </div>
+   511→   511→                      <div className="flex items-center justify-between">
+   512→   512→                        <span className="text-sm text-gray-500">Duration</span>
+   513→   513→                        <span className="text-sm font-semibold text-gray-900">{plan.duration}</span>
+   514→   514→                      </div>
+   515→   515→                    </div>
+   516→   516→                    <a
+   517→   517→                      href="/register"
+   518→   518→                      className={`mt-5 block text-center text-sm font-semibold py-3 rounded-lg transition-colors ${
+   519→   519→                        plan.premium
+   520→   520→                          ? 'bg-red-700 hover:bg-red-800 text-white'
+   521→   521→                          : 'bg-gray-900 hover:bg-gray-800 text-white'
+   522→   522→                      }`}
+   523→   523→                    >
+   524→   524→                      Get Started
+   525→   525→                    </a>
+   526→   526→                  </div>
+   527→   527→                </div>
+   528→   528→              </FadeIn>
+   529→   529→            ))}
+   530→   530→          </div>
+   531→   531→        </div>
+   532→   532→      </section>
+   533→   533→
+   534→   534→      {/* ── WHY CHOOSE US ─────────────────────────────────────────────────── */}
+   535→   535→      <section id="why-us" className="py-20 sm:py-24 bg-white">
+   536→   536→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   537→   537→          <FadeIn>
+   538→   538→            <div className="text-center max-w-2xl mx-auto">
+   539→   539→              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+   540→   540→                Why TeslaPrimeCapital?
+   541→   541→              </h2>
+   542→   542→              <p className="mt-4 text-gray-500 text-lg">
+   543→   543→                Built for serious investors who expect more from their investment platform.
+   544→   544→              </p>
+   545→   545→            </div>
+   546→   546→          </FadeIn>
+   547→   547→
+   548→   548→          <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+   549→   549→            {FEATURES.map((feature, idx) => (
+   550→   550→              <FadeIn key={feature.title} delay={idx * 0.08}>
+   551→   551→                <div className="p-6 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-300 h-full">
+   552→   552→                  <div className="w-11 h-11 rounded-xl bg-red-50 text-red-700 flex items-center justify-center flex-shrink-0">
+   553→   553→                    {feature.icon}
+   554→   554→                  </div>
+   555→   555→                  <h3 className="mt-4 text-base font-semibold text-gray-900">{feature.title}</h3>
+   556→   556→                  <p className="mt-2 text-sm text-gray-500 leading-relaxed">{feature.description}</p>
+   557→   557→                </div>
+   558→   558→              </FadeIn>
+   559→   559→            ))}
+   560→   560→          </div>
+   561→   561→        </div>
+   562→   562→      </section>
+   563→   563→
+   564→   564→      {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
+   565→   565→      <section className="py-20 sm:py-24 bg-gray-50">
+   566→   566→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   567→   567→          <FadeIn>
+   568→   568→            <div className="text-center max-w-2xl mx-auto">
+   569→   569→              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+   570→   570→                How It Works
+   571→   571→              </h2>
+   572→   572→              <p className="mt-4 text-gray-500 text-lg">
+   573→   573→                Start earning in three simple steps. No complex setup required.
+   574→   574→              </p>
+   575→   575→            </div>
+   576→   576→          </FadeIn>
+   577→   577→
+   578→   578→          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 relative">
+   579→   579→            {/* Connecting line (desktop only) */}
+   580→   580→            <div className="hidden md:block absolute top-14 left-[20%] right-[20%] h-px bg-gray-200" />
+   581→   581→
+   582→   582→            {STEPS.map((step, idx) => (
+   583→   583→              <FadeIn key={step.number} delay={idx * 0.15}>
+   584→   584→                <div className="relative flex flex-col items-center text-center">
+   585→   585→                  <div className="relative z-10 w-28 h-14 bg-white border border-gray-200 rounded-xl shadow-sm flex items-center justify-center">
+   586→   586→                    <span className="text-2xl font-bold text-red-700">{step.number}</span>
+   587→   587→                  </div>
+   588→   588→                  <h3 className="mt-6 text-lg font-semibold text-gray-900">{step.title}</h3>
+   589→   589→                  <p className="mt-2 text-sm text-gray-500 max-w-xs leading-relaxed">{step.description}</p>
+   590→   590→                </div>
+   591→   591→              </FadeIn>
+   592→   592→            ))}
+   593→   593→          </div>
+   594→   594→        </div>
+   595→   595→      </section>
+   596→   596→
+   597→   597→      {/* ── STATS / TRUST BANNER ──────────────────────────────────────────── */}
+   598→   598→      <section className="py-16 sm:py-20 bg-gray-50 border-y border-gray-200">
+   599→   599→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   600→   600→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
+   601→   601→            {STATS.map((stat, idx) => (
+   602→   602→              <FadeIn key={stat.label} delay={idx * 0.1}>
+   603→   603→                <div className="text-center">
+   604→   604→                  <p className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
+   605→   605→                  <p className="mt-2 text-sm text-gray-500 font-medium">{stat.label}</p>
+   606→   606→                </div>
+   607→   607→              </FadeIn>
+   608→   608→            ))}
+   609→   609→          </div>
+   610→   610→        </div>
+   611→   611→      </section>
+   612→   612→
+   613→   613→      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
+   614→   614→      <section className="py-20 sm:py-24 bg-white">
+   615→   615→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   616→   616→          <FadeIn>
+   617→   617→            <div className="text-center max-w-2xl mx-auto">
+   618→   618→              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+   619→   619→                Trusted by Thousands
+   620→   620→              </h2>
+   621→   621→              <p className="mt-4 text-gray-500 text-lg">
+   622→   622→                Real feedback from verified investors on our platform.
+   623→   623→              </p>
+   624→   624→            </div>
+   625→   625→          </FadeIn>
+   626→   626→
+   627→   627→          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
+   628→   628→            {TESTIMONIALS.map((t, idx) => (
+   629→   629→              <FadeIn key={t.name} delay={idx * 0.12}>
+   630→   630→                <div className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-sm transition-shadow duration-300 h-full flex flex-col">
+   631→   631→                  <svg className="w-8 h-8 text-red-700 opacity-30 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+   632→   632→                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+   633→   633→                  </svg>
+   634→   634→                  <p className="mt-4 text-sm text-gray-600 leading-relaxed flex-1">{t.quote}</p>
+   635→   635→                  <div className="mt-5 pt-5 border-t border-gray-100">
+   636→   636→                    <div className="flex items-center justify-between">
+   637→   637→                      <div>
+   638→   638→                        <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+   639→   639→                        <p className="text-xs text-gray-400">{t.role}</p>
+   640→   640→                      </div>
+   641→   641→                      <StarRating count={t.stars} />
+   642→   642→                    </div>
+   643→   643→                  </div>
+   644→   644→                </div>
+   645→   645→              </FadeIn>
+   646→   646→            ))}
+   647→   647→          </div>
+   648→   648→        </div>
+   649→   649→      </section>
+   650→   650→
+   651→   651→      {/* ── FAQ SECTION ───────────────────────────────────────────────────── */}
+   652→   652→      <section id="faq" className="py-20 sm:py-24 bg-gray-50">
+   653→   653→        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+   654→   654→          <FadeIn>
+   655→   655→            <div className="text-center">
+   656→   656→              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+   657→   657→                Frequently Asked Questions
+   658→   658→              </h2>
+   659→   659→              <p className="mt-4 text-gray-500 text-lg">
+   660→   660→                Everything you need to know about investing with TeslaPrimeCapital.
+   661→   661→              </p>
+   662→   662→            </div>
+   663→   663→          </FadeIn>
+   664→   664→
+   665→   665→          <FadeIn delay={0.15}>
+   666→   666→            <div className="mt-12 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+   667→   667→              {FAQ_ITEMS.map((item, idx) => (
+   668→   668→                <FaqItem
+   669→   669→                  key={idx}
+   670→   670→                  question={item.question}
+   671→   671→                  answer={item.answer}
+   672→   672→                  isOpen={openFaq === idx}
+   673→   673→                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+   674→   674→                />
+   675→   675→              ))}
+   676→   676→            </div>
+   677→   677→          </FadeIn>
+   678→   678→        </div>
+   679→   679→      </section>
+   680→   680→
+   681→   681→      {/* ── CTA SECTION ───────────────────────────────────────────────────── */}
+   682→   682→      <section className="bg-red-700">
+   683→   683→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 text-center">
+   684→   684→          <FadeIn>
+   685→   685→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+   686→   686→              Ready to Start Earning?
+   687→   687→            </h2>
+   688→   688→            <p className="mt-5 text-lg text-red-100 max-w-xl mx-auto">
+   689→   689→              Join over 15,000 investors already earning daily returns on TeslaPrimeCapital.
+   690→   690→            </p>
+   691→   691→            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+   692→   692→              <a
+   693→   693→                href="/register"
+   694→   694→                className="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 text-sm font-bold rounded-lg transition-colors"
+   695→   695→              >
+   696→   696→                Get Started Now
+   697→   697→              </a>
+   698→   698→              <a
+   699→   699→                href="#footer"
+   700→   700→                className="text-sm font-medium text-white/80 hover:text-white underline underline-offset-4 transition-colors"
+   701→   701→              >
+   702→   702→                Contact Sales
+   703→   703→              </a>
+   704→   704→            </div>
+   705→   705→          </FadeIn>
+   706→   706→        </div>
+   707→   707→      </section>
+   708→   708→
+   709→   709→      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+   710→   710→      <footer id="footer" className="bg-gray-950 text-gray-400">
+   711→   711→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+   712→   712→          <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+   713→   713→            {/* Brand Column */}
+   714→   714→            <div className="col-span-2 md:col-span-1">
+   715→   715→              <div className="flex items-center gap-2.5">
+   716→   716→                <div className="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center">
+   717→   717→                  <span className="text-white font-bold text-sm">T</span>
+   718→   718→                </div>
+   719→   719→                <div className="flex items-baseline">
+   720→   720→                  <span className="font-bold text-base tracking-tight text-white">TESLA</span>
+   721→   721→                  <span className="text-base font-light tracking-tight text-white">PrimeCapital</span>
+   722→   722→                </div>
+   723→   723→              </div>
+   724→   724→              <p className="mt-4 text-sm leading-relaxed text-gray-500">
+   725→   725→                Premium managed investment platform offering guaranteed daily returns with institutional-grade security.
+   726→   726→              </p>
+   727→   727→              {/* Social Icons */}
+   728→   728→              <div className="mt-6 flex items-center gap-3">
+   729→   729→                {/* X / Twitter */}
+   730→   730→                <a href="#" className="w-9 h-9 rounded-lg bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-colors" aria-label="Twitter">
+   731→   731→                  <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+   732→   732→                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+   733→   733→                  </svg>
+   734→   734→                </a>
+   735→   735→                {/* LinkedIn */}
+   736→   736→                <a href="#" className="w-9 h-9 rounded-lg bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-colors" aria-label="LinkedIn">
+   737→   737→                  <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+   738→   738→                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+   739→   739→                  </svg>
+   740→   740→                </a>
+   741→   741→                {/* Telegram */}
+   742→   742→                <a href="#" className="w-9 h-9 rounded-lg bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-colors" aria-label="Telegram">
+   743→   743→                  <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+   744→   744→                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+   745→   745→                  </svg>
+   746→   746→                </a>
+   747→   747→              </div>
+   748→   748→            </div>
+   749→   749→
+   750→   750→            {/* Link Columns */}
+   751→   751→            {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
+   752→   752→              <div key={heading}>
+   753→   753→                <h4 className="text-sm font-semibold text-white uppercase tracking-wider">{heading}</h4>
+   754→   754→                <ul className="mt-4 space-y-3">
+   755→   755→                  {links.map((link) => (
+   756→   756→                    <li key={link}>
+   757→   757→                      <a
+   758→   758→                        href="#"
+   759→   759→                        className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+   760→   760→                      >
+   761→   761→                        {link}
+   762→   762→                      </a>
+   763→   763→                    </li>
+   764→   764→                  ))}
+   765→   765→                </ul>
+   766→   766→              </div>
+   767→   767→            ))}
+   768→   768→          </div>
+   769→   769→        </div>
+   770→   770→
+   771→   771→        {/* Bottom Bar */}
+   772→   772→        <div className="border-t border-gray-900">
+   773→   773→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+   774→   774→            <p className="text-xs text-gray-600">
+   775→   775→              © 2024 TeslaPrimeCapital. All rights reserved.
+   776→   776→            </p>
+   777→   777→            <div className="flex items-center gap-6">
+   778→   778→              <a href="#" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+   779→   779→                Terms of Service
+   780→   780→              </a>
+   781→   781→              <a href="#" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+   782→   782→                Privacy Policy
+   783→   783→              </a>
+   784→   784→            </div>
+   785→   785→          </div>
+   786→   786→        </div>
+   787→   787→      </footer>
+   788→   788→    </div>
+   789→   789→  );
+   790→   790→}

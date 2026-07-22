@@ -232,6 +232,9 @@ model User {
 
   twoFactorEnabled  Boolean    @default(false) @map("two_factor_enabled")
 
+  verificationCode       String?    @map("verification_code")
+  verificationCodeExpires DateTime?  @map("verification_code_expires")
+
   lastLoginAt       DateTime?  @map("last_login_at")
   lastLoginIp       String?    @map("last_login_ip")
   loginAttemptCount Int        @default(0) @map("login_attempt_count")

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatWidget from '@/components/ChatWidget';
@@ -31,12 +31,27 @@ function getPasswordStrength(pw: string): { level: number; label: string; color:
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [step, setStep] = useState<'form' | 'verify' | 'success'>('form');
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', referralCode: '', terms: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const strength = getPasswordStrength(form.password);
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   const update = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -75,9 +90,11 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        router.push('/login');
+        setRegisteredEmail(form.email);
+        setStep('verify');
+        setResendTimer(60);
       } else {
-        setError(data.error || 'Registration failed. Please try again.');
+        setError(data.error?.message || data.error || 'Registration failed. Please try again.');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -86,8 +103,181 @@ export default function RegisterPage() {
     }
   };
 
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+    setVerifyError('');
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+    if (e.key === 'Enter') {
+      handleVerify();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newOtp = [...otp];
+    pasted.split('').forEach((char, i) => { if (i < 6) newOtp[i] = char; });
+    setOtp(newOtp);
+    const nextEmpty = newOtp.findIndex(v => !v);
+    inputRefs.current[nextEmpty === -1 ? 5 : nextEmpty]?.focus();
+  };
+
+  const handleVerify = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) { setVerifyError('Please enter the complete 6-digit code'); return; }
+    setVerifyLoading(true);
+    setVerifyError('');
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail, code, action: 'verify' }),
+      });
+      const data = await res.json();
+      if (res.ok && data.data?.verified) {
+        setStep('success');
+      } else {
+        setVerifyError(data.error?.message || data.error || 'Invalid code. Please try again.');
+      }
+    } catch {
+      setVerifyError('Network error. Please try again.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    setVerifyError('');
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail, action: 'resend', name: `${form.firstName} ${form.lastName}`.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResendTimer(60);
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      } else {
+        setVerifyError(data.error?.message || 'Failed to resend code');
+      }
+    } catch {
+      setVerifyError('Network error. Please try again.');
+    }
+  };
+
   const inputCls = 'w-full bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors';
 
+  // ── SUCCESS SCREEN ──
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-900/30 border border-green-700/50 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
+          <TeslaLogo className="w-10 h-10 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Account Verified</h1>
+          <p className="text-gray-400 text-sm mb-8">Your email has been successfully verified. You can now sign in to your account.</p>
+          <Link href="/login" className="inline-block w-full bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-3 rounded-lg transition-colors text-sm">
+            Sign In Now
+          </Link>
+        </div>
+        <ChatWidget />
+      </div>
+    );
+  }
+
+  // ── OTP VERIFICATION SCREEN ──
+  if (step === 'verify') {
+    return (
+      <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <TeslaLogo className="w-10 h-10 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white">Verify Your Email</h1>
+            <p className="text-gray-400 text-sm mt-2">
+              We sent a 6-digit code to <span className="text-white font-medium">{registeredEmail}</span>
+            </p>
+          </div>
+
+          <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 sm:p-8">
+            {verifyError && (
+              <div className="bg-red-900/30 border border-red-800/50 text-red-400 text-sm rounded-lg px-4 py-3 mb-5">{verifyError}</div>
+            )}
+
+            {/* Shield icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-[#CC0000]/10 border border-[#CC0000]/30 flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+            </div>
+
+            {/* OTP Inputs */}
+            <div className="flex gap-2.5 justify-center mb-6" onPaste={handleOtpPaste}>
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  className="w-12 h-14 bg-[#1a1a1a] border border-tesla-border rounded-lg text-center text-xl font-bold text-white focus:outline-none focus:border-[#CC0000] transition-colors"
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={handleVerify}
+              disabled={verifyLoading || otp.join('').length < 6}
+              className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+            >
+              {verifyLoading ? 'Verifying...' : 'Verify Email'}
+            </button>
+
+            <div className="text-center mt-5">
+              {resendTimer > 0 ? (
+                <p className="text-gray-500 text-sm">Resend code in <span className="text-white font-medium">{resendTimer}s</span></p>
+              ) : (
+                <button onClick={handleResend} className="text-[#CC0000] hover:underline text-sm font-medium">
+                  Resend Verification Code
+                </button>
+              )}
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-tesla-border text-center">
+              <p className="text-gray-600 text-xs">
+                Wrong email?{' '}
+                <button onClick={() => setStep('form')} className="text-gray-400 hover:text-white hover:underline">Go back</button>
+              </p>
+            </div>
+          </div>
+        </div>
+        <ChatWidget />
+      </div>
+    );
+  }
+
+  // ── REGISTRATION FORM ──
   return (
     <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -122,7 +312,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1.5">Password</label>
-              <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="Min 6 characters" className={inputCls} />
+              <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="Min 8 characters" className={inputCls} />
               {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
               {form.password && (
                 <div className="mt-2">
