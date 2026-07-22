@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import WithdrawalNotification from '@/components/WithdrawalNotification';
 
 const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
 
@@ -45,57 +46,16 @@ const stats = [
   { value: '24/7', label: 'Expert Support' },
 ];
 
-const faqs = [
-  { q: 'How does Tesla generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, and algorithmic trading for consistent daily returns.' },
-  { q: 'Is my initial investment protected?', a: 'Yes, your principal is returned in full at the end of your plan duration. We maintain a capital reserve fund to ensure all investor principals are secured.' },
-  { q: 'How do I withdraw my earnings?', a: 'Navigate to Withdraw in your dashboard, enter the amount and wallet address. Withdrawals are processed within minutes for verified accounts.' },
-  { q: 'What is the minimum investment?', a: 'Our Basic plan starts at just $200, making professional investment management accessible to everyone.' },
+const whyUsItems = [
+  { title: 'Managed Portfolios', desc: 'Expert fund managers allocate your capital across diversified strategies for optimal risk-adjusted returns.' },
+  { title: 'Daily Profit Accrual', desc: 'Transparent, real-time profit tracking and instant crediting to your account every day.' },
+  { title: 'Secure & Regulated', desc: 'Bank-grade encryption, multi-factor authentication, and full regulatory compliance.' },
+  { title: 'Instant Withdrawals', desc: 'Access your funds whenever you need. Processed within minutes, not days.' },
 ];
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
   return (
     <div className="min-h-screen bg-tesla-dark text-white">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <TeslaLogo />
-              <span className="text-white font-bold text-lg tracking-tight">Tesla</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              {['Home', 'Plans', 'About', 'FAQ', 'Contact'].map((link) => (
-                <a key={link} href={`#${link.toLowerCase()}`} className="text-gray-400 hover:text-white text-sm font-medium transition-colors">{link}</a>
-              ))}
-            </div>
-            <div className="hidden md:flex items-center gap-3">
-              <button onClick={() => router.push('/login')} className="text-gray-300 hover:text-white text-sm font-medium px-4 py-2 transition-colors">Sign In</button>
-              <button onClick={() => router.push('/register')} className="bg-[#CC0000] hover:bg-[#a30000] text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">Get Started</button>
-            </div>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-white">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {mobileOpen ? <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></> : <><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></>}
-              </svg>
-            </button>
-          </div>
-        </div>
-        {mobileOpen && (
-          <div className="md:hidden bg-tesla-dark border-t border-tesla-border px-4 py-4 space-y-3">
-            {['Home', 'Plans', 'About', 'FAQ', 'Contact'].map((link) => (
-              <a key={link} href={`#${link.toLowerCase()}`} onClick={() => setMobileOpen(false)} className="block text-gray-300 hover:text-white text-sm font-medium py-2">{link}</a>
-            ))}
-            <div className="pt-3 border-t border-tesla-border flex flex-col gap-2">
-              <button onClick={() => router.push('/login')} className="text-gray-300 hover:text-white text-sm font-medium py-2 text-left">Sign In</button>
-              <button onClick={() => router.push('/register')} className="bg-[#CC0000] hover:bg-[#a30000] text-white text-sm font-semibold px-5 py-2.5 rounded-lg text-center transition-colors">Get Started</button>
-            </div>
-          </div>
-        )}
-      </nav>
-
       {/* Hero */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="bg-gradient-hero">
@@ -113,12 +73,12 @@ export default function LandingPage() {
                 Tesla offers professionally managed investment plans with daily returns up to 1.8%. Backed by real performance data.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={() => router.push('/register')} className="bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300">
+                <Link href="/register" className="bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300 text-center">
                   Start Investing Now
-                </button>
-                <a href="#plans" className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300 text-center">
+                </Link>
+                <Link href="/plans" className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300 text-center">
                   View Plans
-                </a>
+                </Link>
               </div>
             </div>
           </FadeIn>
@@ -170,7 +130,7 @@ export default function LandingPage() {
       </section>
 
       {/* Investment Plans */}
-      <section id="plans" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <FadeIn>
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Investment <span className="text-[#CC0000]">Plans</span></h2>
@@ -201,18 +161,21 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => router.push('/login')} className="w-full bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-2.5 rounded-lg transition-colors text-sm">
+                  <Link href="/register" className="block w-full bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-2.5 rounded-lg transition-colors text-sm text-center">
                     Invest Now
-                  </button>
+                  </Link>
                 </div>
               </div>
             </FadeIn>
           ))}
         </div>
+        <div className="text-center mt-10">
+          <Link href="/plans" className="text-[#CC0000] hover:underline text-sm font-medium">View Full Plan Details &rarr;</Link>
+        </div>
       </section>
 
-      {/* Why Us */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30">
+      {/* Why Choose Us */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-14">
@@ -221,12 +184,7 @@ export default function LandingPage() {
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: 'Managed Portfolios', desc: 'Expert fund managers allocate your capital across diversified strategies for optimal risk-adjusted returns.' },
-              { title: 'Daily Profit Accrual', desc: 'Transparent, real-time profit tracking and instant crediting to your account every day.' },
-              { title: 'Secure & Regulated', desc: 'Bank-grade encryption, multi-factor authentication, and full regulatory compliance.' },
-              { title: 'Instant Withdrawals', desc: 'Access your funds whenever you need. Processed within minutes, not days.' },
-            ].map((item, i) => (
+            {whyUsItems.map((item, i) => (
               <FadeIn key={i} delay={i * 120}>
                 <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 hover:border-[#CC0000]/40 transition-all duration-300">
                   <div className="w-12 h-12 bg-[#CC0000]/10 rounded-xl flex items-center justify-center mb-4">
@@ -238,28 +196,66 @@ export default function LandingPage() {
               </FadeIn>
             ))}
           </div>
+          <div className="text-center mt-10">
+            <Link href="/about" className="text-[#CC0000] hover:underline text-sm font-medium">Learn More About Us &rarr;</Link>
+          </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+      {/* How to Invest Quick Steps */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <FadeIn>
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked <span className="text-[#CC0000]">Questions</span></h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How to <span className="text-[#CC0000]">Get Started</span></h2>
+            <p className="text-gray-400 max-w-xl mx-auto">Start earning daily returns in just three simple steps.</p>
           </div>
         </FadeIn>
-        <div className="space-y-3">
-          {faqs.map((faq, i) => (
-            <FadeIn key={i} delay={i * 80}>
-              <div className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left">
-                  <span className="text-white font-medium text-sm sm:text-base pr-4">{faq.q}</span>
-                  <svg className={`w-5 h-5 text-gray-500 shrink-0 transition-transform duration-300 ${openFaq === i ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </button>
-                {openFaq === i && <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed animate-fade-in">{faq.a}</div>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { step: '01', title: 'Create an Account', desc: 'Sign up with your email, verify your identity, and secure your account with a strong password. The entire process takes under 2 minutes.' },
+            { step: '02', title: 'Choose a Plan', desc: 'Select from our four investment tiers — Basic, Silver, Gold, or Platinum — each offering different daily returns and durations.' },
+            { step: '03', title: 'Earn Daily Returns', desc: 'Watch your capital grow with daily profit accrual. Withdraw your earnings or reinvest them to compound your returns at any time.' },
+          ].map((item, i) => (
+            <FadeIn key={i} delay={i * 150}>
+              <div className="relative bg-tesla-card border border-tesla-border rounded-2xl p-6 hover:border-[#CC0000]/40 transition-all duration-300">
+                <span className="text-[#CC0000]/20 text-6xl font-extrabold absolute top-4 right-4">{item.step}</span>
+                <h3 className="text-white font-bold text-lg mb-2 relative">{item.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed relative">{item.desc}</p>
               </div>
             </FadeIn>
           ))}
+        </div>
+        <div className="text-center mt-10">
+          <Link href="/how-to-invest" className="text-[#CC0000] hover:underline text-sm font-medium">Read the Full Investment Guide &rarr;</Link>
+        </div>
+      </section>
+
+      {/* FAQ Preview */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn>
+            <div className="text-center mb-14">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked <span className="text-[#CC0000]">Questions</span></h2>
+              <p className="text-gray-400">Get answers to the most common questions about our platform.</p>
+            </div>
+          </FadeIn>
+          <div className="space-y-3">
+            {[
+              { q: 'How does Tesla generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, and algorithmic trading for consistent daily returns.' },
+              { q: 'Is my initial investment protected?', a: 'Yes, your principal is returned in full at the end of your plan duration. We maintain a capital reserve fund to ensure all investor principals are secured.' },
+              { q: 'How do I withdraw my earnings?', a: 'Navigate to Withdraw in your dashboard, enter the amount and wallet address. Withdrawals are processed within minutes for verified accounts.' },
+            ].map((faq, i) => (
+              <FadeIn key={i} delay={i * 80}>
+                <div className="bg-tesla-card border border-tesla-border rounded-xl p-5">
+                  <p className="text-white font-medium text-sm sm:text-base mb-2">{faq.q}</p>
+                  <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link href="/faq" className="text-[#CC0000] hover:underline text-sm font-medium">View All FAQ &rarr;</Link>
+          </div>
         </div>
       </section>
 
@@ -269,59 +265,15 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#CC0000]/20 via-tesla-card to-tesla-card border border-[#CC0000]/20 rounded-3xl p-8 sm:p-12 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Start Earning?</h2>
             <p className="text-gray-400 max-w-lg mx-auto mb-8">Join 45,000+ investors earning daily returns. Your financial future starts with a single decision.</p>
-            <button onClick={() => router.push('/register')} className="bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300">
+            <Link href="/register" className="inline-block bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-8 py-3.5 rounded-lg text-base transition-all duration-300">
               Create Free Account
-            </button>
+            </Link>
           </div>
         </FadeIn>
       </section>
 
-      {/* Footer */}
-      <footer id="contact" className="border-t border-tesla-border bg-tesla-card/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <TeslaLogo className="w-6 h-6" />
-                <span className="text-white font-bold text-sm">Tesla</span>
-              </div>
-              <p className="text-gray-500 text-sm leading-relaxed">Professional investment management with daily returns you can count on.</p>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold text-sm mb-4">Company</h4>
-              <ul className="space-y-2">
-                {['About Us', 'Careers', 'Press', 'Blog'].map((l) => (
-                  <li key={l}><a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold text-sm mb-4">Resources</h4>
-              <ul className="space-y-2">
-                {['Documentation', 'Help Center', 'API Status', 'Partners'].map((l) => (
-                  <li key={l}><a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold text-sm mb-4">Legal</h4>
-              <ul className="space-y-2">
-                {['Privacy Policy', 'Terms of Service', 'Risk Disclosure', 'AML Policy'].map((l) => (
-                  <li key={l}><a href="#" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-tesla-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-600 text-sm">&copy; 2026 Tesla. All rights reserved.</p>
-            <div className="flex gap-4">
-              {['Twitter', 'LinkedIn', 'Telegram'].map((s) => (
-                <a key={s} href="#" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">{s}</a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Live Withdrawal Notifications */}
+      <WithdrawalNotification />
     </div>
   );
 }

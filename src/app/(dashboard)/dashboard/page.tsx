@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
 import TeslaLogo from '@/components/TeslaLogo';
 import ChatWidget from '@/components/ChatWidget';
+import WithdrawalNotification from '@/components/WithdrawalNotification';
 
 // Dynamic imports for TradingView widgets (no SSR)
 const TickerTapeWidget = dynamic(() => import('@/components/TickerTapeWidget'), { ssr: false });
@@ -104,67 +105,6 @@ function FeaturesSection() {
             </div>
             <p className="text-white text-xs font-semibold mb-1">{f.title}</p>
             <p className="text-gray-500 text-[10px] leading-relaxed">{f.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Testimonials Section ──
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      name: 'Michael R.',
-      role: 'Premium Investor',
-      avatar: 'MR',
-      rating: 5,
-      text: 'Tesla Prime Capital has been my go-to investment platform for over 2 years. The returns are consistent and the customer support is outstanding. I\'ve earned over $45,000 in profits.',
-      earning: '$45,000+',
-    },
-    {
-      name: 'Sarah J.',
-      role: 'Gold Plan Investor',
-      avatar: 'SJ',
-      rating: 5,
-      text: 'I was skeptical at first, but after my first investment matured, I was convinced. The platform is transparent, secure, and the withdrawal process is smooth.',
-      earning: '$28,500+',
-    },
-    {
-      name: 'David L.',
-      role: 'Platinum Investor',
-      avatar: 'DL',
-      rating: 5,
-      text: 'The referral program is amazing — I\'ve earned passive income just by inviting friends. Combined with my investment returns, this has been life-changing.',
-      earning: '$92,000+',
-    },
-  ];
-  return (
-    <div>
-      <div className="text-center mb-4">
-        <h2 className="text-white font-bold text-sm">What Our Investors Say</h2>
-        <p className="text-gray-500 text-[10px]">Real testimonials from verified investors</p>
-      </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
-        {testimonials.map((t) => (
-          <div key={t.name} className="min-w-[260px] bg-tesla-card border border-tesla-border rounded-xl p-4 flex-shrink-0">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#CC0000] to-[#8B0000] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {t.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-xs font-semibold">{t.name}</p>
-                <p className="text-gray-500 text-[10px]">{t.role}</p>
-              </div>
-              <div className="bg-green-900/30 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{t.earning}</div>
-            </div>
-            {/* Stars */}
-            <div className="flex gap-0.5 mb-2">
-              {Array.from({ length: t.rating }).map((_, i) => (
-                <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-              ))}
-            </div>
-            <p className="text-gray-400 text-[11px] leading-relaxed">&ldquo;{t.text}&rdquo;</p>
           </div>
         ))}
       </div>
@@ -324,8 +264,37 @@ export default function DashboardPage() {
       {/* ── CORE FEATURES ── */}
       <FeaturesSection />
 
-      {/* ── TESTIMONIALS ── */}
-      <TestimonialsSection />
+      {/* ── RECENT ACTIVITY FEED ── */}
+      <div>
+        <div className="text-center mb-4">
+          <h2 className="text-white font-bold text-sm">Recent Activity</h2>
+          <p className="text-gray-500 text-[10px]">Live withdrawals from investors worldwide</p>
+        </div>
+        <div className="space-y-2">
+          {[
+            { name: 'Chen W.', amount: '$55,000', method: 'USDT', time: '2 min ago', country: 'CN' },
+            { name: 'Sarah J.', amount: '$28,500', method: 'BTC', time: '5 min ago', country: 'US' },
+            { name: 'Michael R.', amount: '$42,300', method: 'ETH', time: '8 min ago', country: 'UK' },
+            { name: 'Aisha K.', amount: '$18,750', method: 'USDT', time: '12 min ago', country: 'NG' },
+            { name: 'David L.', amount: '$92,100', method: 'BTC', time: '15 min ago', country: 'DE' },
+            { name: 'Fatima S.', amount: '$73,200', method: 'USDT', time: '31 min ago', country: 'AE' },
+          ].map((item, i) => (
+            <div key={i} className="bg-tesla-card border border-tesla-border rounded-xl p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#CC0000] to-[#8B0000] flex items-center justify-center text-white text-[9px] font-bold shrink-0">
+                {item.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-[11px] font-medium">{item.name} <span className="text-gray-500">received</span></p>
+                <p className="text-gray-600 text-[9px]">{item.time}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-green-400 text-xs font-bold">{item.amount}</p>
+                <p className="text-gray-600 text-[9px]">{item.method} &middot; {item.country}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── NEWS ── */}
       <div>
@@ -405,6 +374,9 @@ export default function DashboardPage() {
       </div>
 
       <ChatWidget />
+
+      {/* ── LIVE WITHDRAWAL NOTIFICATIONS ── */}
+      <WithdrawalNotification />
     </div>
   );
 }
