@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatWidget from '@/components/ChatWidget';
@@ -17,11 +17,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Load saved email
-  useState(() => {
-    const saved = localStorage.getItem('remembered_email');
-    if (saved) { setEmail(saved); setRememberMe(true); }
-  });
+  // Load saved email (client-side only)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('remembered_email');
+      if (saved) { setEmail(saved); setRememberMe(true); }
+    } catch {}
+  }, []);
 
   const doLogin = async () => {
     setError('');
