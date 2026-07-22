@@ -4,14 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatWidget from '@/components/ChatWidget';
-
-function TeslaLogo({ className = 'w-10 h-10' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 342 35" className={className} xmlns="http://www.w3.org/2000/svg">
-      <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0zm238.6 0h-6.8v34.8h6.8V.1zm-52.3 6.8c-5.3 0-9.7 2.1-12.9 6.2V.1h-6.8v34.8h6.8V19.5c0-7.4 3.8-12.4 10.2-12.4 5.8 0 9.3 4.3 9.3 11.2v16.6h6.8V17c0-6.3-1.8-10.1-4.5-12.6-2.6-2.3-5.4-2.5-8.9-2.5zM293 7.7c-9.7 0-17 7.3-17 18.2s7.3 18.2 17 18.2c9.4 0 16.7-7.3 16.7-18.2S302.4 7.7 293 7.7zm0 6.5c5.8 0 10.1 4.8 10.1 11.7 0 6.8-4.3 11.7-10.1 11.7S283 32.7 283 25.9c0-6.9 4.2-11.7 10-11.7zm-89.3-6.5h-7.5l-11.2 22.8V.1h-6.8v34.8h7.5l11.2-22.8v22.8h6.8V7.7z" fill="#CC0000"/>
-    </svg>
-  );
-}
+import TeslaLogo from '@/components/TeslaLogo';
 
 function getPasswordStrength(pw: string): { level: number; label: string; color: string } {
   let score = 0;
@@ -208,7 +201,7 @@ export default function RegisterPage() {
       <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <TeslaLogo className="w-10 h-10 mx-auto mb-4" />
+            <TeslaLogo className="w-20 h-auto mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white">Verify Your Email</h1>
             <p className="text-gray-400 text-sm mt-2">
               We sent a 6-digit code to <span className="text-white font-medium">{registeredEmail}</span>
@@ -282,7 +275,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <TeslaLogo className="w-12 h-12 mx-auto mb-4" />
+          <TeslaLogo className="w-24 h-auto mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Create Account</h1>
           <p className="text-gray-400 text-sm mt-1">Start your investment journey today</p>
         </div>
