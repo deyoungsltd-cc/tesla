@@ -9,11 +9,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json bun.lock ./
-RUN npm install --frozen-lockfile 2>/dev/null || npm install
-
-# Generate Prisma client
 COPY prisma ./prisma/
-RUN npx prisma generate
+RUN npm install --frozen-lockfile 2>/dev/null || npm install
 
 # Build the Next.js app
 FROM base AS builder
