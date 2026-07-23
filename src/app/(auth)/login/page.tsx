@@ -66,15 +66,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12 page-enter relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#CC0000]/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <TeslaLogo className="w-24 h-auto mx-auto mb-5" />
+          <TeslaLogo className="w-20 h-auto mx-auto mb-4 drop-shadow-[0_0_15px_rgba(204,0,0,0.3)]" />
           <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
           <p className="text-gray-400 text-sm mt-1">Sign in to your Tesla Prime Capital account</p>
         </div>
 
-        <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 sm:p-8">
+        <div className="dash-card card-shine noise-overlay !p-6 sm:!p-8 animated-border">
           {error && (
             <div className="bg-red-900/30 border border-red-800/50 text-red-400 text-sm rounded-lg px-4 py-3 mb-5">
               {error}
@@ -137,7 +139,7 @@ export default function LoginPage() {
           <button
             onClick={doLogin}
             disabled={loading}
-            className="w-full mt-6 bg-[#CC0000] hover:bg-[#a30000] disabled:opacity-50 text-white font-semibold py-3.5 rounded-lg transition-colors text-sm"
+            className="w-full mt-6 btn-red pulse-ring magnetic-hover text-sm"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

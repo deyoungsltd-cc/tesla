@@ -1,0 +1,447 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useRef, type ReactNode } from 'react';
+     4→     4→import Link from 'next/link';
+     5→     5→import dynamic from 'next/dynamic';
+     6→     6→import WithdrawalNotification from '@/components/WithdrawalNotification';
+     7→     7→
+     8→     8→const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
+     9→     9→const TickerTapeWidget = dynamic(() => import('@/components/TickerTapeWidget'), { ssr: false });
+    10→    10→
+    11→    11→function TeslaLogo({ className = 'w-8 h-8' }: { className?: string }) {
+    12→    12→  return (
+    13→    13→    <svg viewBox="0 0 342 35" className={className} xmlns="http://www.w3.org/2000/svg">
+    14→    14→      <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0zm238.6 0h-6.8v34.8h6.8V.1zm-52.3 6.8c-5.3 0-9.7 2.1-12.9 6.2V.1h-6.8v34.8h6.8V19.5c0-7.4 3.8-12.4 10.2-12.4 5.8 0 9.3 4.3 9.3 11.2v16.6h6.8V17c0-6.3-1.8-10.1-4.5-12.6-2.6-2.3-5.4-2.5-8.9-2.5zM293 7.7c-9.7 0-17 7.3-17 18.2s7.3 18.2 17 18.2c9.4 0 16.7-7.3 16.7-18.2S302.4 7.7 293 7.7zm0 6.5c5.8 0 10.1 4.8 10.1 11.7 0 6.8-4.3 11.7-10.1 11.7S283 32.7 283 25.9c0-6.9 4.2-11.7 10-11.7zm-89.3-6.5h-7.5l-11.2 22.8V.1h-6.8v34.8h7.5l11.2-22.8v22.8h6.8V7.7z" fill="#CC0000"/>
+    15→    15→    </svg>
+    16→    16→  );
+    17→    17→}
+    18→    18→
+    19→    19→function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+    20→    20→  const ref = useRef<HTMLDivElement>(null);
+    21→    21→  const [visible, setVisible] = useState(false);
+    22→    22→  useEffect(() => {
+    23→    23→    const el = ref.current;
+    24→    24→    if (!el) return;
+    25→    25→    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
+    26→    26→    obs.observe(el);
+    27→    27→    return () => obs.disconnect();
+    28→    28→  }, []);
+    29→    29→  return (
+    30→    30→    <div ref={ref} className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+    31→    31→      {children}
+    32→    32→    </div>
+    33→    33→  );
+    34→    34→}
+    35→    35→
+    36→    36→function AnimatedCounter({ value, suffix = '' }: { value: string; suffix?: string }) {
+    37→    37→  const ref = useRef<HTMLSpanElement>(null);
+    38→    38→  const [hasAnimated, setHasAnimated] = useState(false);
+    39→    39→  useEffect(() => {
+    40→    40→    const el = ref.current;
+    41→    41→    if (!el) return;
+    42→    42→    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting && !hasAnimated) { setHasAnimated(true); } }, { threshold: 0.5 });
+    43→    43→    obs.observe(el);
+    44→    44→    return () => obs.disconnect();
+    45→    45→  }, [hasAnimated]);
+    46→    46→
+    47→    47→  const numericPart = parseFloat(value.replace(/[^0-9.]/g, ''));
+    48→    48→  const prefix = value.match(/^[^0-9]*/)?.[0] || '';
+    49→    49→  const decimalPlaces = value.includes('.') ? value.split('.')[1]?.replace(/[^0-9]/g, '').length || 0 : 0;
+    50→    50→
+    51→    51→  useEffect(() => {
+    52→    52→    if (!hasAnimated || !ref.current) return;
+    53→    53→    const duration = 2000;
+    54→    54→    const startTime = Date.now();
+    55→    55→    const interval = setInterval(() => {
+    56→    56→      const elapsed = Date.now() - startTime;
+    57→    57→      const progress = Math.min(elapsed / duration, 1);
+    58→    58→      const eased = 1 - Math.pow(1 - progress, 3);
+    59→    59→      const current = numericPart * eased;
+    60→    60→      if (ref.current) {
+    61→    61→        let display: string;
+    62→    62→        if (decimalPlaces > 0) {
+    63→    63→          display = current.toFixed(decimalPlaces);
+    64→    64→        } else if (numericPart >= 1000) {
+    65→    65→          display = Math.round(current).toLocaleString();
+    66→    66→        } else {
+    67→    67→          display = Math.round(current).toString();
+    68→    68→        }
+    69→    69→        ref.current.textContent = prefix + display + suffix;
+    70→    70→      }
+    71→    71→      if (progress >= 1) clearInterval(interval);
+    72→    72→    }, 16);
+    73→    73→    return () => clearInterval(interval);
+    74→    74→  }, [hasAnimated, numericPart, prefix, suffix, decimalPlaces]);
+    75→    75→
+    76→    76→  return <span ref={ref} className="count-up">{prefix}0{suffix}</span>;
+    77→    77→}
+    78→    78→
+    79→    79→const plans = [
+    80→    80→  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-700', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://tesla-cdn.purplecar.io/2024/model3/hero/M3_Hero_Desktop_Dynamic.jpg', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
+    81→    81→  { name: 'Silver', badge: 'MOST POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model Y', image: 'https://tesla-cdn.purplecar.io/2024/modely/hero/MY_Hero_Desktop_Dynamic.jpg', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
+    82→    82→  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model S', image: 'https://tesla-cdn.purplecar.io/2024/modelss/hero/MS_Hero_Desktop_Dynamic.jpg', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+    83→    83→  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Model X', image: 'https://tesla-cdn.purplecar.io/2024/modelx/hero/MX_Hero_Desktop_Dynamic.jpg', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
+    84→    84→];
+    85→    85→
+    86→    86→const stats = [
+    87→    87→  { value: '$2.4B', label: 'Assets Under Management', suffix: '+' },
+    88→    88→  { value: '45000', label: 'Active Investors', suffix: '+' },
+    89→    89→  { value: '99.9', label: 'Platform Uptime', suffix: '%' },
+    90→    90→  { value: '24', label: 'Expert Support', suffix: '/7' },
+    91→    91→];
+    92→    92→
+    93→    93→const whyUsItems = [
+    94→    94→  { title: 'Managed Portfolios', desc: 'Expert fund managers allocate your capital across diversified strategies for optimal risk-adjusted returns.', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+    95→    95→  { title: 'Daily Profit Accrual', desc: 'Transparent, real-time profit tracking and instant crediting to your account every single day.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+    96→    96→  { title: 'Secure & Regulated', desc: 'Bank-grade encryption, multi-factor authentication, and full regulatory compliance across all jurisdictions.', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+    97→    97→  { title: 'Instant Withdrawals', desc: 'Access your funds whenever you need. Processed within minutes, not days.', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    98→    98→];
+    99→    99→
+   100→   100→export default function LandingPageClient() {
+   101→   101→  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+   102→   102→
+   103→   103→  return (
+   104→   104→    <div className="min-h-screen bg-tesla-dark text-white page-enter">
+   105→   105→      {/* Scroll Progress */}
+   106→   106→      <ScrollProgress />
+   107→   107→
+   108→   108→      {/* Ticker Tape */}
+   109→   109→      <TickerTapeWidget />
+   110→   110→
+   111→   111→      {/* Hero */}
+   112→   112→      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+   113→   113→        {/* Floating orbs */}
+   114→   114→        <div className="float-orb float-orb-lg" style={{ top: '10%', left: '-5%' }} />
+   115→   115→        <div className="float-orb float-orb-md" style={{ top: '30%', right: '-3%' }} />
+   116→   116→        <div className="float-orb float-orb-sm" style={{ bottom: '10%', left: '40%' }} />
+   117→   117→
+   118→   118→        <div className="bg-gradient-hero relative z-10">
+   119→   119→          <FadeIn>
+   120→   120→            <div className="text-center max-w-3xl mx-auto">
+   121→   121→              <div className="inline-flex items-center gap-2 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-4 py-1.5 mb-6 noise-overlay">
+   122→   122→                <span className="glow-dot" />
+   123→   123→                <span className="text-[#CC0000] text-sm font-medium">Trusted by 45,000+ investors worldwide</span>
+   124→   124→              </div>
+   125→   125→              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6 text-shadow-subtle">
+   126→   126→                Invest Smarter.<br />
+   127→   127→                <span className="gradient-text-animated">Earn Daily Returns.</span>
+   128→   128→              </h1>
+   129→   129→              <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+   130→   130→                Tesla Prime Capital offers professionally managed investment plans with daily returns up to <span className="text-white font-semibold">1.8%</span>. Backed by real performance data and institutional-grade security.
+   131→   131→              </p>
+   132→   132→              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   133→   133→                <Link href="/register" className="btn-red text-base pulse-ring magnetic-hover">
+   134→   134→                  Start Investing Now
+   135→   135→                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+   136→   136→                </Link>
+   137→   137→                <Link href="/plans" className="btn-ghost text-base magnetic-hover">
+   138→   138→                  View Plans
+   139→   139→                </Link>
+   140→   140→              </div>
+   141→   141→            </div>
+   142→   142→          </FadeIn>
+   143→   143→        </div>
+   144→   144→      </section>
+   145→   145→
+   146→   146→      {/* Section Divider */}
+   147→   147→      <div className="section-divider" />
+   148→   148→
+   149→   149→      {/* Stats Bar */}
+   150→   150→      <section className="border-y border-tesla-border bg-tesla-card/50">
+   151→   151→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+   152→   152→          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+   153→   153→            {stats.map((s, i) => (
+   154→   154→              <FadeIn key={i} delay={i * 120}>
+   155→   155→                <div className="text-center group">
+   156→   156→                  <div className="text-3xl sm:text-4xl font-black text-white mb-1">
+   157→   157→                    <AnimatedCounter value={s.value} suffix={s.suffix} />
+   158→   158→                  </div>
+   159→   159→                  <div className="text-gray-500 text-sm font-medium">{s.label}</div>
+   160→   160→                </div>
+   161→   161→              </FadeIn>
+   162→   162→            ))}
+   163→   163→          </div>
+   164→   164→        </div>
+   165→   165→      </section>
+   166→   166→
+   167→   167→      {/* Live TSLA Chart */}
+   168→   168→      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30 relative overflow-hidden">
+   169→   169→        <div className="float-orb float-orb-md" style={{ top: '-10%', right: '10%' }} />
+   170→   170→        <div className="max-w-7xl mx-auto relative z-10">
+   171→   171→          <FadeIn>
+   172→   172→            <div className="text-center mb-10">
+   173→   173→              <div className="inline-flex items-center gap-2 mb-3">
+   174→   174→                <span className="glow-dot" />
+   175→   175→                <span className="text-green-400 text-sm font-semibold tracking-wide">LIVE MARKET DATA</span>
+   176→   176→              </div>
+   177→   177→              <h2 className="text-3xl sm:text-4xl font-bold mb-4 heading-gradient">TSLA Live Chart</h2>
+   178→   178→              <p className="text-gray-400 max-w-xl mx-auto">Real-time Tesla stock performance powered by TradingView. Track the market that drives our investment strategy.</p>
+   179→   179→            </div>
+   180→   180→          </FadeIn>
+   181→   181→          <FadeIn delay={200}>
+   182→   182→            <div className="dash-card card-shine noise-overlay !p-0 overflow-hidden animated-border">
+   183→   183→              <div className="px-5 py-3 border-b border-tesla-border flex items-center justify-between">
+   184→   184→                <div className="flex items-center gap-3">
+   185→   185→                  <span className="text-white font-bold">NASDAQ:TSLA</span>
+   186→   186→                  <span className="text-gray-500 text-sm">Tesla, Inc.</span>
+   187→   187→                </div>
+   188→   188→                <div className="flex items-center gap-2">
+   189→   189→                  <span className="glow-dot" />
+   190→   190→                  <span className="text-xs text-gray-500">Live</span>
+   191→   191→                </div>
+   192→   192→              </div>
+   193→   193→              <TradingViewWidget />
+   194→   194→            </div>
+   195→   195→          </FadeIn>
+   196→   196→        </div>
+   197→   197→      </section>
+   198→   198→
+   199→   199→      {/* Section Divider */}
+   200→   200→      <div className="section-divider" />
+   201→   201→
+   202→   202→      {/* Investment Plans */}
+   203→   203→      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative overflow-hidden">
+   204→   204→        <div className="float-orb float-orb-lg" style={{ bottom: '-15%', left: '-10%' }} />
+   205→   205→        <div className="relative z-10">
+   206→   206→          <FadeIn>
+   207→   207→            <div className="text-center mb-14">
+   208→   208→              <h2 className="text-3xl sm:text-4xl font-bold mb-4 heading-gradient">Investment Plans</h2>
+   209→   209→              <p className="text-gray-400 max-w-xl mx-auto">Choose the plan that fits your investment goals. Higher tiers unlock higher daily returns and premium perks.</p>
+   210→   210→            </div>
+   211→   211→          </FadeIn>
+   212→   212→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   213→   213→            {plans.map((plan, i) => (
+   214→   214→              <FadeIn key={i} delay={i * 120}>
+   215→   215→                <div className={`plan-card glass-card card-shine group tilt-card ${plan.popular ? 'ring-1 ring-[#CC0000]/40' : ''}`}>
+   216→   216→                  <div className="relative h-48 overflow-hidden">
+   217→   217→                    <img src={plan.image} alt={`${plan.model} - ${plan.name} Plan`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+   218→   218→                    <div className="absolute inset-0 bg-gradient-to-t from-[#1e1e1e] via-[#1e1e1e]/50 to-transparent" />
+   219→   219→                    <span className={`absolute top-3 left-3 ${plan.badgeBg} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>{plan.badge}</span>
+   220→   220→                    {plan.popular && (
+   221→   221→                      <div className="absolute -top-px left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#CC0000] to-transparent" />
+   222→   222→                    )}
+   223→   223→                  </div>
+   224→   224→                  <div className="p-5 bg-gradient-card-glow">
+   225→   225→                    <div className="flex items-center justify-between mb-3">
+   226→   226→                      <div>
+   227→   227→                        <h3 className="text-lg font-bold text-white">{plan.name}</h3>
+   228→   228→                        <span className="text-gray-500 text-xs font-medium">{plan.model}</span>
+   229→   229→                      </div>
+   230→   230→                      <div className="text-right">
+   231→   231→                        <span className="text-[#CC0000] text-2xl font-black">{plan.daily}</span>
+   232→   232→                        <span className="text-gray-500 text-xs block">daily</span>
+   233→   233→                      </div>
+   234→   234→                    </div>
+   235→   235→                    <div className="flex items-center justify-between text-sm mb-4 py-2.5 px-3 bg-black/30 rounded-lg border border-white/5">
+   236→   236→                      <span className="text-gray-400">{plan.min} — {plan.max}</span>
+   237→   237→                      <span className="text-gray-500">{plan.duration}</span>
+   238→   238→                    </div>
+   239→   239→                    <ul className="space-y-2.5 mb-5">
+   240→   240→                      {plan.features.map((f, j) => (
+   241→   241→                        <li key={j} className="flex items-center gap-2 text-gray-300 text-sm">
+   242→   242→                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+   243→   243→                          {f}
+   244→   244→                        </li>
+   245→   245→                      ))}
+   246→   246→                    </ul>
+   247→   247→                    <Link href="/register" className={`block w-full text-center text-sm font-semibold py-3 rounded-xl transition-all duration-300 ${plan.popular ? 'btn-red pulse-ring' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-[#CC0000]/30'}`}>
+   248→   248→                      Invest Now
+   249→   249→                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline ml-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+   250→   250→                    </Link>
+   251→   251→                  </div>
+   252→   252→                </div>
+   253→   253→              </FadeIn>
+   254→   254→            ))}
+   255→   255→          </div>
+   256→   256→          <div className="text-center mt-12">
+   257→   257→            <Link href="/plans" className="inline-flex items-center gap-2 text-[#CC0000] hover:text-[#ff1a1a] text-sm font-semibold transition-colors">
+   258→   258→              View Full Plan Details with ROI Calculator
+   259→   259→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+   260→   260→            </Link>
+   261→   261→          </div>
+   262→   262→        </div>
+   263→   263→      </section>
+   264→   264→
+   265→   265→      {/* Section Divider */}
+   266→   266→      <div className="section-divider" />
+   267→   267→
+   268→   268→      {/* Why Choose Us */}
+   269→   269→      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30 relative overflow-hidden">
+   270→   270→        <div className="float-orb float-orb-sm" style={{ top: '20%', left: '5%' }} />
+   271→   271→        <div className="float-orb float-orb-md" style={{ bottom: '10%', right: '5%' }} />
+   272→   272→        <div className="max-w-7xl mx-auto relative z-10">
+   273→   273→          <FadeIn>
+   274→   274→            <div className="text-center mb-14">
+   275→   275→              <h2 className="text-3xl sm:text-4xl font-bold mb-4 heading-gradient">Why Choose Us</h2>
+   276→   276→              <p className="text-gray-400 max-w-xl mx-auto">Cutting-edge technology with institutional-grade fund management. Every feature designed for your success.</p>
+   277→   277→            </div>
+   278→   278→          </FadeIn>
+   279→   279→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   280→   280→            {whyUsItems.map((item, i) => (
+   281→   281→              <FadeIn key={i} delay={i * 120}>
+   282→   282→                <div className="dash-card card-shine noise-overlay p-6 group tilt-card relative overflow-hidden">
+   283→   283→                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#CC0000]/0 to-transparent group-hover:via-[#CC0000]/60 transition-all duration-500" />
+   284→   284→                  <div className="w-14 h-14 bg-gradient-to-br from-[#CC0000]/20 to-[#CC0000]/5 rounded-2xl flex items-center justify-center mb-5 group-hover:shadow-[0_0_25px_rgba(204,0,0,0.3)] transition-all duration-500 group-hover:scale-110">
+   285→   285→                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
+   286→   286→                  </div>
+   287→   287→                  <h3 className="text-white font-semibold text-lg mb-2">{item.title}</h3>
+   288→   288→                  <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+   289→   289→                </div>
+   290→   290→              </FadeIn>
+   291→   291→            ))}
+   292→   292→          </div>
+   293→   293→          <div className="text-center mt-12">
+   294→   294→            <Link href="/about" className="inline-flex items-center gap-2 text-[#CC0000] hover:text-[#ff1a1a] text-sm font-semibold transition-colors">
+   295→   295→              Learn More About Our Company
+   296→   296→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+   297→   297→            </Link>
+   298→   298→          </div>
+   299→   299→        </div>
+   300→   300→      </section>
+   301→   301→
+   302→   302→      {/* Section Divider */}
+   303→   303→      <div className="section-divider" />
+   304→   304→
+   305→   305→      {/* How to Invest Quick Steps */}
+   306→   306→      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative overflow-hidden">
+   307→   307→        <div className="float-orb float-orb-lg" style={{ top: '-10%', right: '-10%' }} />
+   308→   308→        <div className="relative z-10">
+   309→   309→          <FadeIn>
+   310→   310→            <div className="text-center mb-14">
+   311→   311→              <h2 className="text-3xl sm:text-4xl font-bold mb-4 heading-gradient">How to Get Started</h2>
+   312→   312→              <p className="text-gray-400 max-w-xl mx-auto">Start earning daily returns in just three simple steps. No complicated setup, no hidden requirements.</p>
+   313→   313→            </div>
+   314→   314→          </FadeIn>
+   315→   315→          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+   316→   316→            {/* Connecting line (desktop) */}
+   317→   317→            <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-[1px] bg-gradient-to-r from-[#CC0000]/20 via-[#CC0000]/40 to-[#CC0000]/20" />
+   318→   318→
+   319→   319→            {[
+   320→   320→              { step: '01', title: 'Create an Account', desc: 'Sign up with your email, verify your identity with a 6-digit code, and secure your account with a strong password. The entire process takes under 2 minutes.', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a3 3 0 100-6 3 3 0 000 6z' },
+   321→   321→              { step: '02', title: 'Choose a Plan', desc: 'Select from our four investment tiers — Basic, Silver, Gold, or Platinum — each offering different daily returns, durations, and premium perks.', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+   322→   322→              { step: '03', title: 'Earn Daily Returns', desc: 'Watch your capital grow with daily profit accrual. Withdraw your earnings or reinvest them to compound your returns at any time.', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+   323→   323→            ].map((item, i) => (
+   324→   324→              <FadeIn key={i} delay={i * 150}>
+   325→   325→                <div className="dash-card card-shine p-6 relative group">
+   326→   326→                  <span className="text-[#CC0000]/8 text-7xl font-black absolute top-2 right-4 group-hover:text-[#CC0000]/15 transition-colors select-none">{item.step}</span>
+   327→   327→                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#CC0000]/20 to-transparent flex items-center justify-center mb-4 relative">
+   328→   328→                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
+   329→   329→                  </div>
+   330→   330→                  <h3 className="text-white font-bold text-lg mb-2 relative">{item.title}</h3>
+   331→   331→                  <p className="text-gray-400 text-sm leading-relaxed relative">{item.desc}</p>
+   332→   332→                </div>
+   333→   333→              </FadeIn>
+   334→   334→            ))}
+   335→   335→          </div>
+   336→   336→          <div className="text-center mt-12">
+   337→   337→            <Link href="/how-to-invest" className="inline-flex items-center gap-2 text-[#CC0000] hover:text-[#ff1a1a] text-sm font-semibold transition-colors">
+   338→   338→              Read the Full Investment Guide
+   339→   339→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+   340→   340→            </Link>
+   341→   341→          </div>
+   342→   342→        </div>
+   343→   343→      </section>
+   344→   344→
+   345→   345→      {/* Section Divider */}
+   346→   346→      <div className="section-divider" />
+   347→   347→
+   348→   348→      {/* FAQ Preview — Accordion */}
+   349→   349→      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-tesla-card/30">
+   350→   350→        <div className="max-w-3xl mx-auto">
+   351→   351→          <FadeIn>
+   352→   352→            <div className="text-center mb-14">
+   353→   353→              <h2 className="text-3xl sm:text-4xl font-bold mb-4 heading-gradient">Frequently Asked Questions</h2>
+   354→   354→              <p className="text-gray-400">Get answers to the most common questions about our platform.</p>
+   355→   355→            </div>
+   356→   356→          </FadeIn>
+   357→   357→          <div className="space-y-3">
+   358→   358→            {[
+   359→   359→              { q: 'How does Tesla Prime Capital generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, algorithmic trading, and sustainable energy investments. By spreading risk across multiple asset classes and employing AI-driven analytics, we maintain consistent daily returns while minimizing exposure to any single market downturn.' },
+   360→   360→              { q: 'Is my initial investment protected?', a: 'Yes, your principal is returned in full at the end of your plan duration. We maintain a capital reserve fund specifically designated to ensure all investor principals are secured regardless of market conditions. This reserve is regularly audited and maintained at a ratio that exceeds our total outstanding investment obligations.' },
+   361→   361→              { q: 'How do I withdraw my earnings?', a: 'Navigate to Withdraw in your dashboard, enter the amount and your receiving wallet address. For verified accounts, withdrawals are processed within minutes. Gold and Platinum plan investors enjoy zero withdrawal fees. All applicable fees are clearly displayed before you confirm any transaction.' },
+   362→   362→              { q: 'What deposit methods are accepted?', a: 'We accept Cryptocurrency (Bitcoin, Ethereum, USDT, and other major tokens) and Gift Cards (Amazon, Apple, Google Play, Steam, and other major retailers). Crypto deposits are confirmed within minutes after blockchain confirmation. Gift card deposits are verified and credited within 1-3 business hours.' },
+   363→   363→              { q: 'How does the referral program work?', a: 'Share your unique referral link with friends. When they register and make their first deposit, you earn up to 10% commission on their deposit amount. There is no limit to the number of people you can refer, and commissions are credited instantly to your available balance.' },
+   364→   364→            ].map((faq, i) => (
+   365→   365→              <FadeIn key={i} delay={i * 80}>
+   366→   366→                <div
+   367→   367→                  className={`bg-tesla-card border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${faqOpen === i ? 'border-[#CC0000]/30 shadow-[0_0_20px_rgba(204,0,0,0.08)]' : 'border-tesla-border hover:border-white/10'}`}
+   368→   368→                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+   369→   369→                >
+   370→   370→                  <div className="flex items-center justify-between p-5">
+   371→   371→                    <p className="text-white font-medium text-sm sm:text-base pr-4">{faq.q}</p>
+   372→   372→                    <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${faqOpen === i ? 'bg-[#CC0000]/20 rotate-180' : 'bg-white/5'}`}>
+   373→   373→                      <svg className="w-4 h-4 text-gray-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+   374→   374→                    </div>
+   375→   375→                  </div>
+   376→   376→                  <div className={`overflow-hidden transition-all duration-500 ease-in-out ${faqOpen === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+   377→   377→                    <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed border-t border-tesla-border pt-4">{faq.a}</div>
+   378→   378→                  </div>
+   379→   379→                </div>
+   380→   380→              </FadeIn>
+   381→   381→            ))}
+   382→   382→          </div>
+   383→   383→          <div className="text-center mt-12">
+   384→   384→            <Link href="/faq" className="inline-flex items-center gap-2 text-[#CC0000] hover:text-[#ff1a1a] text-sm font-semibold transition-colors">
+   385→   385→              View All 15+ FAQ Questions
+   386→   386→              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+   387→   387→            </Link>
+   388→   388→          </div>
+   389→   389→        </div>
+   390→   390→      </section>
+   391→   391→
+   392→   392→      {/* Section Divider */}
+   393→   393→      <div className="section-divider" />
+   394→   394→
+   395→   395→      {/* CTA */}
+   396→   396→      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+   397→   397→        <div className="float-orb float-orb-lg" style={{ top: '-20%', left: '30%' }} />
+   398→   398→        <FadeIn>
+   399→   399→          <div className="max-w-4xl mx-auto relative z-10">
+   400→   400→            <div className="animated-border">
+   401→   401→              <div className="relative overflow-hidden rounded-2xl">
+   402→   402→                <div className="absolute inset-0 bg-gradient-to-br from-[#CC0000]/15 via-[#CC0000]/5 to-transparent rounded-2xl" />
+   403→   403→                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#CC0000]/8 rounded-full blur-[120px]" />
+   404→   404→                <div className="relative bg-tesla-dark/90 rounded-2xl p-8 sm:p-14 text-center noise-overlay">
+   405→   405→                  <div className="inline-flex items-center gap-2 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-4 py-1.5 mb-6">
+   406→   406→                    <span className="glow-dot" />
+   407→   407→                    <span className="text-[#CC0000] text-sm font-medium">Join 45,000+ investors today</span>
+   408→   408→                  </div>
+   409→   409→                  <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative">Ready to Start <span className="gradient-text-animated">Earning</span>?</h2>
+   410→   410→                  <p className="text-gray-400 max-w-lg mx-auto mb-8 relative">Your financial future starts with a single decision. Create a free account and start earning daily returns in under 5 minutes.</p>
+   411→   411→                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   412→   412→                    <Link href="/register" className="btn-red text-base pulse-ring magnetic-hover">
+   413→   413→                      Create Free Account
+   414→   414→                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+   415→   415→                    </Link>
+   416→   416→                    <Link href="/contact" className="btn-ghost text-base magnetic-hover">
+   417→   417→                      Talk to Our Team
+   418→   418→                    </Link>
+   419→   419→                  </div>
+   420→   420→                </div>
+   421→   421→              </div>
+   422→   422→            </div>
+   423→   423→          </div>
+   424→   424→        </FadeIn>
+   425→   425→      </section>
+   426→   426→
+   427→   427→      {/* Live Withdrawal Notifications */}
+   428→   428→      <WithdrawalNotification />
+   429→   429→    </div>
+   430→   430→  );
+   431→   431→}
+   432→   432→
+   433→   433→/* Scroll Progress Bar Component */
+   434→   434→function ScrollProgress() {
+   435→   435→  const [progress, setProgress] = useState(0);
+   436→   436→  useEffect(() => {
+   437→   437→    const handleScroll = () => {
+   438→   438→      const scrollTop = window.scrollY;
+   439→   439→      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+   440→   440→      setProgress(docHeight > 0 ? (scrollTop / docHeight) * 100 : 0);
+   441→   441→    };
+   442→   442→    window.addEventListener('scroll', handleScroll, { passive: true });
+   443→   443→    return () => window.removeEventListener('scroll', handleScroll);
+   444→   444→  }, []);
+   445→   445→  return <div className="scroll-progress" style={{ width: `${progress}%` }} />;
+   446→   446→}
+   447→   447→
