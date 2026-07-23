@@ -1,22 +1,23 @@
 # =============================================
-# TESLA PLATFORM - Dockerfile for Coolify
+# TESLA PLATFORM - Dockerfile
 # =============================================
 FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json bun.lock ./
 COPY prisma ./prisma/
-RUN npm install --frozen-lockfile 2>/dev/null || npm install
+RUN npm install --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 
 # Build the Next.js app
 FROM base AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./
 COPY . .
 
 RUN npx prisma generate
