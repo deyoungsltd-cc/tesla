@@ -29,27 +29,27 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen bg-tesla-dark text-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-tesla-dark/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <TeslaLogo />
-              <span className="text-white font-bold text-lg tracking-tight">Tesla</span>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <TeslaLogo className="w-8 h-8 group-hover:drop-shadow-[0_0_8px_rgba(204,0,0,0.5)] transition-all duration-300" />
+              <span className="text-white font-bold text-lg tracking-tight">Tesla<span className="text-[#CC0000]">Prime</span></span>
             </Link>
             <div className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors ${pathname === link.href ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`text-sm font-medium transition-all duration-300 ${pathname === link.href ? 'text-white drop-shadow-[0_0_8px_rgba(204,0,0,0.4)]' : 'text-gray-400 hover:text-white hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.2)]'}`}
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/login" className="text-gray-300 hover:text-white text-sm font-medium px-4 py-2 transition-colors">Sign In</Link>
-              <Link href="/register" className="bg-[#CC0000] hover:bg-[#a30000] text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors">Get Started</Link>
+              <Link href="/login" className="text-gray-300 hover:text-white text-sm font-medium px-4 py-2 transition-all duration-300 hover:bg-white/5 rounded-lg">Sign In</Link>
+              <Link href="/register" className="btn-red text-sm py-2 px-5">Get Started</Link>
             </div>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-white">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -59,13 +59,13 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
         {mobileOpen && (
-          <div className="md:hidden bg-tesla-dark border-t border-tesla-border px-4 py-4 space-y-3">
+          <div className="md:hidden bg-tesla-dark/95 backdrop-blur-xl border-t border-white/5 px-4 py-4 space-y-3">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={`block text-sm font-medium py-2 ${pathname === link.href ? 'text-white' : 'text-gray-300 hover:text-white'}`}>{link.label}</Link>
+              <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={`block text-sm font-medium py-2 px-3 rounded-lg transition-all ${pathname === link.href ? 'text-white bg-white/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}>{link.label}</Link>
             ))}
-            <div className="pt-3 border-t border-tesla-border flex flex-col gap-2">
-              <Link href="/login" onClick={() => setMobileOpen(false)} className="text-gray-300 hover:text-white text-sm font-medium py-2">Sign In</Link>
-              <Link href="/register" onClick={() => setMobileOpen(false)} className="bg-[#CC0000] hover:bg-[#a30000] text-white text-sm font-semibold px-5 py-2.5 rounded-lg text-center">Get Started</Link>
+            <div className="pt-3 border-t border-white/5 flex flex-col gap-2">
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="text-gray-300 hover:text-white text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-white/5 text-center">Sign In</Link>
+              <Link href="/register" onClick={() => setMobileOpen(false)} className="btn-red text-center text-sm">Get Started</Link>
             </div>
           </div>
         )}

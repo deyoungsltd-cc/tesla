@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // Fallback for NEXT_PUBLIC_APP_URL on Railway (build-time env)
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://teslapremiumfinance.com',
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'hswppapu',
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
