@@ -16,6 +16,7 @@ const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Plans', href: '/plans' },
   { label: 'How to Invest', href: '/how-to-invest' },
+  { label: 'Blog', href: '/blog' },
   { label: 'About', href: '/about' },
   { label: 'FAQ', href: '/faq' },
   { label: 'Contact', href: '/contact' },

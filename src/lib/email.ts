@@ -1,12 +1,21 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@teslaprimecapital.com';
+
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error('RESEND_API_KEY not configured');
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
 
 export async function sendVerificationEmail(to: string, otp: string, name?: string) {
   const greeting = name ? `Hi ${name}` : 'Hello';
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: `Tesla Prime Capital <${FROM_EMAIL}>`,
     to,
     subject: 'Your Verification Code - Tesla Prime Capital',
@@ -33,7 +42,7 @@ export async function sendVerificationEmail(to: string, otp: string, name?: stri
 
 export async function sendWelcomeEmail(to: string, name?: string) {
   const greeting = name ? `Dear ${name}` : 'Welcome';
-  return resend.emails.send({
+  return getResend().emails.send({
     from: `Tesla Prime Capital <${FROM_EMAIL}>`,
     to,
     subject: 'Welcome to Tesla Prime Capital',
