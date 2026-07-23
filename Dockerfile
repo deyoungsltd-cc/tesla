@@ -4,26 +4,26 @@
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 
-# Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
-COPY package.json bun.lock ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma/
-RUN npm install --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 
-# Build the Next.js app
+# Install without triggering postinstall, then generate prisma separately
+RUN npm install --ignore-scripts && npx prisma generate
+
 FROM base AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./
+COPY --from=deps /app/.prisma ./.prisma
+COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY . .
 
-RUN npx prisma generate
 RUN npm run build
 
-# Production image
 FROM base AS runner
 WORKDIR /app
 
