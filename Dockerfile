@@ -10,7 +10,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
-# Install without triggering postinstall, then generate prisma separately
 RUN npm install --ignore-scripts && npx prisma generate
 
 FROM base AS builder
@@ -18,10 +17,9 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./
-COPY --from=deps /app/.prisma ./.prisma
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY . .
 
+RUN npx prisma generate
 RUN npm run build
 
 FROM base AS runner
