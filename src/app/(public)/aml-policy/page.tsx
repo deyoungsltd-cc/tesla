@@ -1,59 +1,66 @@
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = { title: 'AML Policy | Tesla Prime Capital', description: 'Tesla Prime Capital anti-money laundering policy and procedures.' };
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+
+function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={`transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+const sections = [
+  { title: '1. Policy Statement', content: ['Tesla Prime Capital is firmly committed to the prevention of money laundering, terrorist financing, and other financial crimes. We maintain comprehensive Anti-Money Laundering (AML) and Counter-Terrorist Financing (CTF) policies and procedures that comply with international standards and applicable regulations in all jurisdictions where we operate.'] },
+  { title: '2. Customer Due Diligence (CDD)', content: ['We perform Customer Due Diligence on all users who create an account on our platform. This includes verifying the identity of each user through our KYC process, which requires submission of valid government-issued identification and proof of address. We verify the authenticity of submitted documents using automated verification systems and manual review when necessary.'] },
+  { title: '3. Enhanced Due Diligence (EDD)', content: ['Enhanced Due Diligence is applied to users or transactions that present higher risk factors, including large transactions exceeding specified thresholds, users from jurisdictions identified as having higher money laundering risks, transactions involving complex ownership structures, and patterns of activity inconsistent with stated investment profiles.'] },
+  { title: '4. Transaction Monitoring', content: ['We employ sophisticated transaction monitoring systems that analyze all deposits, withdrawals, and investment activities on our platform in real-time. Our monitoring systems are calibrated to identify patterns and behaviors consistent with money laundering, terrorist financing, sanctions evasion, or other financial crimes.'] },
+  { title: '5. Reporting Obligations', content: ['Tesla Prime Capital complies with all applicable reporting obligations, including the filing of Suspicious Activity Reports (SARs) with relevant financial intelligence units and regulatory authorities. We cooperate fully with law enforcement agencies and regulatory bodies in all investigations.'] },
+  { title: '6. Sanctions Compliance', content: ['We maintain strict compliance with international sanctions programs, including those administered by the United Nations, the U.S. Office of Foreign Assets Control (OFAC), the European Union, and other relevant sanctions authorities. We do not provide services to individuals or entities that are subject to sanctions.'] },
+  { title: '7. Record Keeping', content: ['We maintain comprehensive records of all user identification documents, transaction histories, due diligence activities, and compliance reports for a minimum of five years in accordance with applicable regulatory requirements.'] },
+  { title: '8. Staff Training', content: ['All Tesla Prime Capital employees receive comprehensive AML/CTF training upon hiring and participate in ongoing training programs. Our compliance team receives advanced training in suspicious activity identification, investigation procedures, and regulatory reporting requirements.'] },
+  { title: '9. Contact', content: ['For questions about our AML policies or to report suspicious activity, please contact our compliance department at compliance@teslaprimecapital.com.'] },
+];
 
 export default function AMLPolicyPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h1 className="text-3xl sm:text-4xl font-bold mb-4">Anti-Money Laundering <span className="text-[#CC0000]">Policy</span></h1>
-      <p className="text-gray-500 text-sm mb-12">Last updated: July 2026</p>
-
-      <div className="space-y-8 text-gray-400 text-sm leading-relaxed">
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">1. Policy Statement</h2>
-          <p className="mb-3">Tesla Prime Capital is firmly committed to the prevention of money laundering, terrorist financing, and other financial crimes. We maintain comprehensive Anti-Money Laundering (AML) and Counter-Terrorist Financing (CTF) policies and procedures that comply with international standards and applicable regulations in all jurisdictions where we operate. Our AML program is designed to detect, prevent, and report suspicious activities while ensuring that legitimate investors can use our platform with minimal friction.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">2. Customer Due Diligence (CDD)</h2>
-          <p className="mb-3">We perform Customer Due Diligence on all users who create an account on our platform. This includes verifying the identity of each user through our KYC (Know Your Customer) process, which requires submission of valid government-issued identification and proof of address. We verify the authenticity of submitted documents using automated verification systems and manual review when necessary. For users who trigger enhanced due diligence criteria, we may request additional information or documentation to establish the source of funds and the nature of their investment activity.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">3. Enhanced Due Diligence (EDD)</h2>
-          <p className="mb-3">Enhanced Due Diligence is applied to users or transactions that present higher risk factors. These include large transactions exceeding specified thresholds, users from jurisdictions identified as having higher money laundering risks, transactions involving complex ownership structures, patterns of activity that are inconsistent with the user&apos;s stated investment profile, and any other circumstances that warrant additional scrutiny. Enhanced due diligence may involve requesting additional documentation, conducting more thorough background checks, and obtaining senior management approval for account maintenance.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">4. Transaction Monitoring</h2>
-          <p className="mb-3">We employ sophisticated transaction monitoring systems that analyze all deposits, withdrawals, and investment activities on our platform in real-time. Our monitoring systems are calibrated to identify patterns and behaviors consistent with money laundering, terrorist financing, sanctions evasion, or other financial crimes. When suspicious patterns are detected, the system generates alerts that are reviewed by our trained compliance officers who determine whether further investigation or a suspicious activity report is warranted.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">5. Reporting Obligations</h2>
-          <p className="mb-3">Tesla Prime Capital complies with all applicable reporting obligations, including the filing of Suspicious Activity Reports (SARs) with relevant financial intelligence units and regulatory authorities. We cooperate fully with law enforcement agencies and regulatory bodies in investigations related to money laundering, terrorist financing, or other financial crimes. It is our policy to report suspicious transactions regardless of the amount involved and to maintain the confidentiality of such reports as required by law.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">6. Sanctions Compliance</h2>
-          <p className="mb-3">We maintain strict compliance with international sanctions programs, including those administered by the United Nations, the U.S. Office of Foreign Assets Control (OFAC), the European Union, and other relevant sanctions authorities. Our systems automatically screen all users, transactions, and counterparties against current sanctions lists. We do not provide services to individuals or entities that are subject to sanctions, and any accounts or transactions found to involve sanctioned parties are immediately frozen and reported to the appropriate authorities.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">7. Record Keeping</h2>
-          <p>We maintain comprehensive records of all user identification documents, transaction histories, due diligence activities, and compliance reports for a minimum of five years after the termination of the business relationship or the completion of the transaction, in accordance with applicable regulatory requirements. These records are securely stored and accessible only to authorized compliance personnel and regulatory authorities upon request.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">8. Staff Training</h2>
-          <p>All Tesla Prime Capital employees receive comprehensive AML/CTF training upon hiring and participate in ongoing training programs to stay current with evolving regulations, typologies, and best practices. Our compliance team receives advanced training in suspicious activity identification, investigation procedures, and regulatory reporting requirements. Training completion is tracked and mandatory for all staff members.</p>
-        </section>
-
-        <section>
-          <h2 className="text-white font-bold text-lg mb-3">9. Contact</h2>
-          <p>For questions about our AML policies or to report suspicious activity, please contact our compliance department at compliance@teslaprimecapital.com.</p>
-        </section>
-      </div>
+    <div className="min-h-screen bg-tesla-dark text-white page-enter">
+      <section className="relative pt-36 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto overflow-hidden">
+        <div className="float-orb float-orb-md" style={{ top: '5%', right: '-8%' }} />
+        <FadeIn>
+          <div className="text-center relative z-10">
+            <div className="inline-flex items-center gap-2 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-4 py-1.5 mb-6">
+              <span className="text-[#CC0000] text-sm font-medium">Legal Document</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-black mb-4 heading-gradient">Anti-Money Laundering Policy</h1>
+            <p className="text-gray-500 text-sm">Last updated: July 2026</p>
+          </div>
+        </FadeIn>
+      </section>
+      <hr className="section-divider" />
+      <section className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto pb-24">
+        <div className="space-y-8">
+          {sections.map((section, i) => (
+            <FadeIn key={i} delay={i * 60}>
+              <div className="dash-card card-shine noise-overlay p-8">
+                <h2 className="text-white font-bold text-xl mb-4">{section.title}</h2>
+                <div className="text-gray-400 text-sm leading-relaxed space-y-3">
+                  {section.content.map((p, j) => <p key={j}>{p}</p>)}
+                </div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

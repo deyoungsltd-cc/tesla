@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 
-function FadeIn({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -72,71 +72,87 @@ export default function FAQPage() {
   };
 
   return (
-    <div className="page-enter max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative overflow-hidden">
+    <div className="page-enter relative overflow-hidden">
       {/* Floating Orbs */}
-      <div className="absolute top-10 -left-40 w-80 h-80 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-32 -right-40 w-96 h-96 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-0 w-64 h-64 bg-[#CC0000]/3 rounded-full blur-3xl pointer-events-none" />
+      <div className="float-orb float-orb-md" style={{ top: '5%', left: '-12%' }} />
+      <div className="float-orb float-orb-lg" style={{ bottom: '20%', right: '-10%' }} />
+      <div className="float-orb float-orb-sm" style={{ top: '40%', right: '5%' }} />
 
-      <FadeIn>
-        <div className="text-center mb-14">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked <span className="text-[#CC0000]">Questions</span></h1>
-          <p className="text-gray-400 max-w-xl mx-auto">Everything you need to know about investing with Tesla Prime Capital. Can&apos;t find what you&apos;re looking for? <Link href="/contact" className="text-[#CC0000] hover:underline">Contact our support team</Link>.</p>
-        </div>
-      </FadeIn>
+      {/* Hero Section */}
+      <section className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <FadeIn>
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 heading-gradient">Frequently Asked Questions</h1>
+            <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">Everything you need to know about investing with Tesla Prime Capital. Can&apos;t find what you&apos;re looking for? <Link href="/contact" className="text-[#CC0000] hover:underline">Contact our support team</Link>.</p>
+          </div>
+        </FadeIn>
+      </section>
 
-      <div className="space-y-12">
-        {faqs.map((section, sIdx) => (
-          <FadeIn key={section.category} delay={sIdx * 80}>
-            <div>
-              <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
-                <span className="w-1 h-6 bg-[#CC0000] rounded-full" />
-                {section.category}
-              </h2>
-              <div className="space-y-3">
-                {section.items.map((item) => {
-                  const key = `${section.category}-${item.q}`;
-                  const isOpen = openKey === key;
-                  return (
-                    <div
-                      key={key}
-                      className={`bg-tesla-card border rounded-xl overflow-hidden transition-all duration-300 ${isOpen ? 'border-[#CC0000]/50 shadow-[0_0_20px_rgba(204,0,0,0.1)]' : 'border-tesla-border'}`}
-                    >
-                      <button
-                        onClick={() => toggleItem(key)}
-                        className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-tesla-card-light transition-colors text-left"
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="section-divider" />
+      </div>
+
+      {/* FAQ Sections */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <div className="space-y-16">
+          {faqs.map((section, sIdx) => (
+            <FadeIn key={section.category} delay={sIdx * 80}>
+              <div>
+                <h2 className="text-white font-bold text-xl mb-6 flex items-center gap-3">
+                  <span className="w-1.5 h-7 bg-[#CC0000] rounded-full" />
+                  {section.category}
+                </h2>
+                <div className="space-y-3">
+                  {section.items.map((item) => {
+                    const key = `${section.category}-${item.q}`;
+                    const isOpen = openKey === key;
+                    return (
+                      <div
+                        key={key}
+                        className={`dash-card bg-tesla-card border rounded-2xl overflow-hidden transition-all duration-500 ${isOpen ? 'border-[#CC0000]/50 shadow-[0_0_30px_rgba(204,0,0,0.1)]' : 'border-tesla-border hover:border-tesla-border/80'}`}
                       >
-                        <span className="text-white font-medium text-sm sm:text-base pr-4">{item.q}</span>
-                        <svg
-                          className={`w-5 h-5 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#CC0000]' : 'text-gray-500'}`}
-                          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        <button
+                          onClick={() => toggleItem(key)}
+                          className="w-full flex items-center justify-between p-5 sm:p-6 cursor-pointer hover:bg-white/[0.02] transition-colors text-left"
                         >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </button>
-                      <div className={`overflow-hidden transition-all duration-400 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed border-t border-tesla-border pt-4">{item.a}</div>
+                          <span className="text-white font-medium text-sm sm:text-base pr-4">{item.q}</span>
+                          <svg
+                            className={`w-5 h-5 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#CC0000]' : 'text-gray-500'}`}
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
+                        <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-gray-400 text-sm leading-relaxed border-t border-tesla-border pt-5">{item.a}</div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </FadeIn>
-        ))}
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="section-divider" />
       </div>
 
       {/* CTA */}
-      <FadeIn delay={400}>
-        <div className="mt-16 text-center bg-tesla-card border border-tesla-border rounded-2xl p-8 animated-border">
-          <h3 className="text-white font-bold text-lg mb-2">Still have questions?</h3>
-          <p className="text-gray-400 text-sm mb-6">Our support team is available 24/7 to help you with any inquiries.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/contact" className="bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors text-center">Contact Support</Link>
-            <Link href="/register" className="border border-tesla-border hover:border-gray-500 text-gray-300 hover:text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors text-center">Create Account</Link>
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <FadeIn delay={400}>
+          <div className="text-center dash-card card-shine noise-overlay bg-tesla-card border border-tesla-border rounded-2xl p-10 animated-border">
+            <h3 className="text-white font-bold text-xl mb-3">Still have questions?</h3>
+            <p className="text-gray-400 text-sm mb-8 max-w-md mx-auto">Our support team is available 24/7 to help you with any inquiries.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/contact" className="btn-red pulse-ring magnetic-hover px-8 py-3 rounded-xl text-sm text-center">Contact Support</Link>
+              <Link href="/register" className="btn-ghost px-8 py-3 rounded-xl text-sm text-center">Create Account</Link>
+            </div>
           </div>
-        </div>
-      </FadeIn>
+        </FadeIn>
+      </section>
     </div>
   );
 }

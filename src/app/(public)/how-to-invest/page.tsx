@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 
-function FadeIn({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -55,63 +55,80 @@ const steps = [
 
 export default function HowToInvestPage() {
   return (
-    <div className="page-enter max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative overflow-hidden">
+    <div className="page-enter relative overflow-hidden">
       {/* Floating Orbs */}
-      <div className="absolute top-10 -right-40 w-80 h-80 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-20 -left-40 w-96 h-96 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="float-orb float-orb-md" style={{ top: '5%', right: '-8%' }} />
+      <div className="float-orb float-orb-lg" style={{ bottom: '15%', left: '-10%' }} />
+      <div className="float-orb float-orb-sm" style={{ top: '60%', right: '-5%' }} />
 
-      <FadeIn>
-        <div className="text-center mb-14">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">How to <span className="text-[#CC0000]">Invest</span></h1>
-          <p className="text-gray-400 max-w-xl mx-auto">A complete guide to getting started with Tesla Prime Capital and maximizing your investment returns.</p>
-        </div>
-      </FadeIn>
+      {/* Hero Section */}
+      <section className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <FadeIn>
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 heading-gradient">How to Invest</h1>
+            <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">A complete guide to getting started with Tesla Prime Capital and maximizing your investment returns.</p>
+          </div>
+        </FadeIn>
+      </section>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="section-divider" />
+      </div>
 
       {/* Steps with vertical timeline */}
-      <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute left-[23px] sm:left-[27px] top-0 bottom-0 w-px bg-gradient-to-b from-[#CC0000]/50 via-[#CC0000]/20 to-transparent" />
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-[23px] sm:left-[27px] top-0 bottom-0 w-px bg-gradient-to-b from-[#CC0000]/50 via-[#CC0000]/20 to-transparent" />
 
-        <div className="space-y-12">
-          {steps.map((item, idx) => (
-            <FadeIn key={item.step} delay={idx * 100}>
-              <div className="relative dash-card card-shine noise-overlay bg-tesla-card border border-tesla-border rounded-2xl p-6 sm:p-8">
-                <div className="flex items-start gap-4 sm:gap-6">
-                  <div className="relative shrink-0 z-10 w-12 h-12 bg-[#CC0000] rounded-xl flex items-center justify-center text-white font-bold text-lg pulse-ring">
-                    {item.step}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-white font-bold text-lg sm:text-xl mb-3">{item.title}</h2>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-4">{item.desc}</p>
-                    <div className="bg-[#1a1a1a] border border-tesla-border rounded-xl p-4">
-                      <p className="text-[#CC0000] text-xs font-bold uppercase tracking-wider mb-2">Pro Tips</p>
-                      <ul className="space-y-1.5">
-                        {item.tips.map((tip, i) => (
-                          <li key={i} className="flex items-start gap-2 text-gray-500 text-xs leading-relaxed">
-                            <svg className="shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                            {tip}
-                          </li>
-                        ))}
-                      </ul>
+          <div className="space-y-14">
+            {steps.map((item, idx) => (
+              <FadeIn key={item.step} delay={idx * 100}>
+                <div className="relative dash-card card-shine noise-overlay bg-tesla-card border border-tesla-border rounded-2xl p-7 sm:p-9 hover:border-[#CC0000]/20 transition-all duration-500">
+                  <div className="flex items-start gap-5 sm:gap-7">
+                    <div className="relative shrink-0 z-10 w-12 h-12 bg-[#CC0000] rounded-xl flex items-center justify-center text-white font-bold text-lg pulse-ring shadow-[0_0_20px_rgba(204,0,0,0.3)]">
+                      {item.step}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-white font-bold text-lg sm:text-xl mb-3">{item.title}</h2>
+                      <p className="text-gray-400 text-sm leading-relaxed mb-5">{item.desc}</p>
+                      <div className="bg-[#1a1a1a] border border-tesla-border rounded-xl p-5">
+                        <p className="text-[#CC0000] text-xs font-bold uppercase tracking-wider mb-3">Pro Tips</p>
+                        <ul className="space-y-2">
+                          {item.tips.map((tip, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-gray-500 text-xs leading-relaxed">
+                              <svg className="shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </FadeIn>
-          ))}
+              </FadeIn>
+            ))}
+          </div>
         </div>
+      </section>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="section-divider" />
       </div>
 
-      <div className="section-divider my-10" />
-
       {/* Referral Bonus Section */}
-      <FadeIn delay={500}>
-        <div className="mt-4 bg-gradient-to-br from-[#CC0000]/10 via-tesla-card to-tesla-card border border-[#CC0000]/20 rounded-2xl p-8">
-          <h2 className="text-white font-bold text-lg mb-3">Boost Your Earnings with Referrals</h2>
-          <p className="text-gray-400 text-sm leading-relaxed mb-4">After setting up your investment, share your unique referral link with friends and family. When they register and deposit, you earn up to 10% commission on their first deposit. There is no limit to the number of people you can refer.</p>
-          <Link href="/plans" className="inline-block bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">View Investment Plans</Link>
-        </div>
-      </FadeIn>
+      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto relative z-10">
+        <FadeIn delay={500}>
+          <div className="dash-card card-shine noise-overlay bg-gradient-to-br from-[#CC0000]/10 via-tesla-card to-tesla-card border border-[#CC0000]/20 rounded-2xl p-10 animated-border">
+            <h2 className="text-white font-bold text-xl mb-3">Boost Your Earnings with Referrals</h2>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">After setting up your investment, share your unique referral link with friends and family. When they register and deposit, you earn up to 10% commission on their first deposit. There is no limit to the number of people you can refer.</p>
+            <Link href="/plans" className="btn-red pulse-ring magnetic-hover inline-flex items-center gap-2">
+              View Investment Plans
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </Link>
+          </div>
+        </FadeIn>
+      </section>
     </div>
   );
 }
