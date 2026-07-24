@@ -179,7 +179,7 @@ export default function AdminPage() {
     setDialogAttachment('');
   };
 
-  const executeDepositAction = async () {
+  const executeDepositAction = async () => {
     if (!messageDialog) return;
     setActionLoading(messageDialog.id);
     setMessageDialog(null);
@@ -246,6 +246,24 @@ export default function AdminPage() {
   };
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchTerm); };
+
+  const saveElonUrl = async (url?: string) => {
+    const inputUrl = url || (document.getElementById('elonUrlInput') as HTMLInputElement)?.value.trim();
+    if (!inputUrl) return;
+    setSettingsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ elonPhotoUrl: inputUrl }),
+      });
+      const data = await res.json();
+      if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo URL updated!'); }
+      else showToast(data.error?.message || 'Update failed');
+    } catch { showToast('Update failed'); }
+    setSettingsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-tesla-dark text-white flex">
@@ -712,9 +730,9 @@ export default function AdminPage() {
                       />
                     </label>
                     <input type="text" placeholder="Or paste CEO photo URL..." className="bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors" defaultValue={elonPhotoUrl || ''} id="elonUrlInput"
-                      onKeyDown={async (e) => { if (e.key === 'Enter') { const url = (e.target as HTMLInputElement).value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ elonPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); } }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { saveElonUrl((e.target as HTMLInputElement).value.trim()); } }}
                     />
-                    <button onClick={async () => { const url = (document.getElementById('elonUrlInput') as HTMLInputElement)?.value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ elonPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); }} className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start">Save URL</button>
+                    <button onClick={() => saveElonUrl()} className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start">Save URL</button>
                   </div>
                 </div>
               </div>
