@@ -99,18 +99,30 @@ export async function POST(request: NextRequest) {
     });
 
     // Send verification email with OTP stored in DB
-    try {
-      const otp = generateOtpCode();
+    const hasEmailService = !!process.env.RESEND_API_KEY;
+    if (hasEmailService) {
+      try {
+        const otp = generateOtpCode();
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            verificationCode: otp,
+            verificationCodeExpires: new Date(Date.now() + 10 * 60 * 1000),
+          },
+        });
+        await sendVerificationEmail(email, otp, `${firstName || ''} ${lastName || ''}`.trim() || undefined);
+      } catch (emailErr) {
+        console.error('Failed to send verification email (non-blocking):', emailErr);
+      }
+    } else {
+      // Auto-verify when email service is not configured
       await db.user.update({
         where: { id: user.id },
         data: {
-          verificationCode: otp,
-          verificationCodeExpires: new Date(Date.now() + 10 * 60 * 1000),
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
         },
       });
-      await sendVerificationEmail(email, otp, `${firstName || ''} ${lastName || ''}`.trim() || undefined);
-    } catch (emailErr) {
-      console.error('Failed to send verification email (non-blocking):', emailErr);
     }
 
     return apiResponse(

@@ -796,3 +796,16 @@ model GiftCard {
   @@index([status], map: "idx_giftcard_status")
   @@map("gift_cards")
 }
+
+// ──────────────────────────────────────────────
+// SITE SETTINGS
+// ──────────────────────────────────────────────
+
+model SiteSettings {
+  id           String   @id @default("main")
+  aboutPhotoUrl String? @map("about_photo_url")
+  aboutPhotoUpdatedAt DateTime? @map("about_photo_updated_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}

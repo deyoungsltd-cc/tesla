@@ -21,6 +21,7 @@ const navItems = [
   { label: 'Withdrawals', key: 'withdrawals', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></svg> },
   { label: 'KYC Review', key: 'kyc', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4h18v16H3z" /><path d="M3 10h18" /></svg> },
   { label: 'Market', key: 'market', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
+  { label: 'Settings', key: 'settings', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> },
 ];
 
 function apiCall(url: string, options?: RequestInit) {
@@ -68,6 +69,8 @@ export default function AdminPage() {
   const [depositFilter, setDepositFilter] = useState('');
   const [withdrawalFilter, setWithdrawalFilter] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+  const [settingsPhotoUrl, setSettingsPhotoUrl] = useState<string | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -119,6 +122,11 @@ export default function AdminPage() {
     if (activeTab === 'deposits') fetchDeposits(depositFilter);
     if (activeTab === 'withdrawals') fetchWithdrawals(withdrawalFilter);
     if (activeTab === 'kyc') fetchKyc();
+    if (activeTab === 'settings') {
+      apiCall('/api/admin/settings').then(r => r.json()).then(d => {
+        if (d.success && d.data?.aboutPhotoUrl) setSettingsPhotoUrl(d.data.aboutPhotoUrl);
+      });
+    }
   }, [activeTab, depositFilter, withdrawalFilter]);
 
   const updateUserStatus = async (userId: string, status: string) => {
@@ -515,6 +523,138 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <TradingViewWidget />
+              </div>
+            </div>
+          )}
+
+          {/* SETTINGS TAB */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <h3 className="text-white font-semibold text-sm">Site Settings</h3>
+
+              {/* About Page Photo */}
+              <div className="bg-tesla-card border border-tesla-border rounded-xl p-6">
+                <h4 className="text-white font-medium mb-1">About Page Photo</h4>
+                <p className="text-gray-500 text-xs mb-5">Upload a photo for the About page leadership section. Max 5MB. JPG, PNG, WebP.</p>
+
+                <div className="flex flex-col sm:flex-row items-start gap-6">
+                  <div className="w-40 h-40 rounded-2xl overflow-hidden border border-tesla-border bg-[#1a1a1a] shrink-0">
+                    {settingsPhotoUrl ? (
+                      <img src={settingsPhotoUrl} alt="Current About Photo" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No photo set</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-3 flex-1">
+                    <label className="cursor-pointer inline-flex items-center gap-2 bg-[#CC0000] hover:bg-[#ff1a1a] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      {settingsLoading ? 'Uploading...' : 'Upload Photo'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) {
+                            showToast('File too large. Max 5MB.');
+                            return;
+                          }
+                          setSettingsLoading(true);
+                          try {
+                            const fd = new FormData();
+                            fd.append('photo', file);
+                            const token = localStorage.getItem('token');
+                            const res = await fetch('/api/admin/settings', {
+                              method: 'POST',
+                              headers: token ? { Authorization: `Bearer ${token}` } : {},
+                              body: fd,
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              setSettingsPhotoUrl(data.data.aboutPhotoUrl);
+                              showToast('Photo updated successfully!');
+                            } else {
+                              showToast(data.error?.message || 'Upload failed');
+                            }
+                          } catch {
+                            showToast('Upload failed');
+                          }
+                          setSettingsLoading(false);
+                        }}
+                      />
+                    </label>
+
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="text"
+                        placeholder="Or paste an image URL..."
+                        className="bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
+                        defaultValue={settingsPhotoUrl || ''}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            const url = (e.target as HTMLInputElement).value.trim();
+                            if (!url) return;
+                            setSettingsLoading(true);
+                            try {
+                              const token = localStorage.getItem('token');
+                              const res = await fetch('/api/admin/settings', {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                },
+                                body: JSON.stringify({ aboutPhotoUrl: url }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setSettingsPhotoUrl(data.data.aboutPhotoUrl);
+                                showToast('Photo URL updated!');
+                              } else {
+                                showToast(data.error?.message || 'Update failed');
+                              }
+                            } catch {
+                              showToast('Update failed');
+                            }
+                            setSettingsLoading(false);
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={async () => {
+                          const input = (document.querySelector('input[placeholder="Or paste an image URL..."]') as HTMLInputElement);
+                          const url = input?.value.trim();
+                          if (!url) return;
+                          setSettingsLoading(true);
+                          try {
+                            const token = localStorage.getItem('token');
+                            const res = await fetch('/api/admin/settings', {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                              },
+                              body: JSON.stringify({ aboutPhotoUrl: url }),
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              setSettingsPhotoUrl(data.data.aboutPhotoUrl);
+                              showToast('Photo URL updated!');
+                            } else {
+                              showToast(data.error?.message || 'Update failed');
+                            }
+                          } catch {
+                            showToast('Update failed');
+                          }
+                          setSettingsLoading(false);
+                        }}
+                        className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start"
+                      >
+                        Save URL
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
