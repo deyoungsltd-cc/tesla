@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, readFile, unlink } from 'fs/promises';
-import { join } from 'path';
 import { db } from '@/lib/db';
 import { getSessionUser, apiResponse, apiError } from '@/lib/api-helpers';
 
-// GET site settings (public - used by About page)
+// GET site settings (public - used by landing page and about page)
 export async function GET() {
   try {
     let settings = await db.siteSettings.findUnique({ where: { id: 'main' } });
@@ -23,7 +21,7 @@ export async function GET() {
   }
 }
 
-// POST - Upload about page photo (admin only)
+// POST - Upload photo and store as base64 data URL in database (persists across deploys)
 export async function POST(request: NextRequest) {
   // Auth check
   const user = await getSessionUser(request);
@@ -49,34 +47,25 @@ export async function POST(request: NextRequest) {
       return apiError('Invalid file type. Use JPG, PNG, WebP, or GIF.', 'INVALID_FILE_TYPE', 400);
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return apiError('File too large. Maximum 5MB.', 'FILE_TOO_LARGE', 400);
+    // Validate file size (max 2MB for DB storage)
+    if (file.size > 2 * 1024 * 1024) {
+      return apiError('File too large. Maximum 2MB for upload. Use the URL field for larger images.', 'FILE_TOO_LARGE', 400);
     }
 
-    // Save file to /tmp/uploads (writable in Docker)
+    // Convert file to base64 data URL — stored in DB so it persists across deploys
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${target}-photo-${Date.now()}.${ext}`;
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    const uploadDir = '/tmp/uploads';
-    await mkdir(uploadDir, { recursive: true });
-
-    const filepath = join(uploadDir, filename);
-    await writeFile(filepath, buffer);
-
-    // Serve via /api/admin/settings/photo/<filename>
-    const photoUrl = `/api/admin/settings/photo/${filename}`;
-
-    // Update database
+    // Update database with data URL
     let settings = await db.siteSettings.findUnique({ where: { id: 'main' } });
     const updateData: any = {};
     if (target === 'elon') {
-      updateData.elonPhotoUrl = photoUrl;
+      updateData.elonPhotoUrl = dataUrl;
       updateData.elonPhotoUpdatedAt = new Date();
     } else {
-      updateData.aboutPhotoUrl = photoUrl;
+      updateData.aboutPhotoUrl = dataUrl;
       updateData.aboutPhotoUpdatedAt = new Date();
     }
     if (!settings) {
@@ -90,7 +79,7 @@ export async function POST(request: NextRequest) {
       aboutPhotoUpdatedAt: settings.aboutPhotoUpdatedAt,
       elonPhotoUrl: settings.elonPhotoUrl,
       elonPhotoUpdatedAt: settings.elonPhotoUpdatedAt,
-      message: 'Photo uploaded successfully',
+      message: 'Photo uploaded and saved successfully',
     });
   } catch (error) {
     console.error('Upload photo error:', error);
@@ -98,7 +87,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update about photo URL (admin only - for external URL)
+// PUT - Update photo URL (admin only - for external URLs or data URLs)
 export async function PUT(request: NextRequest) {
   // Auth check
   const user = await getSessionUser(request);
