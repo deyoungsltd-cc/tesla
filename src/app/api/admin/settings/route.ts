@@ -1,8 +1,8 @@
-import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
-import { writeFile, mkdir } from 'fs/promises';
+import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, mkdir, readFile, unlink } from 'fs/promises';
 import { join } from 'path';
-import { apiResponse, apiError } from '@/lib/api-helpers';
+import { db } from '@/lib/db';
+import { getSessionUser, apiResponse, apiError } from '@/lib/api-helpers';
 
 // GET site settings (public - used by About page)
 export async function GET() {
@@ -23,6 +23,15 @@ export async function GET() {
 
 // POST - Upload about page photo (admin only)
 export async function POST(request: NextRequest) {
+  // Auth check
+  const user = await getSessionUser(request);
+  if (!user) {
+    return apiError('Authentication required', 'UNAUTHORIZED', 401);
+  }
+  if (!user.adminRecord) {
+    return apiError('Admin access required', 'FORBIDDEN', 403);
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('photo') as File | null;
@@ -42,21 +51,22 @@ export async function POST(request: NextRequest) {
       return apiError('File too large. Maximum 5MB.', 'FILE_TOO_LARGE', 400);
     }
 
-    // Save file
+    // Save file to /tmp/uploads (writable in Docker)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const ext = file.name.split('.').pop() || 'jpg';
     const filename = `about-photo-${Date.now()}.${ext}`;
 
-    // Ensure uploads directory exists
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    const uploadDir = '/tmp/uploads';
     await mkdir(uploadDir, { recursive: true });
 
     const filepath = join(uploadDir, filename);
     await writeFile(filepath, buffer);
 
+    // Serve via /api/admin/settings/photo/<filename>
+    const photoUrl = `/api/admin/settings/photo/${filename}`;
+
     // Update database
-    const photoUrl = `/uploads/${filename}`;
     let settings = await db.siteSettings.findUnique({ where: { id: 'main' } });
     if (!settings) {
       settings = await db.siteSettings.create({
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest) {
     return apiResponse({
       aboutPhotoUrl: settings.aboutPhotoUrl,
       aboutPhotoUpdatedAt: settings.aboutPhotoUpdatedAt,
-      message: 'Photo updated successfully',
+      message: 'Photo uploaded successfully',
     });
   } catch (error) {
     console.error('Upload photo error:', error);
@@ -82,6 +92,15 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update about photo URL (admin only - for external URL)
 export async function PUT(request: NextRequest) {
+  // Auth check
+  const user = await getSessionUser(request);
+  if (!user) {
+    return apiError('Authentication required', 'UNAUTHORIZED', 401);
+  }
+  if (!user.adminRecord) {
+    return apiError('Admin access required', 'FORBIDDEN', 403);
+  }
+
   try {
     const body = await request.json();
     const { aboutPhotoUrl } = body;

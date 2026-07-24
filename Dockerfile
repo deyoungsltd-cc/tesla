@@ -30,17 +30,31 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# Copy standalone output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/prisma/seed.cjs ./prisma/seed.cjs
-COPY --from=builder /app/start.sh ./start.sh
 
+# Copy public assets
+COPY --from=builder /app/public ./public
+
+# Copy prisma for runtime db push
+COPY --from=builder /app/prisma ./prisma
+
+# Copy generated Prisma client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy seed file
+COPY --from=builder /app/prisma/seed.cjs ./prisma/seed.cjs
+
+# Copy node_modules for prisma CLI and bcryptjs at runtime
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy startup script
+COPY --from=builder /app/start.sh ./start.sh
 RUN chmod +x /app/start.sh
-RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
+
+# Ensure uploads dir exists and is writable
+RUN mkdir -p /tmp/uploads && chown -R nextjs:nodejs /tmp/uploads /app/public
 
 USER nextjs
 
