@@ -78,10 +78,10 @@ function ScrollProgress() {
 
 /* ── Data ── */
 const plans = [
-  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&q=85&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
-  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&q=85&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
-  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1535392432937-a27c36ec07b5?w=800&q=85&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
-  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Cybertruck', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&q=85&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
+  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=1200&q=80&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
+  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=1200&q=80&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
+  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1535392432937-a27c36ec07b5?w=1200&q=80&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Cybertruck', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1200&q=80&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
 ];
 
 const stats = [
@@ -131,13 +131,28 @@ export default function LandingPageClient() {
       <TickerTapeWidget />
 
       {/* ══════════ HERO ══════════ */}
-      <section className="relative pt-36 pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+      <section className="relative pt-44 pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
         <div className="float-orb float-orb-lg" style={{ top: '5%', left: '-8%' }} />
         <div className="float-orb float-orb-md" style={{ top: '25%', right: '-5%' }} />
         <div className="float-orb float-orb-sm" style={{ bottom: '15%', left: '35%' }} />
         <div className="bg-gradient-hero relative z-10">
           <FadeIn>
             <div className="text-center max-w-4xl mx-auto">
+              {/* Elon Musk Portrait */}
+              <div className="mb-10 flex justify-center">
+                <div className="relative group">
+                  <img
+                    src="https://images.unsplash.com/photo-1583485007828-81ec6e063b71?w=200&q=80&fit=crop&crop=face"
+                    alt="Tesla CEO"
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#CC0000]/40 shadow-[0_0_40px_rgba(204,0,0,0.2)] group-hover:border-[#CC0000]/70 group-hover:shadow-[0_0_60px_rgba(204,0,0,0.3)] transition-all duration-500"
+                    loading="eager"
+                  />
+                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#CC0000] flex items-center justify-center shadow-lg">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="white"><path d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362h-.004.004zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46V1.463z"/></svg>
+                  </div>
+                </div>
+              </div>
+
               <div className="inline-flex items-center gap-3 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-6 py-2.5 mb-8">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 <span className="text-[#CC0000] text-sm font-medium tracking-wide">Trusted by 45,000+ investors worldwide</span>
@@ -161,6 +176,25 @@ export default function LandingPageClient() {
             </div>
           </FadeIn>
         </div>
+
+        {/* Board Members / Team Photo */}
+        <FadeIn delay={300}>
+          <div className="mt-16 relative max-w-5xl mx-auto">
+            <div className="relative rounded-2xl overflow-hidden border border-tesla-border shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+              <img
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80&fit=crop"
+                alt="Tesla Prime Capital Leadership Team"
+                className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-tesla-dark via-tesla-dark/60 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                <p className="text-white font-bold text-sm sm:text-base mb-1">Our Leadership</p>
+                <p className="text-gray-400 text-xs sm:text-sm">A team of seasoned investment professionals driving your financial success</p>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
       </section>
 
       <hr className="section-divider" />

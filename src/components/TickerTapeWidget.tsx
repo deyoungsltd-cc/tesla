@@ -43,8 +43,8 @@ export default function TickerTapeWidget({ symbols, colorTheme = 'dark', height 
   }, []);
 
   return (
-    <div className="w-full overflow-hidden rounded-lg">
-      <div ref={containerRef} className="tradingview-widget-container" />
+    <div className="fixed top-[83px] left-0 right-0 z-[45] w-full" style={{ height: `${height}px` }}>
+      <div ref={containerRef} className="tradingview-widget-container w-full" />
     </div>
   );
 }
