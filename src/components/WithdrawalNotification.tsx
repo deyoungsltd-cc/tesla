@@ -86,7 +86,7 @@ export default function WithdrawalNotification() {
 
   return (
     <div
-      className={`fixed bottom-24 md:bottom-6 left-4 z-[999] max-w-xs transition-all duration-400 ${
+      className={`fixed bottom-24 md:bottom-6 left-4 md:left-6 z-[999] max-w-xs transition-all duration-400 ${
         isExiting
           ? 'opacity-0 translate-y-4 translate-x-0'
           : 'opacity-100 translate-y-0 translate-x-0'

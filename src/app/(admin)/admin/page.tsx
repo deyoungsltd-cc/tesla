@@ -75,7 +75,11 @@ export default function AdminPage() {
   const [withdrawalFilter, setWithdrawalFilter] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const [settingsPhotoUrl, setSettingsPhotoUrl] = useState<string | null>(null);
+  const [elonPhotoUrl, setElonPhotoUrl] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
+  const [messageDialog, setMessageDialog] = useState<{type: 'kyc'|'deposit'|'withdrawal', id: string, action: 'approve'|'reject', defaultReason?: string} | null>(null);
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogAttachment, setDialogAttachment] = useState('');
 
   // Auth check
   useEffect(() => {
@@ -147,7 +151,10 @@ export default function AdminPage() {
     if (activeTab === 'kyc') fetchKyc();
     if (activeTab === 'settings') {
       apiCall('/api/admin/settings').then(r => r.json()).then(d => {
-        if (d.success && d.data?.aboutPhotoUrl) setSettingsPhotoUrl(d.data.aboutPhotoUrl);
+        if (d.success) {
+          if (d.data?.aboutPhotoUrl) setSettingsPhotoUrl(d.data.aboutPhotoUrl);
+          if (d.data?.elonPhotoUrl) setElonPhotoUrl(d.data.elonPhotoUrl);
+        }
       });
     }
   }, [activeTab, depositFilter, withdrawalFilter]);
@@ -167,16 +174,28 @@ export default function AdminPage() {
   };
 
   const handleDepositAction = async (depositId: string, action: 'approve' | 'reject') => {
-    setActionLoading(depositId);
-    const reason = action === 'reject' ? prompt('Rejection reason:') : undefined;
-    if (action === 'reject' && reason === null) { setActionLoading(null); return; }
+    setMessageDialog({ type: 'deposit', id: depositId, action });
+    setDialogMessage('');
+    setDialogAttachment('');
+  };
+
+  const executeDepositAction = async () {
+    if (!messageDialog) return;
+    setActionLoading(messageDialog.id);
+    setMessageDialog(null);
     try {
       const res = await apiCall('/api/admin/deposits', {
         method: 'PATCH',
-        body: JSON.stringify({ depositId, action, reason }),
+        body: JSON.stringify({
+          depositId: messageDialog.id,
+          action: messageDialog.action,
+          reason: messageDialog.action === 'reject' ? dialogMessage || undefined : undefined,
+          adminMessage: dialogMessage || undefined,
+          attachmentUrl: dialogAttachment || undefined,
+        }),
       });
       const data = await res.json();
-      if (data.success) { showToast(`Deposit ${action}d`); fetchDeposits(depositFilter); fetchStats(); }
+      if (data.success) { showToast(`Deposit ${messageDialog.action}d, email sent to user`); fetchDeposits(depositFilter); fetchStats(); }
       else showToast(data.error?.message || 'Action failed');
     } catch { showToast('Network error'); }
     setActionLoading(null);
@@ -199,16 +218,28 @@ export default function AdminPage() {
   };
 
   const handleKycAction = async (verificationId: string, action: 'approve' | 'reject') => {
-    setActionLoading(verificationId);
-    const reason = action === 'reject' ? prompt('Rejection reason:') : undefined;
-    if (action === 'reject' && reason === null) { setActionLoading(null); return; }
+    setMessageDialog({ type: 'kyc', id: verificationId, action });
+    setDialogMessage('');
+    setDialogAttachment('');
+  };
+
+  const executeKycAction = async () => {
+    if (!messageDialog) return;
+    setActionLoading(messageDialog.id);
+    setMessageDialog(null);
     try {
       const res = await apiCall('/api/admin/kyc', {
         method: 'PATCH',
-        body: JSON.stringify({ verificationId, action, reason }),
+        body: JSON.stringify({
+          verificationId: messageDialog.id,
+          action: messageDialog.action,
+          reason: messageDialog.action === 'reject' ? dialogMessage || undefined : undefined,
+          adminMessage: dialogMessage || undefined,
+          attachmentUrl: dialogAttachment || undefined,
+        }),
       });
       const data = await res.json();
-      if (data.success) { showToast(`KYC ${action}d`); fetchKyc(); fetchStats(); }
+      if (data.success) { showToast(`KYC ${messageDialog.action}d, email sent to user`); fetchKyc(); fetchStats(); }
       else showToast(data.error?.message || 'Action failed');
     } catch { showToast('Network error'); }
     setActionLoading(null);
@@ -221,6 +252,43 @@ export default function AdminPage() {
       {toast && (
         <div className="fixed top-4 right-4 z-[100] bg-tesla-card border border-tesla-border rounded-lg px-4 py-3 text-sm shadow-xl animate-fade-in">
           {toast}
+        </div>
+      )}
+
+      {/* Message Dialog Modal */}
+      {messageDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setMessageDialog(null)}>
+          <div className="bg-[#1a1a1a] border border-tesla-border rounded-2xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-white font-semibold mb-1">
+              {messageDialog.action === 'approve' ? 'Approve' : 'Reject'} {messageDialog.type === 'kyc' ? 'KYC' : messageDialog.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
+            </h3>
+            <p className="text-gray-500 text-xs mb-4">
+              {messageDialog.action === 'approve'
+                ? 'Add an optional message and the user will receive an email notification.'
+                : 'Provide a reason for rejection. The user will be notified via email.'}
+            </p>
+            <textarea
+              value={dialogMessage}
+              onChange={e => setDialogMessage(e.target.value)}
+              placeholder={messageDialog.action === 'reject' ? 'Rejection reason / billing message...' : 'Optional message to the user (e.g. billing details, instructions)...'}
+              rows={4}
+              className="w-full bg-[#111] border border-tesla-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors resize-none mb-3"
+            />
+            <input
+              type="text"
+              value={dialogAttachment}
+              onChange={e => setDialogAttachment(e.target.value)}
+              placeholder="Attachment URL (optional — document, receipt, invoice...)"
+              className="w-full bg-[#111] border border-tesla-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors mb-5"
+            />
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setMessageDialog(null)} className="px-5 py-2.5 text-sm text-gray-400 hover:text-white border border-tesla-border rounded-xl transition-colors">Cancel</button>
+              <button onClick={() => { if (messageDialog.type === 'kyc') executeKycAction(); else executeDepositAction(); }}
+                className={`px-5 py-2.5 text-sm font-medium text-white rounded-xl transition-colors ${messageDialog.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+                Confirm &amp; Send Email
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -579,103 +647,74 @@ export default function AdminPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) {
-                            showToast('File too large. Max 5MB.');
-                            return;
-                          }
+                          if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.'); return; }
                           setSettingsLoading(true);
                           try {
                             const fd = new FormData();
                             fd.append('photo', file);
+                            fd.append('target', 'about');
                             const token = localStorage.getItem('token');
-                            const res = await fetch('/api/admin/settings', {
-                              method: 'POST',
-                              headers: token ? { Authorization: `Bearer ${token}` } : {},
-                              body: fd,
-                            });
+                            const res = await fetch('/api/admin/settings', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
                             const data = await res.json();
-                            if (data.success) {
-                              setSettingsPhotoUrl(data.data.aboutPhotoUrl);
-                              showToast('Photo updated successfully!');
-                            } else {
-                              showToast(data.error?.message || 'Upload failed');
-                            }
-                          } catch {
-                            showToast('Upload failed');
-                          }
+                            if (data.success) { setSettingsPhotoUrl(data.data.aboutPhotoUrl); showToast('Photo updated!'); }
+                            else showToast(data.error?.message || 'Upload failed');
+                          } catch { showToast('Upload failed'); }
                           setSettingsLoading(false);
                         }}
                       />
                     </label>
+                    <input type="text" placeholder="Or paste an image URL..." className="bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors" defaultValue={settingsPhotoUrl || ''} id="aboutUrlInput"
+                      onKeyDown={async (e) => { if (e.key === 'Enter') { const url = (e.target as HTMLInputElement).value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ aboutPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setSettingsPhotoUrl(data.data.aboutPhotoUrl); showToast('Photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); } }}
+                    />
+                    <button onClick={async () => { const url = (document.getElementById('aboutUrlInput') as HTMLInputElement)?.value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ aboutPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setSettingsPhotoUrl(data.data.aboutPhotoUrl); showToast('Photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); }} className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start">Save URL</button>
+                  </div>
+                </div>
+              </div>
 
-                    <div className="flex flex-col gap-2">
+              {/* Elon Photo (Homepage Hero) */}
+              <div className="bg-tesla-card border border-tesla-border rounded-xl p-6">
+                <h4 className="text-white font-medium mb-1">Homepage Hero Photo (CEO Portrait)</h4>
+                <p className="text-gray-500 text-xs mb-5">Upload a photo displayed on the homepage hero section. This appears as a circular portrait. Max 5MB.</p>
+
+                <div className="flex flex-col sm:flex-row items-start gap-6">
+                  <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-[#CC0000]/30 bg-[#1a1a1a] shrink-0">
+                    {elonPhotoUrl ? (
+                      <img src={elonPhotoUrl} alt="Current CEO Photo" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No photo set</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-3 flex-1">
+                    <label className="cursor-pointer inline-flex items-center gap-2 bg-[#CC0000] hover:bg-[#ff1a1a] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      {settingsLoading ? 'Uploading...' : 'Upload CEO Photo'}
                       <input
-                        type="text"
-                        placeholder="Or paste an image URL..."
-                        className="bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
-                        defaultValue={settingsPhotoUrl || ''}
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter') {
-                            const url = (e.target as HTMLInputElement).value.trim();
-                            if (!url) return;
-                            setSettingsLoading(true);
-                            try {
-                              const token = localStorage.getItem('token');
-                              const res = await fetch('/api/admin/settings', {
-                                method: 'PUT',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                                },
-                                body: JSON.stringify({ aboutPhotoUrl: url }),
-                              });
-                              const data = await res.json();
-                              if (data.success) {
-                                setSettingsPhotoUrl(data.data.aboutPhotoUrl);
-                                showToast('Photo URL updated!');
-                              } else {
-                                showToast(data.error?.message || 'Update failed');
-                              }
-                            } catch {
-                              showToast('Update failed');
-                            }
-                            setSettingsLoading(false);
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={async () => {
-                          const input = (document.querySelector('input[placeholder="Or paste an image URL..."]') as HTMLInputElement);
-                          const url = input?.value.trim();
-                          if (!url) return;
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.'); return; }
                           setSettingsLoading(true);
                           try {
+                            const fd = new FormData();
+                            fd.append('photo', file);
+                            fd.append('target', 'elon');
                             const token = localStorage.getItem('token');
-                            const res = await fetch('/api/admin/settings', {
-                              method: 'PUT',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                              },
-                              body: JSON.stringify({ aboutPhotoUrl: url }),
-                            });
+                            const res = await fetch('/api/admin/settings', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
                             const data = await res.json();
-                            if (data.success) {
-                              setSettingsPhotoUrl(data.data.aboutPhotoUrl);
-                              showToast('Photo URL updated!');
-                            } else {
-                              showToast(data.error?.message || 'Update failed');
-                            }
-                          } catch {
-                            showToast('Update failed');
-                          }
+                            if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo updated!'); }
+                            else showToast(data.error?.message || 'Upload failed');
+                          } catch { showToast('Upload failed'); }
                           setSettingsLoading(false);
                         }}
-                        className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start"
-                      >
-                        Save URL
-                      </button>
-                    </div>
+                      />
+                    </label>
+                    <input type="text" placeholder="Or paste CEO photo URL..." className="bg-[#1a1a1a] border border-tesla-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors" defaultValue={elonPhotoUrl || ''} id="elonUrlInput"
+                      onKeyDown={async (e) => { if (e.key === 'Enter') { const url = (e.target as HTMLInputElement).value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ elonPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); } }}
+                    />
+                    <button onClick={async () => { const url = (document.getElementById('elonUrlInput') as HTMLInputElement)?.value.trim(); if (!url) return; setSettingsLoading(true); try { const token = localStorage.getItem('token'); const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ elonPhotoUrl: url }) }); const data = await res.json(); if (data.success) { setElonPhotoUrl(data.data.elonPhotoUrl); showToast('CEO photo URL updated!'); } else showToast(data.error?.message || 'Update failed'); } catch { showToast('Update failed'); } setSettingsLoading(false); }} className="bg-white/5 hover:bg-white/10 text-white text-xs font-medium px-4 py-2 rounded-lg border border-tesla-border transition-colors self-start">Save URL</button>
                   </div>
                 </div>
               </div>

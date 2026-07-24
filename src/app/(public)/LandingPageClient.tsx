@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import WithdrawalNotification from '@/components/WithdrawalNotification';
@@ -105,12 +105,80 @@ const steps = [
 
 const testimonials = [
   { name: 'David M.', location: 'New York, USA', plan: 'Gold Investor', text: 'Tesla Prime Capital has completely transformed my investment strategy. The daily returns are consistent and the withdrawal process is seamless. I have been investing for 8 months and the results exceed my expectations.', avatar: 'D', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
-  { name: 'Sarah K.', location: 'London, UK', plan: 'Platinum Investor', text: 'The VIP support and zero-fee withdrawals make Platinum the best plan. My portfolio has grown over 40% in just 3 months. The transparency and real-time tracking give me complete confidence.', avatar: 'S', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face' },
-  { name: 'James T.', location: 'Sydney, AU', plan: 'Silver Investor', text: 'As a first-time investor, the platform made everything simple. The 0.8% daily returns are exactly as advertised and my account manager has been incredibly helpful throughout the process.', avatar: 'J', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' },
-  { name: 'Amara O.', location: 'Lagos, NG', plan: 'Gold Investor', text: 'I was skeptical at first but Tesla Prime Capital proved me wrong. The returns are real, the support team responds within minutes, and I have successfully withdrawn multiple times without any issues.', avatar: 'A', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Sarah K.', location: 'London, UK', plan: 'Platinum Investor', text: 'The VIP support and zero-fee withdrawals make Platinum the best plan. My portfolio has grown over 40% in just 3 months.', avatar: 'S', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face' },
+  { name: 'James T.', location: 'Sydney, AU', plan: 'Silver Investor', text: 'As a first-time investor, the platform made everything simple. The 0.8% daily returns are exactly as advertised and my account manager has been incredibly helpful.', avatar: 'J', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Amara O.', location: 'Lagos, NG', plan: 'Gold Investor', text: 'I was skeptical at first but Tesla Prime Capital proved me wrong. The returns are real, the support team responds within minutes, and I have successfully withdrawn multiple times.', avatar: 'A', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face' },
   { name: 'Robert L.', location: 'Toronto, CA', plan: 'Platinum Investor', text: 'After retiring, I needed a reliable income source. Tesla Prime Capital delivers exactly what they promise. My daily earnings are consistent and the platform is incredibly easy to navigate.', avatar: 'R', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
-  { name: 'Mei L.', location: 'Singapore', plan: 'Silver Investor', text: 'The referral program is fantastic. I have referred several colleagues and we all earn together. The platform transparency with real-time tracking sets it apart from anything else I have tried.', avatar: 'M', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Mei L.', location: 'Singapore', plan: 'Silver Investor', text: 'The referral program is fantastic. I have referred several colleagues and we all earn together. The platform transparency with real-time tracking sets it apart.', avatar: 'M', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face' },
 ];
+
+/* ── Pop-up Testimonial Component ── */
+function TestimonialPopup() {
+  const [idx, setIdx] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  const show = useCallback((i: number) => {
+    setExiting(false);
+    setVisible(true);
+    const hideTimer = setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => { setVisible(false); setExiting(false); }, 500);
+    }, 6000);
+    return () => clearTimeout(hideTimer);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => show(0), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const interval = setInterval(() => {
+      const next = (idx + 1) % testimonials.length;
+      setIdx(next);
+      show(next);
+    }, 18000);
+    return () => clearInterval(interval);
+  }, [idx, paused, show]);
+
+  const t = testimonials[idx % testimonials.length];
+  if (!visible || !t) return null;
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-[998] max-w-sm transition-all duration-500 ${exiting ? 'opacity-0 translate-y-6 scale-95' : 'opacity-100 translate-y-0 scale-100'}`}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="bg-tesla-card/95 backdrop-blur-xl border border-tesla-border rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]" />
+        <div className="p-5">
+          <div className="flex items-start gap-3 mb-3">
+            {t.photo ? (
+              <img src={t.photo} alt={t.name} className="w-10 h-10 rounded-full object-cover border-2 border-[#CC0000]/30 shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#CC0000] to-[#8B0000] flex items-center justify-center text-white text-sm font-bold shrink-0">{t.avatar}</div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold">{t.name}</p>
+              <p className="text-gray-500 text-[11px]">{t.location} &middot; {t.plan}</p>
+            </div>
+            <button onClick={() => { setExiting(true); setTimeout(() => setVisible(false), 500); }} className="text-gray-600 hover:text-gray-400 transition-colors shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+          <div className="flex gap-0.5 mb-2">
+            {[...Array(5)].map((_, i) => <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>)}
+          </div>
+          <p className="text-gray-300 text-xs leading-relaxed line-clamp-3">&ldquo;{t.text}&rdquo;</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const faqs = [
   { q: 'How does Tesla Prime Capital generate returns?', a: 'Our fund managers deploy capital across diversified strategies including equities, crypto assets, algorithmic trading, and sustainable energy investments. By spreading risk across multiple asset classes and employing AI-driven analytics, we maintain consistent daily returns while minimizing exposure to any single market downturn.' },
@@ -123,6 +191,16 @@ const faqs = [
 /* ── MAIN COMPONENT ── */
 export default function LandingPageClient() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [elonPhoto, setElonPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data?.elonPhotoUrl) setElonPhoto(d.data.elonPhotoUrl); })
+      .catch(() => {});
+  }, []);
+
+  const defaultElonPhoto = 'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=200&q=80&fit=crop&crop=face';
 
   return (
     <div className="min-h-screen bg-tesla-dark text-white page-enter">
@@ -140,7 +218,7 @@ export default function LandingPageClient() {
               <div className="mb-10 flex justify-center">
                 <div className="relative group">
                   <img
-                    src="https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=200&q=80&fit=crop&crop=face"
+                    src={elonPhoto || defaultElonPhoto}
                     alt="Tesla CEO"
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#CC0000]/40 shadow-[0_0_40px_rgba(204,0,0,0.2)] group-hover:border-[#CC0000]/70 group-hover:shadow-[0_0_60px_rgba(204,0,0,0.3)] transition-all duration-500"
                     loading="eager"
@@ -505,6 +583,7 @@ export default function LandingPageClient() {
         </FadeIn>
       </section>
 
+      <TestimonialPopup />
       <WithdrawalNotification />
     </div>
   );

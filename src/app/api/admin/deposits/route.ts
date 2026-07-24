@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { requireRole, apiResponse, apiError } from '@/lib/api-helpers';
+import { sendAdminNotificationEmail } from '@/lib/email';
 
 // GET /api/admin/deposits — list deposits with filters
 async function listHandler(request: NextRequest) {
@@ -37,7 +38,7 @@ async function listHandler(request: NextRequest) {
 async function updateHandler(request: NextRequest) {
   try {
     const body = await request.json();
-    const { depositId, action, reason } = body;
+    const { depositId, action, reason, adminMessage, attachmentUrl } = body;
 
     if (!depositId || !action) {
       return apiError('depositId and action are required', 'VALIDATION_ERROR', 400);
@@ -52,6 +53,12 @@ async function updateHandler(request: NextRequest) {
     if (deposit.status !== 'pending' && deposit.status !== 'pending_verification') {
       return apiError('Deposit is not in a pending state', 'INVALID_STATE', 400);
     }
+
+    const userName = deposit.user.profile
+      ? `${deposit.user.profile.firstName || ''} ${deposit.user.profile.lastName || ''}`.trim()
+      : deposit.user.email;
+    const userEmail = deposit.user.email;
+    const amountStr = `$${deposit.amount.toFixed(2)}`;
 
     if (action === 'approve') {
       const result = await db.$transaction(async (tx) => {
@@ -79,17 +86,29 @@ async function updateHandler(request: NextRequest) {
           },
         });
 
+        const msg = adminMessage || `Your deposit of ${amountStr} has been approved and credited to your account.`;
         await tx.notification.create({
           data: {
             userId: deposit.userId,
             type: 'deposit_confirmed',
             title: 'Deposit Confirmed',
-            message: `Your deposit of $${deposit.amount.toFixed(2)} has been approved and credited to your account.`,
+            message: msg,
           },
         });
 
         return updated;
       });
+
+      // Send email asynchronously (non-blocking)
+      sendAdminNotificationEmail(userEmail, userName, {
+        type: 'deposit_confirmed',
+        title: 'Deposit Confirmed',
+        message: `Your deposit of ${amountStr} via ${deposit.method} has been approved and credited to your wallet. You can now use these funds for investments or withdrawals.`,
+        amount: amountStr,
+        adminMessage,
+        attachmentUrl,
+      }).catch((err) => console.error('Failed to send deposit confirmation email:', err));
+
       return apiResponse(result);
     }
 
@@ -100,17 +119,29 @@ async function updateHandler(request: NextRequest) {
           data: { status: 'rejected', rejectionReason: reason || 'Rejected by admin' },
         });
 
+        const msg = adminMessage || `Your deposit of ${amountStr} has been rejected. Reason: ${reason || 'Not specified'}.`;
         await tx.notification.create({
           data: {
             userId: deposit.userId,
             type: 'deposit_rejected',
             title: 'Deposit Rejected',
-            message: `Your deposit of $${deposit.amount.toFixed(2)} has been rejected. Reason: ${reason || 'Not specified'}.`,
+            message: msg,
           },
         });
 
         return updated;
       });
+
+      // Send email asynchronously (non-blocking)
+      sendAdminNotificationEmail(userEmail, userName, {
+        type: 'deposit_rejected',
+        title: 'Deposit Rejected',
+        message: `Your deposit of ${amountStr} via ${deposit.method} has been rejected. Reason: ${reason || 'Not specified'}. Please contact support if you believe this is an error.`,
+        amount: amountStr,
+        adminMessage,
+        attachmentUrl,
+      }).catch((err) => console.error('Failed to send deposit rejection email:', err));
+
       return apiResponse(result);
     }
 

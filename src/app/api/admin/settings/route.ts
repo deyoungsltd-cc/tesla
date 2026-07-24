@@ -14,6 +14,8 @@ export async function GET() {
     return apiResponse({
       aboutPhotoUrl: settings.aboutPhotoUrl,
       aboutPhotoUpdatedAt: settings.aboutPhotoUpdatedAt,
+      elonPhotoUrl: settings.elonPhotoUrl,
+      elonPhotoUpdatedAt: settings.elonPhotoUpdatedAt,
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -35,6 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('photo') as File | null;
+    const target = (formData.get('target') as string) || 'about'; // 'about' or 'elon'
 
     if (!file) {
       return apiError('No photo file provided', 'MISSING_FILE', 400);
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `about-photo-${Date.now()}.${ext}`;
+    const filename = `${target}-photo-${Date.now()}.${ext}`;
 
     const uploadDir = '/tmp/uploads';
     await mkdir(uploadDir, { recursive: true });
@@ -68,20 +71,25 @@ export async function POST(request: NextRequest) {
 
     // Update database
     let settings = await db.siteSettings.findUnique({ where: { id: 'main' } });
-    if (!settings) {
-      settings = await db.siteSettings.create({
-        data: { id: 'main', aboutPhotoUrl: photoUrl, aboutPhotoUpdatedAt: new Date() },
-      });
+    const updateData: any = {};
+    if (target === 'elon') {
+      updateData.elonPhotoUrl = photoUrl;
+      updateData.elonPhotoUpdatedAt = new Date();
     } else {
-      settings = await db.siteSettings.update({
-        where: { id: 'main' },
-        data: { aboutPhotoUrl: photoUrl, aboutPhotoUpdatedAt: new Date() },
-      });
+      updateData.aboutPhotoUrl = photoUrl;
+      updateData.aboutPhotoUpdatedAt = new Date();
+    }
+    if (!settings) {
+      settings = await db.siteSettings.create({ data: { id: 'main', ...updateData } });
+    } else {
+      settings = await db.siteSettings.update({ where: { id: 'main' }, data: updateData });
     }
 
     return apiResponse({
       aboutPhotoUrl: settings.aboutPhotoUrl,
       aboutPhotoUpdatedAt: settings.aboutPhotoUpdatedAt,
+      elonPhotoUrl: settings.elonPhotoUrl,
+      elonPhotoUpdatedAt: settings.elonPhotoUpdatedAt,
       message: 'Photo uploaded successfully',
     });
   } catch (error) {
@@ -103,27 +111,33 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { aboutPhotoUrl } = body;
+    const { aboutPhotoUrl, elonPhotoUrl } = body;
 
-    if (!aboutPhotoUrl || typeof aboutPhotoUrl !== 'string') {
+    const updateData: any = {};
+    if (aboutPhotoUrl && typeof aboutPhotoUrl === 'string') {
+      updateData.aboutPhotoUrl = aboutPhotoUrl;
+      updateData.aboutPhotoUpdatedAt = new Date();
+    }
+    if (elonPhotoUrl && typeof elonPhotoUrl === 'string') {
+      updateData.elonPhotoUrl = elonPhotoUrl;
+      updateData.elonPhotoUpdatedAt = new Date();
+    }
+    if (Object.keys(updateData).length === 0) {
       return apiError('Valid photo URL is required', 'MISSING_URL', 400);
     }
 
     let settings = await db.siteSettings.findUnique({ where: { id: 'main' } });
     if (!settings) {
-      settings = await db.siteSettings.create({
-        data: { id: 'main', aboutPhotoUrl, aboutPhotoUpdatedAt: new Date() },
-      });
+      settings = await db.siteSettings.create({ data: { id: 'main', ...updateData } });
     } else {
-      settings = await db.siteSettings.update({
-        where: { id: 'main' },
-        data: { aboutPhotoUrl, aboutPhotoUpdatedAt: new Date() },
-      });
+      settings = await db.siteSettings.update({ where: { id: 'main' }, data: updateData });
     }
 
     return apiResponse({
       aboutPhotoUrl: settings.aboutPhotoUrl,
       aboutPhotoUpdatedAt: settings.aboutPhotoUpdatedAt,
+      elonPhotoUrl: settings.elonPhotoUrl,
+      elonPhotoUpdatedAt: settings.elonPhotoUpdatedAt,
       message: 'Photo URL updated successfully',
     });
   } catch (error) {

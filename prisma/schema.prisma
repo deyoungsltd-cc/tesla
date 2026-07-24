@@ -802,10 +802,12 @@ model GiftCard {
 // ──────────────────────────────────────────────
 
 model SiteSettings {
-  id           String   @id @default("main")
-  aboutPhotoUrl String? @map("about_photo_url")
+  id           String    @id @default("main")
+  aboutPhotoUrl String?  @map("about_photo_url")
   aboutPhotoUpdatedAt DateTime? @map("about_photo_updated_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  elonPhotoUrl String?  @map("elon_photo_url")
+  elonPhotoUpdatedAt DateTime? @map("elon_photo_updated_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("site_settings")
 }
