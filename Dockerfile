@@ -36,10 +36,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma/seed.cjs ./prisma/seed.cjs
 COPY --from=builder /app/start.sh ./start.sh
 
 RUN chmod +x /app/start.sh
+RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
 
 USER nextjs
 

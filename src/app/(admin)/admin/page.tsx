@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
 
-function TeslaLogo({ className = 'w-7 h-7' }: { className?: string }) {
+function TeslaTLogo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 342 35" className={className} xmlns="http://www.w3.org/2000/svg">
-      <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0zm238.6 0h-6.8v34.8h6.8V.1zm-52.3 6.8c-5.3 0-9.7 2.1-12.9 6.2V.1h-6.8v34.8h6.8V19.5c0-7.4 3.8-12.4 10.2-12.4 5.8 0 9.3 4.3 9.3 11.2v16.6h6.8V17c0-6.3-1.8-10.1-4.5-12.6-2.6-2.3-5.4-2.5-8.9-2.5zM293 7.7c-9.7 0-17 7.3-17 18.2s7.3 18.2 17 18.2c9.4 0 16.7-7.3 16.7-18.2S302.4 7.7 293 7.7zm0 6.5c5.8 0 10.1 4.8 10.1 11.7 0 6.8-4.3 11.7-10.1 11.7S283 32.7 283 25.9c0-6.9 4.2-11.7 10-11.7zm-89.3-6.5h-7.5l-11.2 22.8V.1h-6.8v34.8h7.5l11.2-22.8v22.8h6.8V7.7z" fill="#CC0000"/>
-    </svg>
+    <div className={`w-8 h-8 rounded-lg bg-[#CC0000]/10 border border-[#CC0000]/20 flex items-center justify-center ${className}`}>
+      <svg viewBox="0 0 28 35" className="w-4 h-5" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0z" fill="#CC0000"/>
+      </svg>
+    </div>
   );
 }
 
@@ -56,6 +59,8 @@ const statusBadge = (status: string) => {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [authed, setAuthed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -71,6 +76,24 @@ export default function AdminPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [settingsPhotoUrl, setSettingsPhotoUrl] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
+
+  // Auth check
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const adminUser = localStorage.getItem('adminUser');
+    if (!token || !adminUser) {
+      router.replace('/admin/login');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(adminUser);
+      if (!parsed.adminRecord) {
+        router.replace('/admin/login');
+        return;
+      }
+    } catch { router.replace('/admin/login'); return; }
+    setAuthed(true);
+  }, [router]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -202,8 +225,8 @@ export default function AdminPage() {
       )}
 
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-tesla-card border-r border-tesla-border flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center gap-2 px-5 h-16 border-b border-tesla-border">
-          <TeslaLogo className="w-7 h-7" />
+        <div className="flex items-center gap-2.5 px-5 h-16 border-b border-tesla-border">
+          <TeslaTLogo />
           <span className="font-bold text-sm">Tesla Admin</span>
           <button className="lg:hidden ml-auto text-gray-400" onClick={() => setSidebarOpen(false)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -233,11 +256,11 @@ export default function AdminPage() {
           ))}
         </nav>
         <div className="p-4 border-t border-tesla-border">
-          <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }} className="text-gray-500 hover:text-red-400 text-xs transition-colors">
+          <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); localStorage.removeItem('user'); router.push('/admin/login'); }} className="text-gray-500 hover:text-red-400 text-xs transition-colors">
             Sign Out
           </button>
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-300 text-xs block mt-2 transition-colors">
-            &larr; Back to Dashboard
+          <Link href="/" className="text-gray-500 hover:text-gray-300 text-xs block mt-2 transition-colors">
+            &larr; Back to Main Site
           </Link>
         </div>
       </aside>
