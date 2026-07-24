@@ -37,7 +37,7 @@ function HeroSection() {
           </div>
           <div className="text-center sm:text-left flex-1">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-              <TeslaLogo className="w-14 h-auto" />
+              <TeslaLogo variant="compact" className="h-8" />
             </div>
             <h2 className="text-white text-lg sm:text-xl font-bold mt-1 leading-tight">
               A New Approach to Trading
@@ -215,7 +215,7 @@ export default function DashboardPage() {
       <div className="bg-tesla-card border border-tesla-border rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-tesla-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TeslaLogo className="w-5 h-auto" />
+            <TeslaLogo variant="icon" className="w-5 h-5" />
             <div>
               <p className="text-white text-sm font-bold">TSLA</p>
               <p className="text-gray-500 text-[10px]">Tesla, Inc. &middot; NASDAQ</p>
@@ -300,7 +300,7 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <TeslaLogo className="w-5 h-auto" />
+            <TeslaLogo variant="icon" className="w-5 h-5" />
             <h2 className="text-white font-bold text-sm">TSLA Top Stories</h2>
           </div>
           <Link href="/market" className="text-[#CC0000] text-xs font-medium hover:underline">See All</Link>
@@ -369,7 +369,7 @@ export default function DashboardPage() {
           <span className="text-gray-600 text-[10px]">🛡️ Secured</span>
           <span className="text-gray-600 text-[10px]">⏰ 24/7</span>
         </div>
-        <TeslaLogo className="w-20 h-auto mx-auto mb-2 opacity-30" />
+        <TeslaLogo variant="wordmark" className="h-6 mx-auto mb-2 opacity-30" />
         <p className="text-gray-700 text-[10px]">&copy; {new Date().getFullYear()} Tesla Prime Capital. All rights reserved.</p>
       </div>
 

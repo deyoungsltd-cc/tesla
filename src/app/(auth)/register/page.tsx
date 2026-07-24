@@ -183,7 +183,7 @@ export default function RegisterPage() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-900/30 border border-green-700/50 flex items-center justify-center">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
           </div>
-          <TeslaLogo className="w-10 h-10 mx-auto mb-4" />
+          <TeslaLogo className="h-8 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Account Verified</h1>
           <p className="text-gray-400 text-sm mb-8">Your email has been successfully verified. You can now sign in to your account.</p>
           <Link href="/login" className="inline-block w-full bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-3 rounded-lg transition-colors text-sm">
@@ -201,7 +201,7 @@ export default function RegisterPage() {
       <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <TeslaLogo className="w-20 h-auto mx-auto mb-4" />
+            <TeslaLogo className="h-14 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white">Verify Your Email</h1>
             <p className="text-gray-400 text-sm mt-2">
               We sent a 6-digit code to <span className="text-white font-medium">{registeredEmail}</span>
@@ -275,7 +275,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-tesla-dark flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <TeslaLogo className="w-24 h-auto mx-auto mb-4" />
+          <TeslaLogo className="h-14 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Create Account</h1>
           <p className="text-gray-400 text-sm mt-1">Start your investment journey today</p>
         </div>

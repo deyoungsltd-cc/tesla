@@ -71,7 +71,7 @@ export default function LoginPage() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#CC0000]/5 rounded-full blur-[150px] pointer-events-none" />
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <TeslaLogo className="w-20 h-auto mx-auto mb-4 drop-shadow-[0_0_15px_rgba(204,0,0,0.3)]" />
+          <TeslaLogo className="h-14 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(204,0,0,0.3)]" />
           <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
           <p className="text-gray-400 text-sm mt-1">Sign in to your Tesla Prime Capital account</p>
         </div>

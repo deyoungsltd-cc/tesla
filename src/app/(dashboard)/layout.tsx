@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 bg-tesla-dark/95 backdrop-blur-md border-b border-tesla-border shrink-0">
         <div className="flex items-center justify-between h-14 px-4 max-w-4xl w-full mx-auto">
           <div className="flex items-center gap-2.5 min-w-0">
-            <TeslaLogo className="w-16 h-auto shrink-0" />
+            <TeslaLogo variant="compact" className="h-8 shrink-0" />
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <Link href="/notifications" className="relative text-gray-400 hover:text-white transition-colors">
