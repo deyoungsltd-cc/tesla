@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const TickerTapeWidget = dynamic(() => import('@/components/TickerTapeWidget'), { ssr: false });
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -85,8 +88,13 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         </div>
       </nav>
 
+      {/* Stock Ticker Tape — sticky below navbar */}
+      <div className="sticky top-[83px] z-40 bg-tesla-dark">
+        <TickerTapeWidget />
+      </div>
+
       {/* Main Content */}
-      <main className="pt-[23px]">{children}</main>
+      <main>{children}</main>
 
       {/* Back to top */}
       <button

@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  serverExternalPackages: ['bcryptjs', 'jsonwebtoken'],
   // Fallback for NEXT_PUBLIC_APP_URL on Railway (build-time env)
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://teslapremiumfinance.com',

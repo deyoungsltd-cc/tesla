@@ -125,6 +125,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return apiError('Internal server error', 'INTERNAL_ERROR', 500);
+    // Expose error type for diagnosis (safe — no credentials leaked)
+    let message = 'Internal server error';
+    let code = 'INTERNAL_ERROR';
+    if (error instanceof Error) {
+      const msg = error.message;
+      if (msg.includes('DATABASE_URL') || msg.includes('prisma') || msg.includes('connect') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') || msg.includes('timeout')) {
+        message = 'Database connection error. Please ensure DATABASE_URL is configured.';
+        code = 'DB_CONNECTION_ERROR';
+      } else if (msg.includes('bcrypt') || msg.includes('compare')) {
+        message = 'Authentication service error.';
+        code = 'AUTH_SERVICE_ERROR';
+      }
+    }
+    return apiError(message, code, 500);
   }
 }

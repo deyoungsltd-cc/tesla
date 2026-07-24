@@ -6,7 +6,6 @@ import dynamic from 'next/dynamic';
 import WithdrawalNotification from '@/components/WithdrawalNotification';
 
 const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { ssr: false });
-const TickerTapeWidget = dynamic(() => import('@/components/TickerTapeWidget'), { ssr: false });
 
 /* ── Shared Components ── */
 function FadeIn({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
@@ -80,7 +79,7 @@ function ScrollProgress() {
 const plans = [
   { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=1200&q=80&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
   { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=1200&q=80&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
-  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1535392432937-a27c36ec07b5?w=1200&q=80&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1554744512-d6c603f27c54?w=1200&q=80&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
   { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Cybertruck', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1200&q=80&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
 ];
 
@@ -128,7 +127,6 @@ export default function LandingPageClient() {
   return (
     <div className="min-h-screen bg-tesla-dark text-white page-enter">
       <ScrollProgress />
-      <TickerTapeWidget />
 
       {/* ══════════ HERO ══════════ */}
       <section className="relative pt-44 pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
@@ -142,7 +140,7 @@ export default function LandingPageClient() {
               <div className="mb-10 flex justify-center">
                 <div className="relative group">
                   <img
-                    src="https://images.unsplash.com/photo-1583485007828-81ec6e063b71?w=200&q=80&fit=crop&crop=face"
+                    src="https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=200&q=80&fit=crop&crop=face"
                     alt="Tesla CEO"
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#CC0000]/40 shadow-[0_0_40px_rgba(204,0,0,0.2)] group-hover:border-[#CC0000]/70 group-hover:shadow-[0_0_60px_rgba(204,0,0,0.3)] transition-all duration-500"
                     loading="eager"

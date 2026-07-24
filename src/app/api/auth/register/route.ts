@@ -146,6 +146,13 @@ export async function POST(request: NextRequest) {
     if (error.code === 'P2002') {
       return apiError('Email already registered', 'EMAIL_EXISTS', 409);
     }
+    // Expose DB connection errors for diagnosis
+    if (error instanceof Error) {
+      const msg = error.message;
+      if (msg.includes('connect') || msg.includes('ECONNREFUSED') || msg.includes('prisma')) {
+        return apiError('Database connection error. Please ensure DATABASE_URL is configured.', 'DB_CONNECTION_ERROR', 500);
+      }
+    }
     return apiError('Internal server error', 'INTERNAL_ERROR', 500);
   }
 }
