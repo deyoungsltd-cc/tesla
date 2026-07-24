@@ -20,6 +20,7 @@ COPY --from=deps /app/package.json ./
 COPY . .
 
 RUN npx prisma generate
+RUN npx prisma db push --accept-data-loss 2>/dev/null || true
 RUN npm run build
 
 FROM base AS runner
