@@ -38,7 +38,7 @@ export default function AboutPage() {
             <div className="relative p-8 sm:p-12">
               <div className="flex flex-col sm:flex-row items-center gap-8">
                 <div className="w-36 h-36 rounded-2xl overflow-hidden border-2 border-[#CC0000]/30 shrink-0 bg-tesla-card shadow-[0_0_40px_rgba(204,0,0,0.15)] relative">
-                  <img src="https://images.unsplash.com/photo-1534272208726-63db30c70396?w=300&q=80" alt="Elon Musk - Tesla CEO" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1534272208726-63db30c70396?w=300&q=80" alt="Tesla Leadership" className="w-full h-full object-cover" onError={(e) => { const t = e.currentTarget as HTMLImageElement; t.src = 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&q=80'; }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/30 to-transparent" />
                 </div>
                 <div className="text-center sm:text-left">

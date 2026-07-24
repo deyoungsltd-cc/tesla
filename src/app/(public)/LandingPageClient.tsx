@@ -78,10 +78,10 @@ function ScrollProgress() {
 
 /* ── Data ── */
 const plans = [
-  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&q=80', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
-  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model Y', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=600&q=80', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
-  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
-  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&q=80', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
+  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1567407349153-4d9545b2aa96?w=800&q=85&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
+  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model Y', image: 'https://images.unsplash.com/photo-1554744512-d6c603f27c54?w=800&q=85&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
+  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&q=85&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&q=85&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
 ];
 
 const stats = [
@@ -135,8 +135,8 @@ export default function LandingPageClient() {
         <div className="bg-gradient-hero relative z-10">
           <FadeIn>
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center gap-2.5 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-5 py-2 mb-8 noise-overlay">
-                <span className="glow-dot" />
+              <div className="inline-flex items-center gap-3 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-6 py-2.5 mb-8">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 <span className="text-[#CC0000] text-sm font-medium tracking-wide">Trusted by 45,000+ investors worldwide</span>
               </div>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-8 text-shadow-subtle">
@@ -234,9 +234,10 @@ export default function LandingPageClient() {
             {plans.map((plan, i) => (
               <FadeIn key={i} delay={i * 150}>
                 <div className={`plan-card glass-card card-shine group tilt-card h-full flex flex-col ${plan.popular ? 'ring-1 ring-[#CC0000]/40' : ''}`}>
-                  <div className="relative h-52 overflow-hidden">
-                    <img src={plan.image} alt={`${plan.name} Plan`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/60 to-transparent" />
+                  <div className="relative h-56 overflow-hidden bg-black">
+                    <img src={plan.image} alt={`${plan.name} Plan - ${plan.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-tesla-dark via-tesla-dark/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
                     <span className={`absolute top-4 left-4 ${plan.badgeBg} text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg tracking-wide`}>{plan.badge}</span>
                     {plan.popular && <div className="absolute -top-px left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#CC0000] to-transparent" />}
                   </div>
@@ -443,8 +444,8 @@ export default function LandingPageClient() {
                 <div className="absolute inset-0 bg-gradient-to-br from-[#CC0000]/15 via-[#CC0000]/5 to-transparent rounded-3xl" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#CC0000]/8 rounded-full blur-[120px]" />
                 <div className="relative bg-tesla-dark/90 rounded-3xl p-10 sm:p-16 text-center noise-overlay">
-                  <div className="inline-flex items-center gap-2.5 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-5 py-2 mb-8">
-                    <span className="glow-dot" />
+                  <div className="inline-flex items-center gap-3 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-6 py-2.5 mb-8">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
                     <span className="text-[#CC0000] text-sm font-medium">Join 45,000+ investors today</span>
                   </div>
                   <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-5 relative">Ready to Start <span className="gradient-text-animated">Earning</span>?</h2>
