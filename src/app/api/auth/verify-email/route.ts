@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     if (!email) return apiError('Email is required', 'MISSING_EMAIL', 400);
 
-    const user = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+    const user = await db.user.findUnique({ where: { email: email.toLowerCase() }, include: { profile: true } });
     if (!user) return apiError('Account not found', 'USER_NOT_FOUND', 404);
 
     if (action === 'send' || action === 'resend') {

@@ -10,8 +10,8 @@ const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget')
 function TeslaTLogo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
     <div className={`w-8 h-8 rounded-lg bg-[#CC0000]/10 border border-[#CC0000]/20 flex items-center justify-center ${className}`}>
-      <svg viewBox="0 0 28 35" className="w-4 h-5" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0z" fill="#CC0000"/>
+      <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.743 0L7.79 12.276h3.166l.546-1.397h5.506l.546 1.397h3.166L15.257 0h-2.514zM12 4.583l1.835 4.744h-3.67L12 4.583zM7.79 12.276L.1 24h23.8l-7.69-11.724H7.79z" fill="#CC0000"/>
       </svg>
     </div>
   );

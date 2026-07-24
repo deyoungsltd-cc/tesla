@@ -53,8 +53,8 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#CC0000]/10 border border-[#CC0000]/20 mb-5">
-            <svg viewBox="0 0 28 35" className="w-8 h-10" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 .1a9.7 9.7 0 007 7h11l.5.1v27.6h6.8V7.3L26 7a9.7 9.7 0 007-7H0z" fill="#CC0000"/>
+            <svg viewBox="0 0 24 24" className="w-8 h-8" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.743 0L7.79 12.276h3.166l.546-1.397h5.506l.546 1.397h3.166L15.257 0h-2.514zM12 4.583l1.835 4.744h-3.67L12 4.583zM7.79 12.276L.1 24h23.8l-7.69-11.724H7.79z" fill="#CC0000"/>
             </svg>
           </div>
           <h1 className="text-2xl font-black text-white mb-2">Admin Panel</h1>

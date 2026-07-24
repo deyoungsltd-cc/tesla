@@ -1,0 +1,811 @@
+     1→     1→generator client {
+     2→     2→  provider = "prisma-client-js"
+     3→     3→}
+     4→     4→
+     5→     5→datasource db {
+     6→     6→  provider = "postgresql"
+     7→     7→  url      = env("DATABASE_URL")
+     8→     8→}
+     9→     9→
+    10→    10→// ──────────────────────────────────────────────
+    11→    11→// ENUM DEFINITIONS (SQLite: stored as strings)
+    12→    12→// ──────────────────────────────────────────────
+    13→    13→
+    14→    14→enum UserStatus {
+    15→    15→  pending_verification
+    16→    16→  active
+    17→    17→  suspended
+    18→    18→  banned
+    19→    19→  closed
+    20→    20→}
+    21→    21→
+    22→    22→enum KycLevel {
+    23→    23→  LEVEL_0
+    24→    24→  LEVEL_1
+    25→    25→  LEVEL_2
+    26→    26→  LEVEL_3
+    27→    27→}
+    28→    28→
+    29→    29→enum WalletType {
+    30→    30→  demo
+    31→    31→  live
+    32→    32→}
+    33→    33→
+    34→    34→enum TransactionType {
+    35→    35→  deposit
+    36→    36→  withdrawal
+    37→    37→  investment
+    38→    38→  investment_return
+    39→    39→  referral_bonus
+    40→    40→  fee
+    41→    41→  promo_credit
+    42→    42→  balance_adjustment
+    43→    43→}
+    44→    44→
+    45→    45→enum TransactionStatus {
+    46→    46→  pending
+    47→    47→  completed
+    48→    48→  failed
+    49→    49→  reversed
+    50→    50→}
+    51→    51→
+    52→    52→enum InvestmentStatus {
+    53→    53→  active
+    54→    54→  completed
+    55→    55→  failed
+    56→    56→  cancelled
+    57→    57→}
+    58→    58→
+    59→    59→enum DepositMethod {
+    60→    60→  crypto
+    61→    61→  gift_card
+    62→    62→}
+    63→    63→
+    64→    64→enum CryptoCurrency {
+    65→    65→  BTC
+    66→    66→  ETH
+    67→    67→  USDT
+    68→    68→}
+    69→    69→
+    70→    70→enum DepositStatus {
+    71→    71→  pending
+    72→    72→  pending_verification
+    73→    73→  confirmed
+    74→    74→  rejected
+    75→    75→  expired
+    76→    76→}
+    77→    77→
+    78→    78→enum WithdrawalStatus {
+    79→    79→  pending
+    80→    80→  processing
+    81→    81→  completed
+    82→    82→  rejected
+    83→    83→  failed
+    84→    84→}
+    85→    85→
+    86→    86→enum WithdrawalDestinationType {
+    87→    87→  crypto
+    88→    88→  bank
+    89→    89→}
+    90→    90→
+    91→    91→enum ReferralCommissionType {
+    92→    92→  direct
+    93→    93→  binary
+    94→    94→}
+    95→    95→
+    96→    96→enum ReferralCommissionStatus {
+    97→    97→  pending
+    98→    98→  paid
+    99→    99→  reversed
+   100→   100→}
+   101→   101→
+   102→   102→enum BinaryPosition {
+   103→   103→  left
+   104→   104→  right
+   105→   105→}
+   106→   106→
+   107→   107→enum KycDocumentType {
+   108→   108→  id_front
+   109→   109→  id_back
+   110→   110→  selfie
+   111→   111→  proof_of_address
+   112→   112→}
+   113→   113→
+   114→   114→enum KycDocumentStatus {
+   115→   115→  pending
+   116→   116→  approved
+   117→   117→  rejected
+   118→   118→  expired
+   119→   119→}
+   120→   120→
+   121→   121→enum TicketStatus {
+   122→   122→  open
+   123→   123→  in_progress
+   124→   124→  waiting_user
+   125→   125→  resolved
+   126→   126→  closed
+   127→   127→}
+   128→   128→
+   129→   129→enum TicketPriority {
+   130→   130→  low
+   131→   131→  medium
+   132→   132→  high
+   133→   133→  urgent
+   134→   134→}
+   135→   135→
+   136→   136→enum AdminRoleName {
+   137→   137→  SUPER_ADMIN
+   138→   138→  ADMIN
+   139→   139→  COMPLIANCE
+   140→   140→  SUPPORT
+   141→   141→}
+   142→   142→
+   143→   143→enum NotificationType {
+   144→   144→  deposit_confirmed
+   145→   145→  deposit_rejected
+   146→   146→  withdrawal_processed
+   147→   147→  withdrawal_rejected
+   148→   148→  investment_activated
+   149→   149→  investment_completed
+   150→   150→  investment_return_credited
+   151→   151→  referral_earned
+   152→   152→  kyc_submitted
+   153→   153→  kyc_approved
+   154→   154→  kyc_rejected
+   155→   155→  kyc_reminder
+   156→   156→  security_login_detected
+   157→   157→  security_password_changed
+   158→   158→  ticket_response
+   159→   159→  ticket_resolved
+   160→   160→  system_maintenance
+   161→   161→  system_announcement
+   162→   162→  custom
+   163→   163→}
+   164→   164→
+   165→   165→enum OtpType {
+   166→   166→  email_verification
+   167→   167→  password_reset
+   168→   168→  two_factor_setup
+   169→   169→  two_factor_disable
+   170→   170→  withdrawal_confirm
+   171→   171→}
+   172→   172→
+   173→   173→enum GiftCardStatus {
+   174→   174→  pending
+   175→   175→  verified
+   176→   176→  rejected
+   177→   177→  expired
+   178→   178→}
+   179→   179→
+   180→   180→enum EmailStatus {
+   181→   181→  sent
+   182→   182→  delivered
+   183→   183→  failed
+   184→   184→  bounced
+   185→   185→}
+   186→   186→
+   187→   187→enum PayoutStatus {
+   188→   188→  pending
+   189→   189→  processed
+   190→   190→  failed
+   191→   191→}
+   192→   192→
+   193→   193→enum UserMode {
+   194→   194→  demo
+   195→   195→  live
+   196→   196→}
+   197→   197→
+   198→   198→enum DurationUnit {
+   199→   199→  hours
+   200→   200→  days
+   201→   201→}
+   202→   202→
+   203→   203→enum PromoDiscountType {
+   204→   204→  percentage
+   205→   205→  fixed
+   206→   206→}
+   207→   207→
+   208→   208→enum PromoCodeStatus {
+   209→   209→  active
+   210→   210→  inactive
+   211→   211→  expired
+   212→   212→  fully_redeemed
+   213→   213→}
+   214→   214→
+   215→   215→// ──────────────────────────────────────────────
+   216→   216→// USER MODEL
+   217→   217→// ──────────────────────────────────────────────
+   218→   218→
+   219→   219→model User {
+   220→   220→  id                String     @id @default(cuid())
+   221→   221→  email             String     @unique
+   222→   222→  passwordHash      String     @map("password_hash")
+   223→   223→  emailVerified     Boolean    @default(false) @map("email_verified")
+   224→   224→  emailVerifiedAt   DateTime?  @map("email_verified_at")
+   225→   225→
+   226→   226→  status            UserStatus @default(pending_verification)
+   227→   227→  kycLevel          KycLevel   @default(LEVEL_0) @map("kyc_level")
+   228→   228→  activeMode        UserMode   @default(demo) @map("active_mode")
+   229→   229→
+   230→   230→  referralCode      String     @unique @map("referral_code")
+   231→   231→  referredById      String?    @map("referred_by_id")
+   232→   232→
+   233→   233→  twoFactorEnabled  Boolean    @default(false) @map("two_factor_enabled")
+   234→   234→
+   235→   235→  verificationCode       String?    @map("verification_code")
+   236→   236→  verificationCodeExpires DateTime?  @map("verification_code_expires")
+   237→   237→
+   238→   238→  lastLoginAt       DateTime?  @map("last_login_at")
+   239→   239→  lastLoginIp       String?    @map("last_login_ip")
+   240→   240→  loginAttemptCount Int        @default(0) @map("login_attempt_count")
+   241→   241→  lockedUntil       DateTime?  @map("locked_until")
+   242→   242→
+   243→   243→  preferredCurrency String     @default("USD") @map("preferred_currency")
+   244→   244→  preferredLanguage String     @default("en") @map("preferred_language")
+   245→   245→
+   246→   246→  createdAt         DateTime   @default(now()) @map("created_at")
+   247→   247→  updatedAt         DateTime   @updatedAt @map("updated_at")
+   248→   248→  deletedAt         DateTime?  @map("deleted_at")
+   249→   249→
+   250→   250→  profile           Profile?
+   251→   251→  wallets           Wallet[]
+   252→   252→  deposits          Deposit[]
+   253→   253→  withdrawals       Withdrawal[]
+   254→   254→  investments       UserInvestment[]
+   255→   255→  notifications     Notification[]
+   256→   256→  auditLogs         AuditLog[]
+   257→   257→  supportTickets    SupportTicket[]
+   258→   258→  kycDocuments      KYCDocument[]
+   259→   259→  kycVerifications  KYCVerification[]
+   260→   260→  referredBy        User?      @relation("ReferralTree", fields: [referredById], references: [id])
+   261→   261→  referrals         User[]     @relation("ReferralTree")
+   262→   262→  referralCommissions ReferralCommission[]
+   263→   263→  binaryNode        BinaryNode?
+   264→   264→  adminRecord       Admin?
+   265→   265→  userPromos        UserPromo[]
+   266→   266→  otps              Otp[]
+   267→   267→  emailLogs         EmailLog[]  @relation("EmailRecipient")
+   268→   268→
+   269→   269→  @@index([status], map: "idx_user_status")
+   270→   270→  @@index([kycLevel], map: "idx_user_kyc_level")
+   271→   271→  @@index([referredById], map: "idx_user_referred_by")
+   272→   272→  @@map("users")
+   273→   273→}
+   274→   274→
+   275→   275→// ──────────────────────────────────────────────
+   276→   276→// PROFILE MODEL
+   277→   277→// ──────────────────────────────────────────────
+   278→   278→
+   279→   279→model Profile {
+   280→   280→  id            String   @id @default(cuid())
+   281→   281→  userId        String   @unique @map("user_id")
+   282→   282→
+   283→   283→  firstName     String?  @map("first_name")
+   284→   284→  lastName      String?  @map("last_name")
+   285→   285→  phone         String?  @map("phone")
+   286→   286→  dateOfBirth   DateTime? @map("date_of_birth")
+   287→   287→  avatarUrl     String?  @map("avatar_url")
+   288→   288→  country       String?  @map("country")
+   289→   289→
+   290→   290→  streetAddress String?  @map("street_address")
+   291→   291→  city          String?  @map("city")
+   292→   292→  state         String?  @map("state")
+   293→   293→  postalCode    String?  @map("postal_code")
+   294→   294→
+   295→   295→  createdAt     DateTime @default(now()) @map("created_at")
+   296→   296→  updatedAt     DateTime @updatedAt @map("updated_at")
+   297→   297→
+   298→   298→  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   299→   299→
+   300→   300→  @@map("profiles")
+   301→   301→}
+   302→   302→
+   303→   303→// ──────────────────────────────────────────────
+   304→   304→// WALLET MODEL
+   305→   305→// ──────────────────────────────────────────────
+   306→   306→
+   307→   307→model Wallet {
+   308→   308→  id                String     @id @default(cuid())
+   309→   309→  userId            String     @map("user_id")
+   310→   310→  type              WalletType
+   311→   311→  balance           Float      @default(0)
+   312→   312→  availableBalance  Float      @default(0) @map("available_balance")
+   313→   313→  lockedBalance     Float      @default(0) @map("locked_balance")
+   314→   314→
+   315→   315→  createdAt         DateTime   @default(now()) @map("created_at")
+   316→   316→  updatedAt         DateTime   @updatedAt @map("updated_at")
+   317→   317→
+   318→   318→  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+   319→   319→  transactions      Transaction[]
+   320→   320→  deposits          Deposit[]
+   321→   321→  withdrawals       Withdrawal[]
+   322→   322→  investments       UserInvestment[]
+   323→   323→
+   324→   324→  @@unique([userId, type], map: "uq_wallet_user_type")
+   325→   325→  @@map("wallets")
+   326→   326→}
+   327→   327→
+   328→   328→// ──────────────────────────────────────────────
+   329→   329→// TRANSACTION MODEL
+   330→   330→// ──────────────────────────────────────────────
+   331→   331→
+   332→   332→model Transaction {
+   333→   333→  id              String            @id @default(cuid())
+   334→   334→  walletId        String            @map("wallet_id")
+   335→   335→  type            TransactionType
+   336→   336→  status          TransactionStatus @default(pending)
+   337→   337→  amount          Float
+   338→   338→  description     String?
+   339→   339→  referenceId     String?           @map("reference_id")
+   340→   340→  metadata        String?           // JSON string for flexible data
+   341→   341→
+   342→   342→  createdAt       DateTime          @default(now()) @map("created_at")
+   343→   343→  updatedAt       DateTime          @updatedAt @map("updated_at")
+   344→   344→
+   345→   345→  wallet          Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+   346→   346→
+   347→   347→  @@index([walletId], map: "idx_tx_wallet")
+   348→   348→  @@index([type], map: "idx_tx_type")
+   349→   349→  @@index([status], map: "idx_tx_status")
+   350→   350→  @@map("transactions")
+   351→   351→}
+   352→   352→
+   353→   353→// ──────────────────────────────────────────────
+   354→   354→// INVESTMENT PLAN MODEL
+   355→   355→// ──────────────────────────────────────────────
+   356→   356→
+   357→   357→model InvestmentPlan {
+   358→   358→  id              String        @id @default(cuid())
+   359→   359→  name            String
+   360→   360→  slug            String        @unique
+   361→   361→  description     String?
+   362→   362→  tierName        String        @map("tier_name")  // Basic, Silver, Gold, Platinum
+   363→   363→  minAmount       Float         @map("min_amount")
+   364→   364→  maxAmount       Float?        @map("max_amount")
+   365→   365→  dailyReturnRate Float         @map("daily_return_rate")
+   366→   366→  duration        Int
+   367→   367→  durationUnit    DurationUnit  @map("duration_unit")
+   368→   368→  isActive        Boolean       @default(true) @map("is_active")
+   369→   369→  sortOrder       Int           @default(0) @map("sort_order")
+   370→   370→  features        String?       // JSON array of features
+   371→   371→
+   372→   372→  createdAt       DateTime      @default(now()) @map("created_at")
+   373→   373→  updatedAt       DateTime      @updatedAt @map("updated_at")
+   374→   374→
+   375→   375→  investments     UserInvestment[]
+   376→   376→
+   377→   377→  @@map("investment_plans")
+   378→   378→}
+   379→   379→
+   380→   380→// ──────────────────────────────────────────────
+   381→   381→// USER INVESTMENT MODEL
+   382→   382→// ──────────────────────────────────────────────
+   383→   383→
+   384→   384→model UserInvestment {
+   385→   385→  id                String            @id @default(cuid())
+   386→   386→  userId            String            @map("user_id")
+   387→   387→  planId            String            @map("plan_id")
+   388→   388→  walletId          String            @map("wallet_id")
+   389→   389→  amount            Float
+   390→   390→  mode              UserMode          @default(demo)
+   391→   391→  status            InvestmentStatus  @default(active)
+   392→   392→  dailyReturn       Float             @map("daily_return")
+   393→   393→  totalReturn       Float             @default(0) @map("total_return")
+   394→   394→  expectedReturn    Float             @map("expected_return")
+   395→   395→  startDate         DateTime          @map("start_date")
+   396→   396→  endDate           DateTime?         @map("end_date")
+   397→   397→  lastPayoutAt      DateTime?         @map("last_payout_at")
+   398→   398→  payoutStatus      PayoutStatus      @default(pending) @map("payout_status")
+   399→   399→
+   400→   400→  createdAt         DateTime          @default(now()) @map("created_at")
+   401→   401→  updatedAt         DateTime          @updatedAt @map("updated_at")
+   402→   402→
+   403→   403→  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+   404→   404→  plan              InvestmentPlan    @relation(fields: [planId], references: [id])
+   405→   405→  wallet            Wallet            @relation(fields: [walletId], references: [id])
+   406→   406→
+   407→   407→  @@index([userId], map: "idx_invest_user")
+   408→   408→  @@index([status], map: "idx_invest_status")
+   409→   409→  @@map("user_investments")
+   410→   410→}
+   411→   411→
+   412→   412→// ──────────────────────────────────────────────
+   413→   413→// DEPOSIT MODEL
+   414→   414→// ──────────────────────────────────────────────
+   415→   415→
+   416→   416→model Deposit {
+   417→   417→  id                String            @id @default(cuid())
+   418→   418→  userId            String            @map("user_id")
+   419→   419→  walletId          String            @map("wallet_id")
+   420→   420→  amount            Float
+   421→   421→  usdAmount         Float             @map("usd_amount")
+   422→   422→  method            DepositMethod
+   423→   423→  cryptoCurrency    CryptoCurrency?   @map("crypto_currency")
+   424→   424→  txHash            String?           @map("tx_hash")
+   425→   425→  status            DepositStatus     @default(pending)
+   426→   426→  mode              UserMode          @default(demo)
+   427→   427→  rejectionReason   String?           @map("rejection_reason")
+   428→   428→  verifiedBy        String?           @map("verified_by")
+   429→   429→  verifiedAt        DateTime?         @map("verified_at")
+   430→   430→
+   431→   431→  createdAt         DateTime          @default(now()) @map("created_at")
+   432→   432→  updatedAt         DateTime          @updatedAt @map("updated_at")
+   433→   433→
+   434→   434→  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+   435→   435→  wallet            Wallet            @relation(fields: [walletId], references: [id])
+   436→   436→
+   437→   437→  @@index([userId], map: "idx_deposit_user")
+   438→   438→  @@index([status], map: "idx_deposit_status")
+   439→   439→  @@map("deposits")
+   440→   440→}
+   441→   441→
+   442→   442→// ──────────────────────────────────────────────
+   443→   443→// WITHDRAWAL MODEL
+   444→   444→// ──────────────────────────────────────────────
+   445→   445→
+   446→   446→model Withdrawal {
+   447→   447→  id                    String                   @id @default(cuid())
+   448→   448→  userId                String                   @map("user_id")
+   449→   449→  walletId              String                   @map("wallet_id")
+   450→   450→  amount                Float
+   451→   451→  fee                   Float                    @default(0)
+   452→   452→  netAmount             Float                    @map("net_amount")
+   453→   453→  destinationType       WithdrawalDestinationType @map("destination_type")
+   454→   454→  destinationAddress    String?                  @map("destination_address")
+   455→   455→  bankName              String?                  @map("bank_name")
+   456→   456→  bankAccountName       String?                  @map("bank_account_name")
+   457→   457→  bankAccountNumber     String?                  @map("bank_account_number")
+   458→   458→  status                WithdrawalStatus         @default(pending)
+   459→   459→  mode                  UserMode                 @default(demo)
+   460→   460→  rejectionReason       String?                  @map("rejection_reason")
+   461→   461→  processedBy           String?                  @map("processed_by")
+   462→   462→  processedAt           DateTime?                @map("processed_at")
+   463→   463→
+   464→   464→  createdAt             DateTime                 @default(now()) @map("created_at")
+   465→   465→  updatedAt             DateTime                 @updatedAt @map("updated_at")
+   466→   466→
+   467→   467→  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   468→   468→  wallet                Wallet                   @relation(fields: [walletId], references: [id])
+   469→   469→
+   470→   470→  @@index([userId], map: "idx_withdrawal_user")
+   471→   471→  @@index([status], map: "idx_withdrawal_status")
+   472→   472→  @@map("withdrawals")
+   473→   473→}
+   474→   474→
+   475→   475→// ──────────────────────────────────────────────
+   476→   476→// REFERRAL MODEL
+   477→   477→// ──────────────────────────────────────────────
+   478→   478→
+   479→   479→model Referral {
+   480→   480→  id            String     @id @default(cuid())
+   481→   481→  referrerId    String     @map("referrer_id")
+   482→   482→  referredId    String     @map("referred_id")
+   483→   483→  code          String
+   484→   484→  level         Int        @default(1)
+   485→   485→
+   486→   486→  createdAt     DateTime   @default(now()) @map("created_at")
+   487→   487→
+   488→   488→  @@unique([referrerId, referredId], map: "uq_referral_pair")
+   489→   489→  @@index([referrerId], map: "idx_referral_referrer")
+   490→   490→  @@map("referrals")
+   491→   491→}
+   492→   492→
+   493→   493→// ──────────────────────────────────────────────
+   494→   494→// REFERRAL COMMISSION MODEL
+   495→   495→// ──────────────────────────────────────────────
+   496→   496→
+   497→   497→model ReferralCommission {
+   498→   498→  id              String                   @id @default(cuid())
+   499→   499→  userId          String                   @map("user_id")
+   500→   500→  depositId       String?                  @map("deposit_id")
+   501→   501→  referrerId      String                   @map("referrer_id")
+   502→   502→  amount          Float
+   503→   503→  rate            Float
+   504→   504→  level           Int                      @default(1)
+   505→   505→  type            ReferralCommissionType   @default(direct)
+   506→   506→  status          ReferralCommissionStatus @default(pending)
+   507→   507→
+   508→   508→  createdAt       DateTime                 @default(now()) @map("created_at")
+   509→   509→  updatedAt       DateTime                 @updatedAt @map("updated_at")
+   510→   510→
+   511→   511→  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   512→   512→
+   513→   513→  @@index([userId], map: "idx_commission_user")
+   514→   514→  @@index([status], map: "idx_commission_status")
+   515→   515→  @@map("referral_commissions")
+   516→   516→}
+   517→   517→
+   518→   518→// ──────────────────────────────────────────────
+   519→   519→// BINARY NODE MODEL
+   520→   520→// ──────────────────────────────────────────────
+   521→   521→
+   522→   522→model BinaryNode {
+   523→   523→  id              String         @id @default(cuid())
+   524→   524→  userId          String         @unique @map("user_id")
+   525→   525→  parentId        String?        @map("parent_id")
+   526→   526→  position        BinaryPosition
+   527→   527→  volumeLeft      Float          @default(0) @map("volume_left")
+   528→   528→  volumeRight     Float          @default(0) @map("volume_right")
+   529→   529→  depth           Int            @default(0)
+   530→   530→
+   531→   531→  createdAt       DateTime       @default(now()) @map("created_at")
+   532→   532→  updatedAt       DateTime       @updatedAt @map("updated_at")
+   533→   533→
+   534→   534→  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+   535→   535→  parent          BinaryNode?    @relation("BinaryTree", fields: [parentId], references: [id])
+   536→   536→  children        BinaryNode[]   @relation("BinaryTree")
+   537→   537→
+   538→   538→  @@index([parentId], map: "idx_binary_parent")
+   539→   539→  @@map("binary_nodes")
+   540→   540→}
+   541→   541→
+   542→   542→// ──────────────────────────────────────────────
+   543→   543→// KYC DOCUMENT MODEL
+   544→   544→// ──────────────────────────────────────────────
+   545→   545→
+   546→   546→model KYCDocument {
+   547→   547→  id              String            @id @default(cuid())
+   548→   548→  userId          String            @map("user_id")
+   549→   549→  type            KycDocumentType
+   550→   550→  fileUrl         String            @map("file_url")
+   551→   551→  status          KycDocumentStatus @default(pending)
+   552→   552→  reviewedBy      String?           @map("reviewed_by")
+   553→   553→  reviewedAt      DateTime?         @map("reviewed_at")
+   554→   554→  rejectionReason String?           @map("rejection_reason")
+   555→   555→
+   556→   556→  createdAt       DateTime          @default(now()) @map("created_at")
+   557→   557→  updatedAt       DateTime          @updatedAt @map("updated_at")
+   558→   558→
+   559→   559→  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+   560→   560→
+   561→   561→  @@index([userId], map: "idx_kycdoc_user")
+   562→   562→  @@map("kyc_documents")
+   563→   563→}
+   564→   564→
+   565→   565→// ──────────────────────────────────────────────
+   566→   566→// KYC VERIFICATION MODEL
+   567→   567→// ──────────────────────────────────────────────
+   568→   568→
+   569→   569→model KYCVerification {
+   570→   570→  id              String     @id @default(cuid())
+   571→   571→  userId          String     @unique @map("user_id")
+   572→   572→  level           KycLevel
+   573→   573→  status          KycDocumentStatus @default(pending)
+   574→   574→  submittedAt     DateTime?  @map("submitted_at")
+   575→   575→  verifiedAt      DateTime?  @map("verified_at")
+   576→   576→  notes           String?
+   577→   577→
+   578→   578→  createdAt       DateTime   @default(now()) @map("created_at")
+   579→   579→  updatedAt       DateTime   @updatedAt @map("updated_at")
+   580→   580→
+   581→   581→  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+   582→   582→
+   583→   583→  @@map("kyc_verifications")
+   584→   584→}
+   585→   585→
+   586→   586→// ──────────────────────────────────────────────
+   587→   587→// ADMIN MODEL
+   588→   588→// ──────────────────────────────────────────────
+   589→   589→
+   590→   590→model Admin {
+   591→   591→  id              String        @id @default(cuid())
+   592→   592→  userId          String        @unique @map("user_id")
+   593→   593→  role            AdminRoleName @default(SUPPORT)
+   594→   594→  isSuperAdmin    Boolean       @default(false) @map("is_super_admin")
+   595→   595→
+   596→   596→  createdAt       DateTime      @default(now()) @map("created_at")
+   597→   597→  updatedAt       DateTime      @updatedAt @map("updated_at")
+   598→   598→
+   599→   599→  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+   600→   600→
+   601→   601→  @@map("admins")
+   602→   602→}
+   603→   603→
+   604→   604→// ──────────────────────────────────────────────
+   605→   605→// NOTIFICATION MODEL
+   606→   606→// ──────────────────────────────────────────────
+   607→   607→
+   608→   608→model Notification {
+   609→   609→  id              String            @id @default(cuid())
+   610→   610→  userId          String            @map("user_id")
+   611→   611→  type            NotificationType
+   612→   612→  title           String
+   613→   613→  message         String
+   614→   614→  isRead          Boolean           @default(false) @map("is_read")
+   615→   615→  readAt          DateTime?         @map("read_at")
+   616→   616→  actionUrl       String?           @map("action_url")
+   617→   617→
+   618→   618→  createdAt       DateTime          @default(now()) @map("created_at")
+   619→   619→
+   620→   620→  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+   621→   621→
+   622→   622→  @@index([userId], map: "idx_notif_user")
+   623→   623→  @@index([isRead], map: "idx_notif_read")
+   624→   624→  @@map("notifications")
+   625→   625→}
+   626→   626→
+   627→   627→// ──────────────────────────────────────────────
+   628→   628→// SUPPORT TICKET MODEL
+   629→   629→// ──────────────────────────────────────────────
+   630→   630→
+   631→   631→model SupportTicket {
+   632→   632→  id              String         @id @default(cuid())
+   633→   633→  userId          String         @map("user_id")
+   634→   634→  subject         String
+   635→   635→  message         String
+   636→   636→  status          TicketStatus   @default(open)
+   637→   637→  priority        TicketPriority @default(medium)
+   638→   638→  assignedTo      String?        @map("assigned_to")
+   639→   639→  closedAt        DateTime?      @map("closed_at")
+   640→   640→
+   641→   641→  createdAt       DateTime       @default(now()) @map("created_at")
+   642→   642→  updatedAt       DateTime       @updatedAt @map("updated_at")
+   643→   643→
+   644→   644→  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+   645→   645→
+   646→   646→  @@index([userId], map: "idx_ticket_user")
+   647→   647→  @@index([status], map: "idx_ticket_status")
+   648→   648→  @@map("support_tickets")
+   649→   649→}
+   650→   650→
+   651→   651→// ──────────────────────────────────────────────
+   652→   652→// AUDIT LOG MODEL
+   653→   653→// ──────────────────────────────────────────────
+   654→   654→
+   655→   655→model AuditLog {
+   656→   656→  id              String   @id @default(cuid())
+   657→   657→  userId          String?  @map("user_id")
+   658→   658→  action          String
+   659→   659→  resource        String
+   660→   660→  resourceId      String?  @map("resource_id")
+   661→   661→  details         String?  // JSON
+   662→   662→  ipAddress       String?  @map("ip_address")
+   663→   663→  userAgent       String?  @map("user_agent")
+   664→   664→
+   665→   665→  createdAt       DateTime @default(now()) @map("created_at")
+   666→   666→
+   667→   667→  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+   668→   668→
+   669→   669→  @@index([userId], map: "idx_audit_user")
+   670→   670→  @@index([action], map: "idx_audit_action")
+   671→   671→  @@map("audit_logs")
+   672→   672→}
+   673→   673→
+   674→   674→// ──────────────────────────────────────────────
+   675→   675→// TWO FACTOR AUTH MODEL
+   676→   676→// ──────────────────────────────────────────────
+   677→   677→
+   678→   678→model TwoFactorAuth {
+   679→   679→  id              String   @id @default(cuid())
+   680→   680→  userId          String   @unique @map("user_id")
+   681→   681→  secret          String
+   682→   682→  backupCodes     String   @map("backup_codes") // JSON array
+   683→   683→  verified        Boolean  @default(false)
+   684→   684→
+   685→   685→  createdAt       DateTime @default(now()) @map("created_at")
+   686→   686→  updatedAt       DateTime @updatedAt @map("updated_at")
+   687→   687→
+   688→   688→  @@map("two_factor_auths")
+   689→   689→}
+   690→   690→
+   691→   691→// ──────────────────────────────────────────────
+   692→   692→// OTP MODEL
+   693→   693→// ──────────────────────────────────────────────
+   694→   694→
+   695→   695→model Otp {
+   696→   696→  id              String   @id @default(cuid())
+   697→   697→  userId          String?  @map("user_id")
+   698→   698→  email           String?
+   699→   699→  type            OtpType
+   700→   700→  code            String
+   701→   701→  expiresAt       DateTime @map("expires_at")
+   702→   702→  verified        Boolean  @default(false)
+   703→   703→
+   704→   704→  createdAt       DateTime @default(now()) @map("created_at")
+   705→   705→
+   706→   706→  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+   707→   707→
+   708→   708→  @@index([email], map: "idx_otp_email")
+   709→   709→  @@map("otps")
+   710→   710→}
+   711→   711→
+   712→   712→// ──────────────────────────────────────────────
+   713→   713→// EMAIL LOG MODEL
+   714→   714→// ──────────────────────────────────────────────
+   715→   715→
+   716→   716→model EmailLog {
+   717→   717→  id              String       @id @default(cuid())
+   718→   718→  userId          String       @map("user_id")
+   719→   719→  template        String
+   720→   720→  subject         String
+   721→   721→  status          EmailStatus  @default(sent)
+   722→   722→  errorMessage    String?      @map("error_message")
+   723→   723→
+   724→   724→  createdAt       DateTime     @default(now()) @map("created_at")
+   725→   725→
+   726→   726→  user            User         @relation("EmailRecipient", fields: [userId], references: [id], onDelete: Cascade)
+   727→   727→
+   728→   728→  @@index([userId], map: "idx_email_user")
+   729→   729→  @@map("email_logs")
+   730→   730→}
+   731→   731→
+   732→   732→// ──────────────────────────────────────────────
+   733→   733→// PROMO CODE MODEL
+   734→   734→// ──────────────────────────────────────────────
+   735→   735→
+   736→   736→model PromoCode {
+   737→   737→  id              String              @id @default(cuid())
+   738→   738→  code            String              @unique
+   739→   739→  discountType    PromoDiscountType   @map("discount_type")
+   740→   740→  discountValue   Float               @map("discount_value")
+   741→   741→  minDeposit      Float?              @map("min_deposit")
+   742→   742→  maxUses         Int?                @map("max_uses")
+   743→   743→  currentUses     Int                 @default(0) @map("current_uses")
+   744→   744→  status          PromoCodeStatus     @default(active)
+   745→   745→  validFrom       DateTime            @map("valid_from")
+   746→   746→  validUntil      DateTime?           @map("valid_until")
+   747→   747→
+   748→   748→  createdAt       DateTime            @default(now()) @map("created_at")
+   749→   749→  updatedAt       DateTime            @updatedAt @map("updated_at")
+   750→   750→
+   751→   751→  userPromos      UserPromo[]
+   752→   752→
+   753→   753→  @@map("promo_codes")
+   754→   754→}
+   755→   755→
+   756→   756→// ──────────────────────────────────────────────
+   757→   757→// USER PROMO MODEL
+   758→   758→// ──────────────────────────────────────────────
+   759→   759→
+   760→   760→model UserPromo {
+   761→   761→  id              String     @id @default(cuid())
+   762→   762→  userId          String     @map("user_id")
+   763→   763→  promoCodeId     String     @map("promo_code_id")
+   764→   764→  usedAt          DateTime   @map("used_at")
+   765→   765→
+   766→   766→  createdAt       DateTime   @default(now()) @map("created_at")
+   767→   767→
+   768→   768→  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+   769→   769→  promoCode       PromoCode  @relation(fields: [promoCodeId], references: [id])
+   770→   770→
+   771→   771→  @@index([userId], map: "idx_userpromo_user")
+   772→   772→  @@map("user_promos")
+   773→   773→}
+   774→   774→
+   775→   775→// ──────────────────────────────────────────────
+   776→   776→// GIFT CARD MODEL
+   777→   777→// ──────────────────────────────────────────────
+   778→   778→
+   779→   779→model GiftCard {
+   780→   780→  id              String         @id @default(cuid())
+   781→   781→  depositId       String?        @map("deposit_id")
+   782→   782→  cardType        String         @map("card_type")
+   783→   783→  cardCode        String         @map("card_code")
+   784→   784→  pinCode         String?        @map("pin_code")
+   785→   785→  amount          Float
+   786→   786→  currency        String         @default("USD")
+   787→   787→  imageUrl        String?        @map("image_url")
+   788→   788→  status          GiftCardStatus @default(pending)
+   789→   789→  rejectionReason String?        @map("rejection_reason")
+   790→   790→  verifiedBy      String?        @map("verified_by")
+   791→   791→  verifiedAt      DateTime?      @map("verified_at")
+   792→   792→
+   793→   793→  createdAt       DateTime       @default(now()) @map("created_at")
+   794→   794→  updatedAt       DateTime       @updatedAt @map("updated_at")
+   795→   795→
+   796→   796→  @@index([status], map: "idx_giftcard_status")
+   797→   797→  @@map("gift_cards")
+   798→   798→}
+   799→   799→
+   800→   800→// ──────────────────────────────────────────────
+   801→   801→// SITE SETTINGS
+   802→   802→// ──────────────────────────────────────────────
+   803→   803→
+   804→   804→model SiteSettings {
+   805→   805→  id           String   @id @default("main")
+   806→   806→  aboutPhotoUrl String? @map("about_photo_url")
+   807→   807→  aboutPhotoUpdatedAt DateTime? @map("about_photo_updated_at")
+   808→   808→  updatedAt    DateTime @updatedAt @map("updated_at")
+   809→   809→
+   810→   810→  @@map("site_settings")
+   811→   811→}

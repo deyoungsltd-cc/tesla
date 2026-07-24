@@ -11,6 +11,6 @@ export async function GET() {
     return apiResponse(plans)
   } catch (error) {
     console.error('Get plans error:', error)
-    return apiError('Internal server error', 500)
+    return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
 }

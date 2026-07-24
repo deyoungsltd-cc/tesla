@@ -3,14 +3,12 @@
 // Security: Protect with CRON_SECRET header in production
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/db';
 
 async function processDailyPayouts() {
   console.log(`[${new Date().toISOString()}] Starting daily payout processing...`);
 
-  const activeInvestments = await prisma.userInvestment.findMany({
+  const activeInvestments = await db.userInvestment.findMany({
     where: { status: 'active' },
     include: { plan: true, wallet: true, user: true },
   });
@@ -24,7 +22,7 @@ async function processDailyPayouts() {
     try {
       const dailyReturn = inv.amount * (inv.plan.dailyReturnRate / 100);
 
-      await prisma.userInvestment.update({
+      await db.userInvestment.update({
         where: { id: inv.id },
         data: {
           dailyReturn,
@@ -34,12 +32,12 @@ async function processDailyPayouts() {
         },
       });
 
-      await prisma.wallet.update({
+      await db.wallet.update({
         where: { id: inv.walletId },
         data: { balance: { increment: dailyReturn }, availableBalance: { increment: dailyReturn } },
       });
 
-      await prisma.transaction.create({
+      await db.transaction.create({
         data: {
           walletId: inv.walletId,
           type: 'investment_return',
@@ -51,12 +49,12 @@ async function processDailyPayouts() {
 
       // Check maturity
       if (inv.endDate && new Date() >= inv.endDate) {
-        await prisma.wallet.update({
+        await db.wallet.update({
           where: { id: inv.walletId },
           data: { balance: { increment: inv.amount }, availableBalance: { increment: inv.amount } },
         });
-        await prisma.userInvestment.update({ where: { id: inv.id }, data: { status: 'completed' } });
-        await prisma.transaction.create({
+        await db.userInvestment.update({ where: { id: inv.id }, data: { status: 'completed' } });
+        await db.transaction.create({
           data: { walletId: inv.walletId, type: 'investment_return', status: 'completed', amount: inv.amount, description: `Principal return - ${inv.plan.name}` },
         });
       }
@@ -71,9 +69,9 @@ async function processDailyPayouts() {
 }
 
 export async function POST(request: NextRequest) {
-  // Cron secret verification
+  // Cron secret verification - MUST be present AND correct
   const secret = request.headers.get('x-cron-secret');
-  if (secret && secret !== process.env.CRON_SECRET) {
+  if (!secret || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -81,8 +79,7 @@ export async function POST(request: NextRequest) {
     const result = await processDailyPayouts();
     return NextResponse.json(result);
   } catch (err: any) {
+    console.error('Payout processing error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

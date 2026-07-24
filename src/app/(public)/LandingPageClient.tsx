@@ -78,10 +78,10 @@ function ScrollProgress() {
 
 /* ── Data ── */
 const plans = [
-  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=85&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
-  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model Y', image: 'https://images.unsplash.com/photo-1554744512-d6c603f27c54?w=800&q=85&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
-  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=85&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
-  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=85&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
+  { name: 'Basic', badge: 'STARTER', badgeBg: 'bg-gradient-to-r from-gray-600 to-gray-800', min: '$200', max: '$4,999', daily: '0.5%', duration: '30 Days', model: 'Model 3', image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&q=85&auto=format&fit=crop', features: ['Daily profit accrual', 'Capital return included', '24/7 support access'] },
+  { name: 'Silver', badge: 'POPULAR', badgeBg: 'bg-gradient-to-r from-[#CC0000] to-[#ff1a1a]', min: '$5,000', max: '$9,999', daily: '0.8%', duration: '21 Days', model: 'Model S', image: 'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=800&q=85&auto=format&fit=crop', features: ['Higher daily returns', 'Priority withdrawals', 'Dedicated account manager'], popular: true },
+  { name: 'Gold', badge: 'PREMIUM', badgeBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', min: '$10,000', max: '$49,999', daily: '1.2%', duration: '14 Days', model: 'Model X', image: 'https://images.unsplash.com/photo-1535392432937-a27c36ec07b5?w=800&q=85&auto=format&fit=crop', features: ['Premium daily rates', 'Instant profit withdrawal', 'Portfolio insurance'] },
+  { name: 'Platinum', badge: 'ELITE', badgeBg: 'bg-gradient-to-r from-purple-500 to-indigo-500', min: '$50,000', max: '$100,000', daily: '1.8%', duration: '7 Days', model: 'Cybertruck', image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&q=85&auto=format&fit=crop', features: ['Maximum daily returns', 'Zero-fee withdrawals', 'VIP concierge service'] },
 ];
 
 const stats = [
@@ -105,9 +105,12 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: 'David M.', location: 'New York, USA', plan: 'Gold Investor', text: 'Tesla Prime Capital has completely transformed my investment strategy. The daily returns are consistent and the withdrawal process is seamless. I have been investing for 8 months and the results exceed my expectations.', avatar: 'D' },
-  { name: 'Sarah K.', location: 'London, UK', plan: 'Platinum Investor', text: 'The VIP support and zero-fee withdrawals make Platinum the best plan. My portfolio has grown over 40% in just 3 months. The transparency and real-time tracking give me complete confidence.', avatar: 'S' },
-  { name: 'James T.', location: 'Sydney, AU', plan: 'Silver Investor', text: 'As a first-time investor, the platform made everything simple. The 0.8% daily returns are exactly as advertised and my account manager has been incredibly helpful throughout the process.', avatar: 'J' },
+  { name: 'David M.', location: 'New York, USA', plan: 'Gold Investor', text: 'Tesla Prime Capital has completely transformed my investment strategy. The daily returns are consistent and the withdrawal process is seamless. I have been investing for 8 months and the results exceed my expectations.', avatar: 'D', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Sarah K.', location: 'London, UK', plan: 'Platinum Investor', text: 'The VIP support and zero-fee withdrawals make Platinum the best plan. My portfolio has grown over 40% in just 3 months. The transparency and real-time tracking give me complete confidence.', avatar: 'S', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face' },
+  { name: 'James T.', location: 'Sydney, AU', plan: 'Silver Investor', text: 'As a first-time investor, the platform made everything simple. The 0.8% daily returns are exactly as advertised and my account manager has been incredibly helpful throughout the process.', avatar: 'J', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Amara O.', location: 'Lagos, NG', plan: 'Gold Investor', text: 'I was skeptical at first but Tesla Prime Capital proved me wrong. The returns are real, the support team responds within minutes, and I have successfully withdrawn multiple times without any issues.', avatar: 'A', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Robert L.', location: 'Toronto, CA', plan: 'Platinum Investor', text: 'After retiring, I needed a reliable income source. Tesla Prime Capital delivers exactly what they promise. My daily earnings are consistent and the platform is incredibly easy to navigate.', avatar: 'R', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
+  { name: 'Mei L.', location: 'Singapore', plan: 'Silver Investor', text: 'The referral program is fantastic. I have referred several colleagues and we all earn together. The platform transparency with real-time tracking sets it apart from anything else I have tried.', avatar: 'M', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face' },
 ];
 
 const faqs = [
@@ -368,7 +371,7 @@ export default function LandingPageClient() {
               <p className="text-gray-400 max-w-2xl mx-auto text-base leading-relaxed">Real feedback from real investors. Join thousands who are already growing their wealth with Tesla Prime Capital.</p>
             </div>
           </FadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {testimonials.map((t, i) => (
               <FadeIn key={i} delay={i * 150}>
                 <div className="dash-card card-shine noise-overlay p-8 group tilt-card h-full flex flex-col">
@@ -379,7 +382,11 @@ export default function LandingPageClient() {
                   </div>
                   <p className="text-gray-300 text-sm leading-relaxed mb-6 flex-1">&ldquo;{t.text}&rdquo;</p>
                   <div className="flex items-center gap-4 pt-5 border-t border-tesla-border">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#CC0000] to-[#800000] flex items-center justify-center text-white font-bold text-lg">{t.avatar}</div>
+                    {t.photo ? (
+                      <img src={t.photo} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-[#CC0000]/30" loading="lazy" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#CC0000] to-[#800000] flex items-center justify-center text-white font-bold text-lg">{t.avatar}</div>
+                    )}
                     <div>
                       <p className="text-white font-semibold text-sm">{t.name}</p>
                       <p className="text-gray-500 text-xs">{t.location} &middot; {t.plan}</p>

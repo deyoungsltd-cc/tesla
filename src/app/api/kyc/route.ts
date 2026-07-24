@@ -2,79 +2,61 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, apiResponse, apiError } from '@/lib/api-helpers'
 
-export async function GET() {
-  try {
-    const user = await requireAuth()
+async function getHandler(_request: NextRequest, _context: any, user: any) {
+  const documents = await db.kYCDocument.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+  })
 
-    const documents = await db.kYCDocument.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-    })
+  const kycLevel = user.kycLevel || 'LEVEL_0'
 
-    const kycLevel = user.profile?.kycLevel || 'NONE'
-
-    return apiResponse({
-      kycLevel,
-      documents,
-    })
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return apiError('Unauthorized', 401)
-    }
-    console.error('Get KYC error:', error)
-    return apiError('Internal server error', 500)
-  }
+  return apiResponse({
+    kycLevel,
+    documents,
+  })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await requireAuth()
-    const body = await request.json()
-    const { docType, docNumber, frontImage, backImage } = body
+async function postHandler(request: NextRequest, _context: any, user: any) {
+  const body = await request.json()
+  const { type, fileUrl } = body
 
-    if (!docType || !frontImage) {
-      return apiError('Document type and front image are required')
-    }
-
-    const validDocTypes = ['PASSPORT', 'DRIVERS_LICENSE', 'NATIONAL_ID', 'UTILITY_BILL', 'SELFIE']
-    if (!validDocTypes.includes(docType)) {
-      return apiError('Invalid document type')
-    }
-
-    const pendingDocs = await db.kYCDocument.count({
-      where: { userId: user.id, status: 'PENDING' },
-    })
-
-    if (pendingDocs > 0) {
-      return apiError('You already have a pending KYC document under review')
-    }
-
-    const document = await db.kYCDocument.create({
-      data: {
-        userId: user.id,
-        docType,
-        docNumber: docNumber || null,
-        frontImage,
-        backImage: backImage || null,
-        status: 'PENDING',
-      },
-    })
-
-    await db.notification.create({
-      data: {
-        userId: user.id,
-        type: 'KYC',
-        title: 'KYC Document Submitted',
-        message: `Your ${docType.replace('_', ' ')} document has been submitted for verification. You will be notified once it is reviewed.`,
-      },
-    })
-
-    return apiResponse(document, 201)
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return apiError('Unauthorized', 401)
-    }
-    console.error('Submit KYC error:', error)
-    return apiError('Internal server error', 500)
+  if (!type || !fileUrl) {
+    return apiError('Document type and image are required', 'MISSING_FIELDS', 400)
   }
+
+  const validDocTypes = ['id_front', 'id_back', 'selfie', 'proof_of_address']
+  if (!validDocTypes.includes(type)) {
+    return apiError('Invalid document type', 'INVALID_TYPE', 400)
+  }
+
+  const pendingDocs = await db.kYCDocument.count({
+    where: { userId: user.id, status: 'pending' },
+  })
+
+  if (pendingDocs > 0) {
+    return apiError('You already have a pending KYC document under review', 'PENDING_EXISTS', 400)
+  }
+
+  const document = await db.kYCDocument.create({
+    data: {
+      userId: user.id,
+      type,
+      fileUrl,
+      status: 'pending',
+    },
+  })
+
+  await db.notification.create({
+    data: {
+      userId: user.id,
+      type: 'kyc_submitted',
+      title: 'KYC Document Submitted',
+      message: `Your ${type.replace('_', ' ')} document has been submitted for verification. You will be notified once it is reviewed.`,
+    },
+  })
+
+  return apiResponse(document, 201)
 }
+
+export const GET = requireAuth(getHandler)
+export const POST = requireAuth(postHandler)
