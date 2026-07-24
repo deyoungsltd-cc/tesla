@@ -50,8 +50,14 @@ export default function AboutPage() {
             <div className="relative p-8 sm:p-12">
               <div className="flex flex-col sm:flex-row items-center gap-8">
                 <div className="w-36 h-36 rounded-2xl overflow-hidden border-2 border-[#CC0000]/30 shrink-0 bg-tesla-card shadow-[0_0_40px_rgba(204,0,0,0.15)] relative">
-                  <img src={aboutPhotoUrl || 'https://images.unsplash.com/photo-1534272208726-63db30c70396?w=300&q=80'} alt="Tesla Leadership" className="w-full h-full object-cover" onError={(e) => { const t = e.currentTarget as HTMLImageElement; if (!aboutPhotoUrl) t.src = 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&q=80'; }} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/30 to-transparent" />
+                  {aboutPhotoUrl ? (
+                    <img src={aboutPhotoUrl} alt="Tesla Leadership" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#111]">
+                      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="none" stroke="#CC0000" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/30 to-transparent pointer-events-none" />
                 </div>
                 <div className="text-center sm:text-left">
                   <div className="inline-flex items-center gap-2 bg-[#CC0000]/10 border border-[#CC0000]/20 rounded-full px-4 py-1.5 mb-4">

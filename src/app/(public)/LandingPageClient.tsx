@@ -200,7 +200,7 @@ export default function LandingPageClient() {
       .catch(() => {});
   }, []);
 
-  const defaultElonPhoto = 'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=200&q=80&fit=crop&crop=face';
+  // No default photo — shows uploaded/admin-set photo only
 
   return (
     <div className="min-h-screen bg-tesla-dark text-white page-enter">
@@ -217,12 +217,17 @@ export default function LandingPageClient() {
               {/* Elon Musk Portrait */}
               <div className="mb-10 flex justify-center">
                 <div className="relative group">
-                  <img
-                    src={elonPhoto || defaultElonPhoto}
-                    alt="Tesla CEO"
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#CC0000]/40 shadow-[0_0_40px_rgba(204,0,0,0.2)] group-hover:border-[#CC0000]/70 group-hover:shadow-[0_0_60px_rgba(204,0,0,0.3)] transition-all duration-500"
-                    loading="eager"
-                  />
+                  {elonPhoto ? (
+                    <img
+                      src={elonPhoto}
+                      alt="Tesla CEO"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[#CC0000]/40 shadow-[0_0_40px_rgba(204,0,0,0.2)] group-hover:border-[#CC0000]/70 group-hover:shadow-[0_0_60px_rgba(204,0,0,0.3)] transition-all duration-500"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#CC0000]/40 flex items-center justify-center bg-[#111]">
+                      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="#CC0000" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  )}
                   <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#CC0000] flex items-center justify-center shadow-lg">
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="white"><path d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362h-.004.004zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46V1.463z"/></svg>
                   </div>
