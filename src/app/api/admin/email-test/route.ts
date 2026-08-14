@@ -38,8 +38,6 @@ async function handler(request: NextRequest) {
         config: {
           provider: config.provider,
           fromEmail: config.fromEmail,
-          smtpHost: config.smtpHost,
-          smtpPort: config.smtpPort,
           hasConfig: config.hasConfig,
         },
       });
@@ -53,8 +51,6 @@ async function handler(request: NextRequest) {
         config: {
           provider: config.provider,
           fromEmail: config.fromEmail,
-          smtpHost: config.smtpHost,
-          smtpPort: config.smtpPort,
           hasConfig: config.hasConfig,
         },
       });
