@@ -73,6 +73,7 @@ async function handler(request: NextRequest, _context: any, user: any) {
         vin: trackingInfo.vin || null,
         currentLocation: trackingInfo.currentLocation || null,
         shippingDirection: trackingInfo.shippingDirection || null,
+        factoryLocation: trackingInfo.factoryLocation || null,
         estimatedDelivery: trackingInfo.estimatedDelivery || estimatedDates.delivered,
         estimatedDates,
         timeline,

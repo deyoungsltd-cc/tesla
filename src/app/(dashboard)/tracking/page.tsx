@@ -31,39 +31,39 @@ const COLOR_LABELS: Record<string, string> = {
   quick_silver: 'Quick Silver', blue_multi_coat: 'Blue Multi-Coat',
 };
 
-function Globe3D({ className }: { className?: string }) {
+function GlobeSVG() {
   return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#CC0000" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#CC0000" stopOpacity="0.05" />
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#CC0000" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#CC0000" stop-opacity="0.05" />
         </linearGradient>
+        <radialGradient id="g2" cx="60" cy="60" r="50" gradientUnits="userSpaceOnUse" gradientTransform="rotate(0 0 360)">
+          <stop offset="0%" stop-color="#CC0000" stop-opacity="0.12" />
+          <stop offset="100%" stop-color="#CC0000" stop-opacity="0" />
+        </radialGradient>
       </defs>
-      <circle cx="50" cy="50" r="38" stroke="url(#globeGrad)" strokeWidth="1" />
-      <ellipse cx="50" cy="50" rx="18" ry="38" stroke="#CC0000" strokeWidth="0.5" opacity="0.3" />
-      <ellipse cx="50" cy="50" rx="32" ry="38" stroke="#CC0000" strokeWidth="0.5" opacity="0.2" transform="rotate(60 50 50)" />
-      <ellipse cx="50" cy="50" rx="32" ry="38" stroke="#CC0000" strokeWidth="0.5" opacity="0.2" transform="rotate(-60 50 50)" />
-      <line x1="12" y1="50" x2="88" y2="50" stroke="#CC0000" strokeWidth="0.5" opacity="0.15" />
-      <ellipse cx="50" cy="50" rx="38" ry="14" stroke="#CC0000" strokeWidth="0.5" opacity="0.15" />
-      <circle cx="50" cy="50" r="38" stroke="url(#globeGrad)" strokeWidth="1.5" opacity="0.5">
-        <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="30s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="50" cy="50" r="3" fill="#CC0000" opacity="0.8">
-        <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
+      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#g2)" stroke-width="0.8" opacity="0.6" />
+      <circle cx="60" cy="60" r="42" fill="none" stroke="url(#g1)" stroke-width="0.4" opacity="0.3" />
+      <ellipse cx="60" cy="60" rx="20" ry="38" stroke="url(#g1)" stroke-width="0.5" opacity="0.2" transform="rotate(60 60 60)" />
+      <ellipse cx="60" cy="60" rx="32" ry="38" stroke="url(#g1)" stroke-width="0.5" opacity="0.2" transform="rotate(-60 60 60)" />
+      <line x1="12" y1="20" x2="12" y2="100" stroke="url(#g1)" stroke-width="0.4" opacity="0.15" />
+      <line x1="108" y1="20" x2="108" y2="100" stroke="url(#g1)" stroke-width="0.4" opacity="0.15" />
+      <circle cx="60" cy="60" r="3" fill="#CC0000" opacity="0.8">
+        <animate attributeName="opacity" values="0.4;1;0.4;0" dur="2s" repeatCount="indefinite" />
       </circle>
     </svg>
   );
 }
 
-function TruckIcon({ className }: { className?: string }) {
+function TruckSVG() {
   return (
-    <svg viewBox="0 0 64 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="14" width="38" height="20" rx="3" stroke="currentColor" strokeWidth="2" />
-      <path d="M40 20h10l6 8v6h-16v-14z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="14" cy="36" r="4" stroke="currentColor" strokeWidth="2" />
-      <circle cx="52" cy="36" r="4" stroke="currentColor" strokeWidth="2" />
-      <line x1="18" y1="36" x2="48" y2="36" stroke="currentColor" strokeWidth="1.5" />
+    <svg viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="14" width="38" height="18" rx="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M42 14h10l6-6 7 5v12" />
+      <circle cx="16" cy="36" r="5" stroke="currentColor" strokeWidth="2" />
+      <line x1="46" y1="36" x2="46" y2="36" />
     </svg>
   );
 }
@@ -102,18 +102,15 @@ export default function TrackingPage() {
     return () => clearInterval(interval);
   }, [autoRefresh, fetchTracking, orderNumber]);
 
-  // Animate progress bar on data change
   useEffect(() => {
     if (!trackingData?.tracking?.progress) { setAnimatedProgress(0); return; }
     const target = trackingData.tracking.progress;
     const duration = 1500;
     const start = performance.now();
-    const initial = animatedProgress;
     const animate = (now: number) => {
-      const elapsed = now - start;
-      const t = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-      setAnimatedProgress(initial + (target - initial) * eased);
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setAnimatedProgress(prev => prev + (target - prev) * eased);
       if (t < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
@@ -124,7 +121,7 @@ export default function TrackingPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Search */}
+      {/* Search */
       <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative flex items-center gap-3 mb-4">
@@ -145,8 +142,10 @@ export default function TrackingPage() {
             placeholder="e.g. TP-2025-XXXXXXX"
             className="flex-1 bg-[#1a1a1a] border border-tesla-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors font-mono"
           />
-          <button onClick={handleTrack} disabled={loading || !orderNumber.trim()}
-            className="bg-[#CC0000] hover:bg-[#ff1a1a] disabled:opacity-50 text-white text-sm font-medium px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-[#CC0000]/20 active:scale-95 shrink-0">
+          <button
+            onClick={handleTrack} disabled={loading || !orderNumber.trim()}
+            className="bg-[#CC0000] hover:bg-[#ff1a1a] disabled:opacity-50 text-white text-sm font-medium px-6 py-3 rounded-xl transition-all active:scale-95 hover:shadow-lg hover:shadow-[#CC0000]/20"
+          >
             {loading ? (
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" /><path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" /></svg>
             ) : 'Track'}
@@ -160,13 +159,19 @@ export default function TrackingPage() {
         )}
       </div>
 
-      {/* Results */}
+      {/* Results */
       {trackingData && order && tracking && (
         <div className="space-y-4" style={{ animation: 'fadeSlideUp 0.6s ease-out' }}>
           <div className="flex items-center justify-between">
             <p className="text-gray-400 text-xs">Live tracking for <span className="text-white font-mono font-medium">#{order.orderNumber}</span></p>
-            <button onClick={() => setAutoRefresh(r => !r)}
-              className={"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 " + (autoRefresh ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-lg shadow-green-500/5' : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20')}>
+            <button
+              onClick={() => setAutoRefresh(r => !r)}
+              className={"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 " +
+                (autoRefresh
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-lg shadow-green-500/5'
+                  : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20'
+                )
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
@@ -175,13 +180,11 @@ export default function TrackingPage() {
             </button>
           </div>
 
-          {/* Vehicle summary card with 3D perspective */}
-          <div className="bg-tesla-card border border-tesla-border rounded-2xl overflow-hidden relative group"
-               style={{ perspective: '1000px' }}>
+          {/* Vehicle summary */
+          <div className="bg-tesla-card border border-tesla-border rounded-2xl overflow-hidden relative group">
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#CC0000]/10 transition-all duration-700" />
             <div className="flex items-center gap-4 p-5 relative">
-              <div className="w-32 h-22 rounded-xl overflow-hidden border border-tesla-border bg-[#1a1a1a] shrink-0 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1"
-                   style={{ transformStyle: 'preserve-3d' }}>
+              <div className="w-32 h-22 rounded-xl overflow-hidden border border-tesla-border bg-[#1a1a1a] shrink-0 transition-transform duration-500 group-hover:scale-[1.03]">
                 {order.vehicle?.imageUrl ? (
                   <img src={order.vehicle.imageUrl} alt={order.vehicle.name} className="w-full h-full object-cover" />
                 ) : (
@@ -191,8 +194,7 @@ export default function TrackingPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-white font-semibold">{order.vehicle?.name || 'Vehicle'}</h3>
-                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full border " + (STATUS_COLORS[order.status] || 'bg-gray-700 text-gray-300')}>
-                    {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full border " + (STATUS_COLORS[order.status] || 'bg-gray-700 text-gray-300')}>                    {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
@@ -211,33 +213,29 @@ export default function TrackingPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-gray-500 text-[11px]">Deposit:</span>
-                    <span className={"text-[11px] font-medium " + (order.depositPaid ? 'text-green-400' : 'text-yellow-400')}>
-                      ${Number(order.depositAmount).toLocaleString()} {order.depositPaid ? '(Paid)' : '(Unpaid)'}
-                    </span>
+                    <span className={"text-[11px] font-medium " + (order.depositPaid ? 'text-green-400' : 'text-yellow-400')}>{Number(order.depositAmount).toLocaleString()} {order.depositPaid ? '(Paid)' : '(Unpaid)'}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 3D Route Progress with Globe */
+          {/* 3D Route Progress */
           <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 relative overflow-hidden">
             <div className="absolute -bottom-16 -right-16 opacity-30 pointer-events-none">
-              <Globe3D className="w-64 h-64" />
+              <GlobeSVG />
             </div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-white font-semibold text-sm">Delivery Route</h3>
                 <span className="text-gray-500 text-xs font-mono">{Math.round(animatedProgress)}%</span>
               </div>
-
-              {/* 3D Progress Steps */}
-              <div className="relative">
-                {/* Background track */}
+              {/* Progress track */
+              <div className="relative mt-2">
                 <div className="absolute top-5 left-6 right-6 h-1.5 bg-white/5 rounded-full z-0" />
-                {/* Animated fill track with gradient + glow */}
                 <div
-                  className={"absolute top-5 left-6 h-1.5 rounded-full z-0 transition-all duration-[1500ms] ease-out " + (tracking.isCancelled ? 'bg-red-500/40' : 'bg-gradient-to-r from-[#CC0000] via-[#ff3333] to-[#ff6666]')}
+                  className="absolute top-5 left-6 h-1.5 rounded-full z-0 transition-all duration-[1500ms] ease-out " +
+                    (tracking.isCancelled ? 'bg-red-500/40' : 'bg-gradient-to-r from-[#CC0000] via-[#ff3333] to-[#ff6666]')
                   style={{ width: (tracking.isCancelled ? 0 : animatedProgress) + '%', boxShadow: tracking.isCancelled ? 'none' : '0 0 12px rgba(204,0,0,0.4), 0 0 24px rgba(204,0,0,0.15)' }}
                 />
                 {/* Steps */}
@@ -256,21 +254,16 @@ export default function TrackingPage() {
                                 ? 'bg-red-500/20 border-red-500/50'
                                 : 'bg-[#1a1a1a] border-tesla-border')
                           }
-                          style={isComplete ? {
-                            transform: `perspective(500px) translateZ(${isCurrent ? '8px' : '0px'}) scale(${isCurrent ? '1.15' : '1.05'})`,
-                            transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                          } : {}}
                         >
                           {isComplete ? (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
                           ) : (
                             <span className={"text-xs font-bold " + (isCurrent ? step.color : 'text-gray-600')}>{idx + 1}</span>
                           )}
-                          {/* 3D pulse ring for current step */}
                           {isCurrent && !tracking.isCancelled && (
                             <>
-                              <span className={"absolute inset-[-4px] rounded-full border-2 " + step.border + " opacity-40"} style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
-                              <span className={"absolute inset-[-8px] rounded-full border " + step.border + " opacity-10"} style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite 0.3s' }} />
+                              <span className={"absolute inset-[-4px] rounded-full border-2 " + step.border + " opacity-40" style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                              <span className={"absolute inset-[-8px] rounded-full border " + step.border + " opacity-10" style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite 0.3s' }} />
                             </>
                           )}
                         </div>
@@ -283,13 +276,14 @@ export default function TrackingPage() {
                   })}
                 </div>
               </div>
-
-              {/* Animated truck icon that moves along the progress bar */}
+              {/* Truck animation */
               {!tracking.isCancelled && tracking.currentStep >= 2 && (
                 <div className="flex justify-center mt-6">
-                  <div className="flex items-center gap-2 bg-white/5 border border-tesla-border rounded-full px-4 py-2"
-                       style={{ animation: 'floatBounce 3s ease-in-out infinite' }}>
-                    <TruckIcon className="w-5 h-5 text-[#CC0000]" />
+                  <div
+                    className="flex items-center gap-2 bg-white/5 border border-tesla-border rounded-full px-4 py-2"
+                    style={{ animation: 'floatBounce 3s ease-in-out infinite' }}
+                  >
+                    <TruckSVG />
                     <span className="text-xs text-gray-300 font-medium">{tracking.currentLocation || 'En Route'}</span>
                   </div>
                 </div>
@@ -297,7 +291,7 @@ export default function TrackingPage() {
             </div>
           </div>
 
-          {/* Details Grid with hover effects */}
+          {/* Details Grid */
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-4 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center gap-2 mb-1.5">
@@ -315,10 +309,12 @@ export default function TrackingPage() {
             </div>
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-4 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center gap-2 mb-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /></svg>
                 <span className="text-gray-500 text-[10px] font-medium">Est. Delivery</span>
               </div>
-              <p className="text-white text-sm font-medium">{tracking.estimatedDelivery ? new Date(tracking.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : <span className="text-gray-600 text-xs">Calculating...</span>}</p>
+              <p className="text-white text-sm font-medium">
+                {tracking.estimatedDelivery ? new Date(tracking.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : <span className="text-gray-600 text-xs">Calculating...</span>}
+              </p>
             </div>
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-4 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center gap-2 mb-1.5">
@@ -327,8 +323,11 @@ export default function TrackingPage() {
               </div>
               <p className="text-white text-sm font-medium">{Math.round(animatedProgress)}%</p>
               <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <div className={"h-full rounded-full transition-all duration-[1500ms] ease-out " + (tracking.isCancelled ? 'bg-red-500/50' : 'bg-[#CC0000]')}
-                     style={{ width: animatedProgress + '%', boxShadow: '0 0 8px rgba(204,0,0,0.3)' }} />
+                <div
+                  className={"h-full rounded-full transition-all duration-[1500ms] ease-out " +
+                    (tracking.isCancelled ? 'bg-red-500/50' : 'bg-[#CC0000]')
+                  style={{ width: animatedProgress + '%', boxShadow: '0 0 8px rgba(204,0,0,0.3)' }}
+                </div>
               </div>
             </div>
           </div>
@@ -344,14 +343,14 @@ export default function TrackingPage() {
             </div>
           )}
 
-          {/* Shipping direction banner with 3D globe */}
+          {/* Shipping banner */}
           {tracking.shippingDirection && !tracking.isCancelled && tracking.currentStep >= 3 && (
             <div className="bg-gradient-to-r from-[#CC0000]/10 via-[#CC0000]/5 to-transparent border border-[#CC0000]/20 rounded-xl px-5 py-4 flex items-center gap-4 overflow-hidden relative">
               <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none">
-                <Globe3D className="w-full h-full" />
+                <GlobeSVG />
               </div>
               <div className="w-10 h-10 rounded-full bg-[#CC0000]/20 flex items-center justify-center shrink-0" style={{ animation: 'floatBounce 4s ease-in-out infinite' }}>
-                <TruckIcon className="w-5 h-5 text-[#CC0000]" />
+                <TruckSVG />
               </div>
               <div className="flex-1">
                 <p className="text-white text-sm font-medium">Shipping Route</p>
@@ -389,21 +388,21 @@ export default function TrackingPage() {
                       {!isLast && (
                         <div className="absolute left-[7px] top-6 bottom-0 w-px bg-white/10" />
                       )}
-                      <div className={"relative w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 z-10 transition-all duration-500 " +
-                        (isLatest
-                          ? (stepInfo?.bg || 'bg-[#CC0000]') + ' ' + (stepInfo?.border || 'border-[#CC0000]') + ' shadow-lg scale-125'
-                          : 'bg-[#1a1a1a] border-tesla-border')
-                      }>
+                      <div
+                        className={"relative w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 z-10 transition-all duration-500 " +
+                          (isLatest
+                            ? (stepInfo?.bg || 'bg-[#CC0000]') + ' ' + (stepInfo?.border || 'border-[#CC0000]') + ' shadow-lg scale-125'
+                            : 'bg-[#1a1a1a] border-tesla-border')
+                        }
+                      >
                         {isLatest && <span className={"absolute inset-[-3px] rounded-full " + (stepInfo?.bg || 'bg-[#CC0000]') + " opacity-30"} style={{ animation: 'pingPulse 2s ease-in-out infinite' }} />}
                       </div>
                       <div className={"flex-1 " + (isLast ? '' : 'pb-5')}>
                         <div className="flex items-center gap-2">
-                          <span className={"text-xs font-medium " + (stepInfo?.color || (isLatest ? 'text-white' : 'text-gray-500'))}>
-                            {STATUS_STEPS.find(s => s.value === entry.status)?.label || entry.status}
-                          </span>
-                          <span className="text-gray-600 text-[10px]">{new Date(entry.timestamp).toLocaleString()}</span>
+                          <span className={"text-xs font-medium " + (stepInfo?.color || (isLatest ? 'text-white' : 'text-gray-500'))}>{STATUS_STEPS.find(s => s.value === entry.status)?.label || entry.status}</span>
                         </div>
-                        <p className="text-gray-400 text-xs mt-0.5">{entry.note || 'Status updated'}</p>
+                        {entry.note && <p className="text-gray-400 text-[11px] mt-0.5">{entry.note}</p>}
+                        <span className="text-gray-600 text-[10px]">{new Date(entry.timestamp).toLocaleString()}</span>
                       </div>
                     </div>
                   );
@@ -418,21 +417,6 @@ export default function TrackingPage() {
         </div>
       )}
 
-      {/* Inline keyframe styles */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pingPulse {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.4); opacity: 0; }
-        }
-        @keyframes floatBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-      `}} />
     </div>
   );
 }
