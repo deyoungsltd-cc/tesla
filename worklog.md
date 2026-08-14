@@ -65,3 +65,23 @@ Stage Summary:
 - Kill switch in Settings > Pause Agent stops all proactive behavior
 - Build passes, deployed to Railway
 - AGENT.md created as single source of truth for the project spec
+---
+Task ID: 1
+Agent: main
+Task: Fix vehicle order placement, add gift card deposit, Tesla processing overlay, tracking improvements
+
+Work Log:
+- Fixed cancel-order/route.ts syntax error (spread operator precedence with optional chaining)
+- Fixed order route to handle fallback default vehicles (auto-creates in DB when vehicle ID starts with default-)
+- Gift card deposit already implemented by previous agent (API + UI tabs)
+- Added TeslaProcessingOverlay component with spinning Tesla T logo
+- Added processing overlay to order placement, crypto deposit, and gift card deposit flows
+- Added ETA countdown, share/copy link button, empty state, delivered banner, loading state to tracking page
+- Verified deposit modal has Crypto/Gift Card tab toggle
+
+Stage Summary:
+- Order placement should now work for both DB and fallback vehicles
+- Gift card deposit is available in the deposit modal
+- Processing overlay shows Tesla logo during all async operations
+- Tracking page has richer UX with countdown, sharing, and status banners
+- All changes pushed to main (commit 69866ed)
