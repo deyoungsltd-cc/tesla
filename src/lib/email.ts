@@ -47,7 +47,67 @@ const USE_RESEND = !USE_GMAIL_API && !!RESEND_API_KEY;
 if (USE_SERVICE_ACCOUNT) {
   console.log(`[EMAIL] Using Gmail API via Service Account: ${GOOGLE_CLIENT_EMAIL}, sending as: ${GMAIL_IMPERSONATE_USER}`);
 } else if (USE_OAUTH_REFRESH) {
-  console.log(`[EMAIL] Using Gmail API via OAuth2 refresh token`);
+  console.log(`[EMAIL] Using Gmail API via OAuth2 refresh token (from: ${SMTP_EMAIL})`);
+} else if (USE_RESEND) {
+  console.log(`[EMAIL] Using Resend API`);
+} else if (SMTP_PASSWORD) {
+  console.log(`[EMAIL] Using Gmail SMTP (port ${SMTP_PORT}) — may be blocked on Railway!`);
+} else {
+  console.error('');
+  console.error('╔══════════════════════════════════════════════════════════════╗');
+  console.error('║  ❌ EMAIL IS NOT CONFIGURED — ALL EMAILS WILL FAIL         ║');
+  console.error('╠══════════════════════════════════════════════════════════════╣');
+  console.error('║  Set ONE of these in Railway environment variables:        ║');
+  console.error('║                                                            ║');
+  console.error('║  Option A (recommended): Gmail API OAuth2                  ║');
+  console.error('║    GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET,                   ║');
+  console.error('║    GMAIL_REFRESH_TOKEN, SMTP_EMAIL                         ║');
+  console.error('║                                                            ║');
+  console.error('║  Option B: Resend                                          ║');
+  console.error('║    RESEND_API_KEY                                           ║');
+  console.error('║                                                            ║');
+  console.error('║  Option C: SMTP (blocked on Railway!)                      ║');
+  console.error('║    SMTP_PASSWORD                                            ║');
+  console.error('╚══════════════════════════════════════════════════════════════╝');
+  console.error('');
+}
+
+// ── Startup health check: validate OAuth token on first import ──
+// This runs once when the server starts. If the token is expired,
+// you'll see the big red box in Railway logs immediately.
+if (USE_OAUTH_REFRESH) {
+  (async () => {
+    try {
+      const checkRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: GMAIL_CLIENT_ID,
+          client_secret: GMAIL_CLIENT_SECRET,
+          refresh_token: GMAIL_REFRESH_TOKEN,
+          grant_type: 'refresh_token',
+        }).toString(),
+      });
+      if (checkRes.ok) {
+        const d = await checkRes.json() as { expires_in: number };
+        console.log(`[EMAIL] ✅ Startup health check PASSED — OAuth token valid (expires in ${d.expires_in}s)`);
+      } else {
+        const errText = await checkRes.text();
+        console.error('');
+        console.error('╔══════════════════════════════════════════════════════════════╗');
+        console.error('║  ❌ EMAIL STARTUP CHECK FAILED — TOKEN EXPIRED            ║');
+        console.error('╠══════════════════════════════════════════════════════════════╣');
+        console.error('║  The Gmail OAuth refresh token is dead.                  ║');
+        console.error('║  Every email (OTP, welcome, resets) will FAIL until     ║');
+        console.error('║  you generate a new token. See scripts/ folder.           ║');
+        console.error(`║  Error: ${checkRes.status} — ${errText.slice(0, 40)}`.padEnd(58) + '║');
+        console.error('╚══════════════════════════════════════════════════════════════╝');
+        console.error('');
+      }
+    } catch (e: any) {
+      console.error('[EMAIL] Startup health check could not reach Google:', e.message);
+    }
+  })();
 }
 
 // Safety check: Gmail SMTP requires FROM_EMAIL === SMTP_EMAIL
@@ -279,6 +339,26 @@ async function getGmailAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const text = await res.text();
+    const isInvalidGrant = text.includes('invalid_grant');
+    if (isInvalidGrant) {
+      console.error('');
+      console.error('╔══════════════════════════════════════════════════════════════╗');
+      console.error('║  ⚠️  EMAIL IS BROKEN — GMAIL OAUTH REFRESH TOKEN EXPIRED   ║');
+      console.error('╠══════════════════════════════════════════════════════════════╣');
+      console.error('║  The refresh token is expired or revoked.                  ║');
+      console.error('║  NO emails (OTP, welcome, password reset) will be sent.    ║');
+      console.error('║                                                            ║');
+      console.error('║  FIX: Re-authorize and get a new refresh token:            ║');
+      console.error('║    1. GMAIL_CLIENT_ID=<id> node scripts/gen-oauth-url.js   ║');
+      console.error('║    2. Open URL, authorize, copy redirect URL               ║');
+      console.error('║    3. GMAIL_CLIENT_ID=<id> GMAIL_CLIENT_SECRET=<s> \       ║');
+      console.error('║       node scripts/exchange-oauth-code.js <code>           ║');
+      console.error('║    4. Update GMAIL_REFRESH_TOKEN in Railway env vars        ║');
+      console.error('║                                                            ║');
+      console.error(`║  Provider: ${methodLabel}                                   `.slice(0, 58) + '║');
+      console.error('╚══════════════════════════════════════════════════════════════╝');
+      console.error('');
+    }
     throw new Error(`Gmail API token request failed (${res.status}) via ${methodLabel}: ${text}`);
   }
 
