@@ -235,11 +235,34 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
     }
   }
 
-  // 3) Fall back to SMTP (likely blocked on Railway — see email-debug endpoint)
+  // 3) SMTP fallback — BLOCKED on Railway. Skip entirely if we detect Railway.
+  const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_NAME || process.env.PORT);
+
+  if (IS_RAILWAY && !USE_GMAIL_API && !USE_RESEND) {
+    console.error('');
+    console.error('╔══════════════════════════════════════════════════════════════════╗');
+    console.error('║  ❌ EMAIL FAILED — NO HTTPS EMAIL PROVIDER CONFIGURED        ║');
+    console.error('╠══════════════════════════════════════════════════════════════════╣');
+    console.error('║  Railway blocks SMTP ports. You MUST use Gmail API OAuth2.    ║');
+    console.error('║                                                            ║');
+    console.error('║  Go to Railway → Service → Variables and add:                ║');
+    console.error('║    GMAIL_CLIENT_ID     = your client ID                     ║');
+    console.error('║    GMAIL_CLIENT_SECRET = your client secret                 ║');
+    console.error('║    GMAIL_REFRESH_TOKEN  = your refresh token                 ║');
+    console.error('║    SMTP_EMAIL          = your gmail address                 ║');
+    console.error('╚════════════════════════════════════════════════════════════════╝');
+    console.error('');
+    return {
+      success: false,
+      error: 'Email not configured on Railway. Set GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, and SMTP_EMAIL in Railway environment variables.',
+      provider: 'none',
+      attempts,
+    };
+  }
+
   const transporter = getTransporter();
 
   if (!SMTP_PASSWORD) {
-    console.warn(`[EMAIL] No provider succeeded and SMTP_PASSWORD not set. Would have sent to ${to}: "${subject}"`);
     return {
       success: false,
       error: 'No email provider available (Gmail API, Resend, or SMTP not configured)',
