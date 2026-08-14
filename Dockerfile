@@ -1,0 +1,105 @@
+# =============================================
+# TESLA PLATFORM - Dockerfile
+# =============================================
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+
+# --ignore-scripts prevents the postinstall hook (prisma generate) from running here.
+# We invoke prisma generate explicitly with the local binary (no npx, no npm).
+RUN npm install --ignore-scripts && ./node_modules/.bin/prisma generate
+
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./
+COPY . .
+
+# Use local prisma binary directly (NOT npx — npx can trigger npm install at runtime).
+RUN ./node_modules/.bin/prisma generate
+
+# Sync database schema at BUILD time.
+# This runs 'prisma db push' automatically on every Railway deploy, so the
+# user doesn't need to find Railway's hidden shell.
+#
+# Requirements:
+#   - DATABASE_URL must be set as a Railway variable (it is by default
+#     available at build time).
+#
+# If DATABASE_URL is missing or DB is unreachable, the build continues —
+# the app will still start, but login/DB operations will fail at runtime
+# until the DB is reachable.
+RUN if [ -z "$DATABASE_URL" ]; then \
+      echo "[build] DATABASE_URL not set — skipping schema sync. Set it in Railway Variables."; \
+    else \
+      echo "[build] DATABASE_URL detected — syncing schema with 'prisma db push'..."; \
+      ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate || \
+      echo "[build] WARNING: prisma db push failed. Build continues; schema may need manual sync."; \
+    fi
+
+RUN npm run build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+# Redirect any stray npm cache writes to a writable temp location (defensive).
+# If anything at runtime invokes npm, it will write here instead of /app.
+ENV npm_config_cache=/tmp/.npm-cache
+ENV NPM_CONFIG_PREFIX=/tmp/.npm-prefix
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV NPM_CONFIG_FUND=false
+# Prevent prisma from auto-fetching engines at runtime (we bundle them at build).
+ENV PRISMA_ENGINES_MIRROR=
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy standalone output (includes package.json + server.js)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Copy public assets
+COPY --from=builder /app/public ./public
+
+# Copy prisma schema + seed file (needed for runtime seed)
+COPY --from=builder /app/prisma ./prisma
+
+# Copy node_modules FIRST (from deps stage — has prisma CLI + all deps)
+COPY --from=deps /app/node_modules ./node_modules
+
+# Then OVERWRITE .prisma with the GENERATED client from builder stage.
+# (deps stage doesn't have the generated client engines; builder does.)
+# Order matters: this MUST come after the node_modules COPY above.
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy startup script
+COPY --from=builder /app/start.sh ./start.sh
+RUN chmod +x /app/start.sh
+
+# Pre-create npm cache dirs and make them writable by nextjs user.
+RUN mkdir -p /tmp/.npm-cache /tmp/.npm-prefix /tmp/uploads && \
+    chown -R nextjs:nodejs /app /tmp/.npm-cache /tmp/.npm-prefix /tmp/uploads && \
+    chmod -R 777 /tmp
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Healthcheck — Railway uses HTTP probing, but this also helps local Docker.
+# Hit the homepage (lightweight, no DB queries) so the probe never hangs.
+# Use node (always available) instead of wget/curl.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+
+CMD ["/app/start.sh"]

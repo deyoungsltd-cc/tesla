@@ -1,0 +1,963 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// ENUM DEFINITIONS (SQLite: stored as strings)
+// ──────────────────────────────────────────────
+
+enum UserStatus {
+  pending_verification
+  active
+  suspended
+  banned
+  closed
+}
+
+enum KycLevel {
+  LEVEL_0
+  LEVEL_1
+  LEVEL_2
+  LEVEL_3
+}
+
+enum WalletType {
+  demo
+  live
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+  investment
+  investment_return
+  referral_bonus
+  fee
+  promo_credit
+  balance_adjustment
+}
+
+enum TransactionStatus {
+  pending
+  completed
+  failed
+  reversed
+}
+
+enum InvestmentStatus {
+  active
+  completed
+  failed
+  cancelled
+}
+
+enum DepositMethod {
+  crypto
+  gift_card
+}
+
+enum CryptoCurrency {
+  BTC
+  ETH
+  USDT
+}
+
+enum DepositStatus {
+  pending
+  pending_verification
+  confirmed
+  rejected
+  expired
+}
+
+enum WithdrawalStatus {
+  pending
+  processing
+  completed
+  rejected
+  failed
+}
+
+enum WithdrawalDestinationType {
+  crypto
+  bank
+}
+
+enum ReferralCommissionType {
+  direct
+  binary
+}
+
+enum ReferralCommissionStatus {
+  pending
+  paid
+  reversed
+}
+
+enum BinaryPosition {
+  left
+  right
+}
+
+enum KycDocumentType {
+  id_front
+  id_back
+  selfie
+  proof_of_address
+}
+
+enum KycDocumentStatus {
+  pending
+  approved
+  rejected
+  expired
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  waiting_user
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum AdminRoleName {
+  SUPER_ADMIN
+  ADMIN
+  COMPLIANCE
+  SUPPORT
+}
+
+enum NotificationType {
+  deposit_confirmed
+  deposit_rejected
+  withdrawal_processed
+  withdrawal_rejected
+  investment_activated
+  investment_completed
+  investment_return_credited
+  referral_earned
+  kyc_submitted
+  kyc_approved
+  kyc_rejected
+  kyc_reminder
+  security_login_detected
+  security_password_changed
+  ticket_response
+  ticket_resolved
+  system_maintenance
+  system_announcement
+  vehicle_order_placed
+  vehicle_order_confirmed
+  vehicle_order_shipped
+  vehicle_order_delivered
+  vehicle_order_cancelled
+  custom
+}
+
+enum OtpType {
+  email_verification
+  password_reset
+  two_factor_setup
+  two_factor_disable
+  withdrawal_confirm
+}
+
+enum GiftCardStatus {
+  pending
+  verified
+  rejected
+  expired
+}
+
+enum EmailStatus {
+  sent
+  delivered
+  failed
+  bounced
+}
+
+enum PayoutStatus {
+  pending
+  processed
+  failed
+}
+
+enum UserMode {
+  demo
+  live
+}
+
+enum DurationUnit {
+  hours
+  days
+}
+
+enum PromoDiscountType {
+  percentage
+  fixed
+}
+
+enum PromoCodeStatus {
+  active
+  inactive
+  expired
+  fully_redeemed
+}
+
+// ──────────────────────────────────────────────
+// USER MODEL
+// ──────────────────────────────────────────────
+
+model User {
+  id                String     @id @default(cuid())
+  email             String     @unique
+  passwordHash      String     @map("password_hash")
+  emailVerified     Boolean    @default(false) @map("email_verified")
+  emailVerifiedAt   DateTime?  @map("email_verified_at")
+
+  status            UserStatus @default(pending_verification)
+  kycLevel          KycLevel   @default(LEVEL_0) @map("kyc_level")
+  activeMode        UserMode   @default(live) @map("active_mode")
+
+  referralCode      String     @unique @map("referral_code")
+  referredById      String?    @map("referred_by_id")
+
+  twoFactorEnabled  Boolean    @default(false) @map("two_factor_enabled")
+
+  kycVerificationCode     String?    @map("kyc_verification_code")
+  verificationCode       String?    @map("verification_code")
+  verificationCodeExpires DateTime?  @map("verification_code_expires")
+  kycCodeExpiresAt       DateTime?  @map("kyc_code_expires_at")
+  kycCodePurchased       Boolean    @default(false) @map("kyc_code_purchased")
+
+  lastLoginAt       DateTime?  @map("last_login_at")
+  lastLoginIp       String?    @map("last_login_ip")
+  loginAttemptCount Int        @default(0) @map("login_attempt_count")
+  lockedUntil       DateTime?  @map("locked_until")
+
+  preferredCurrency String     @default("USD") @map("preferred_currency")
+  preferredLanguage String     @default("en") @map("preferred_language")
+
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  deletedAt         DateTime?  @map("deleted_at")
+
+  profile           Profile?
+  wallets           Wallet[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
+  investments       UserInvestment[]
+  notifications     Notification[]
+  auditLogs         AuditLog[] @relation("AuditLogs")
+  supportTickets    SupportTicket[]
+  kycDocuments      KYCDocument[]
+  kycVerifications  KYCVerification[]
+  referredBy        User?      @relation("ReferralTree", fields: [referredById], references: [id])
+  referrals         User[]     @relation("ReferralTree")
+  referralCommissions ReferralCommission[]
+  binaryNode        BinaryNode?
+  adminRecord       Admin?
+  userPromos        UserPromo[]
+  otps              Otp[]
+  emailLogs         EmailLog[]  @relation("EmailRecipient")
+  chartSpikes       ChartSpikeEvent[]
+  vehicleOrders     VehicleOrder[]
+
+  @@index([status], map: "idx_user_status")
+  @@index([kycLevel], map: "idx_user_kyc_level")
+  @@index([referredById], map: "idx_user_referred_by")
+  @@map("users")
+}
+
+// ──────────────────────────────────────────────
+// PROFILE MODEL
+// ──────────────────────────────────────────────
+
+model Profile {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+
+  firstName     String?  @map("first_name")
+  lastName      String?  @map("last_name")
+  phone         String?  @map("phone")
+  dateOfBirth   DateTime? @map("date_of_birth")
+  avatarUrl     String?  @map("avatar_url")
+  country       String?  @map("country")
+
+  streetAddress String?  @map("street_address")
+  city          String?  @map("city")
+  state         String?  @map("state")
+  postalCode    String?  @map("postal_code")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+// ──────────────────────────────────────────────
+// WALLET MODEL
+// ──────────────────────────────────────────────
+
+model Wallet {
+  id                String     @id @default(cuid())
+  userId            String     @map("user_id")
+  type              WalletType
+  balance           Decimal    @default(0) @db.Decimal(18,2)
+  availableBalance  Decimal    @default(0) @db.Decimal(18,2) @map("available_balance")
+  lockedBalance     Decimal    @default(0) @db.Decimal(18,2) @map("locked_balance")
+
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
+  investments       UserInvestment[]
+
+  @@unique([userId, type], map: "uq_wallet_user_type")
+  @@map("wallets")
+}
+
+// ──────────────────────────────────────────────
+// TRANSACTION MODEL
+// ──────────────────────────────────────────────
+
+model Transaction {
+  id              String            @id @default(cuid())
+  walletId        String            @map("wallet_id")
+  type            TransactionType
+  status          TransactionStatus @default(pending)
+  amount          Decimal    @db.Decimal(18,2)
+  description     String?
+  referenceId     String?           @map("reference_id")
+  metadata        String?           // JSON string for flexible data
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  wallet          Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId], map: "idx_tx_wallet")
+  @@index([type], map: "idx_tx_type")
+  @@index([status], map: "idx_tx_status")
+  @@index([referenceId], map: "idx_tx_reference")
+  @@map("transactions")
+}
+
+// ──────────────────────────────────────────────
+// INVESTMENT PLAN MODEL
+// ──────────────────────────────────────────────
+
+model InvestmentPlan {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  description     String?
+  tierName        String        @map("tier_name")  // Basic, Silver, Gold, Platinum
+  minAmount       Decimal      @db.Decimal(18,2) @map("min_amount")
+  maxAmount       Decimal?     @db.Decimal(18,2) @map("max_amount")
+  dailyReturnRate Decimal      @db.Decimal(8,4) @map("daily_return_rate")
+  duration        Int
+  durationUnit    DurationUnit  @map("duration_unit")
+  isActive        Boolean       @default(true) @map("is_active")
+  sortOrder       Int           @default(0) @map("sort_order")
+  features        String?       // JSON array of features
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  investments     UserInvestment[]
+
+  @@map("investment_plans")
+}
+
+// ──────────────────────────────────────────────
+// USER INVESTMENT MODEL
+// ──────────────────────────────────────────────
+
+model UserInvestment {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  planId            String            @map("plan_id")
+  walletId          String            @map("wallet_id")
+  amount            Decimal           @db.Decimal(18,2)
+  mode              UserMode          @default(demo)
+  status            InvestmentStatus  @default(active)
+  dailyReturn       Decimal           @db.Decimal(18,2) @map("daily_return")
+  totalReturn       Decimal           @default(0) @db.Decimal(18,2) @map("total_return")
+  expectedReturn    Decimal           @db.Decimal(18,2) @map("expected_return")
+  startDate         DateTime          @map("start_date")
+  endDate           DateTime?         @map("end_date")
+  lastPayoutAt      DateTime?         @map("last_payout_at")
+  payoutStatus      PayoutStatus      @default(pending) @map("payout_status")
+
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              InvestmentPlan    @relation(fields: [planId], references: [id])
+  wallet            Wallet            @relation(fields: [walletId], references: [id])
+
+  @@index([userId], map: "idx_invest_user")
+  @@index([status], map: "idx_invest_status")
+  @@map("user_investments")
+}
+
+// ──────────────────────────────────────────────
+// DEPOSIT MODEL
+// ──────────────────────────────────────────────
+
+model Deposit {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  walletId          String            @map("wallet_id")
+  amount            Decimal           @db.Decimal(18,2)
+  usdAmount         Decimal           @db.Decimal(18,2) @map("usd_amount")
+  method            DepositMethod
+  cryptoCurrency    CryptoCurrency?   @map("crypto_currency")
+  txHash            String?           @map("tx_hash")
+  status            DepositStatus     @default(pending)
+  mode              UserMode          @default(demo)
+  rejectionReason   String?           @map("rejection_reason")
+  verifiedBy        String?           @map("verified_by")
+  verifiedAt        DateTime?         @map("verified_at")
+
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet            Wallet            @relation(fields: [walletId], references: [id])
+
+  @@index([userId], map: "idx_deposit_user")
+  @@index([status], map: "idx_deposit_status")
+  @@index([walletId], map: "idx_deposit_wallet")
+  @@map("deposits")
+}
+
+// ──────────────────────────────────────────────
+// WITHDRAWAL MODEL
+// ──────────────────────────────────────────────
+
+model Withdrawal {
+  id                    String                   @id @default(cuid())
+  userId                String                   @map("user_id")
+  walletId              String                   @map("wallet_id")
+  amount                Decimal                 @db.Decimal(18,2)
+  fee                   Decimal                 @default(0) @db.Decimal(18,2)
+  netAmount             Decimal                 @db.Decimal(18,2) @map("net_amount")
+  destinationType       WithdrawalDestinationType @map("destination_type")
+  destinationAddress    String?                  @map("destination_address")
+  bankName              String?                  @map("bank_name")
+  bankAccountName       String?                  @map("bank_account_name")
+  bankAccountNumber     String?                  @map("bank_account_number")
+  status                WithdrawalStatus         @default(pending)
+  mode                  UserMode                 @default(demo)
+  rejectionReason       String?                  @map("rejection_reason")
+  processedBy           String?                  @map("processed_by")
+  processedAt           DateTime?                @map("processed_at")
+
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+
+  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet                Wallet                   @relation(fields: [walletId], references: [id])
+
+  @@index([userId], map: "idx_withdrawal_user")
+  @@index([status], map: "idx_withdrawal_status")
+  @@index([walletId], map: "idx_withdrawal_wallet")
+  @@map("withdrawals")
+}
+
+// ──────────────────────────────────────────────
+// REFERRAL MODEL
+// ──────────────────────────────────────────────
+
+model Referral {
+  id            String     @id @default(cuid())
+  referrerId    String     @map("referrer_id")
+  referredId    String     @map("referred_id")
+  code          String
+  level         Int        @default(1)
+
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@unique([referrerId, referredId], map: "uq_referral_pair")
+  @@index([referrerId], map: "idx_referral_referrer")
+  @@map("referrals")
+}
+
+// ──────────────────────────────────────────────
+// REFERRAL COMMISSION MODEL
+// ──────────────────────────────────────────────
+
+model ReferralCommission {
+  id              String                   @id @default(cuid())
+  userId          String                   @map("user_id")
+  depositId       String?                  @map("deposit_id")
+  referrerId      String                   @map("referrer_id")
+  amount          Decimal    @db.Decimal(18,2)
+  rate            Decimal    @db.Decimal(8,4)
+  level           Int                      @default(1)
+  type            ReferralCommissionType   @default(direct)
+  status          ReferralCommissionStatus @default(pending)
+
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_commission_user")
+  @@index([status], map: "idx_commission_status")
+  @@map("referral_commissions")
+}
+
+// ──────────────────────────────────────────────
+// BINARY NODE MODEL
+// ──────────────────────────────────────────────
+
+model BinaryNode {
+  id              String         @id @default(cuid())
+  userId          String         @unique @map("user_id")
+  parentId        String?        @map("parent_id")
+  position        BinaryPosition
+  volumeLeft      Decimal       @default(0) @db.Decimal(18,2) @map("volume_left")
+  volumeRight     Decimal       @default(0) @db.Decimal(18,2) @map("volume_right")
+  depth           Int            @default(0)
+
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent          BinaryNode?    @relation("BinaryTree", fields: [parentId], references: [id])
+  children        BinaryNode[]   @relation("BinaryTree")
+
+  @@index([parentId], map: "idx_binary_parent")
+  @@map("binary_nodes")
+}
+
+// ──────────────────────────────────────────────
+// KYC DOCUMENT MODEL
+// ──────────────────────────────────────────────
+
+model KYCDocument {
+  id              String            @id @default(cuid())
+  userId          String            @map("user_id")
+  type            KycDocumentType
+  fileUrl         String            @map("file_url")
+  status          KycDocumentStatus @default(pending)
+  reviewedBy      String?           @map("reviewed_by")
+  reviewedAt      DateTime?         @map("reviewed_at")
+  rejectionReason String?           @map("rejection_reason")
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_kycdoc_user")
+  @@index([status], map: "idx_kycdoc_status")
+  @@map("kyc_documents")
+}
+
+// ──────────────────────────────────────────────
+// KYC VERIFICATION MODEL
+// ──────────────────────────────────────────────
+
+model KYCVerification {
+  id              String     @id @default(cuid())
+  userId          String     @unique @map("user_id")
+  level           KycLevel
+  status          KycDocumentStatus @default(pending)
+  submittedAt     DateTime?  @map("submitted_at")
+  verifiedAt      DateTime?  @map("verified_at")
+  notes           String?
+
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status], map: "idx_kycverif_status")
+  @@map("kyc_verifications")
+}
+
+// ──────────────────────────────────────────────
+// ADMIN MODEL
+// ──────────────────────────────────────────────
+
+model Admin {
+  id              String        @id @default(cuid())
+  userId          String        @unique @map("user_id")
+  role            AdminRoleName @default(SUPPORT)
+  isSuperAdmin    Boolean       @default(false) @map("is_super_admin")
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs       AuditLog[]
+
+  @@map("admins")
+}
+
+// ──────────────────────────────────────────────
+// NOTIFICATION MODEL
+// ──────────────────────────────────────────────
+
+model Notification {
+  id              String            @id @default(cuid())
+  userId          String            @map("user_id")
+  type            NotificationType
+  title           String
+  message         String
+  isRead          Boolean           @default(false) @map("is_read")
+  readAt          DateTime?         @map("read_at")
+  actionUrl       String?           @map("action_url")
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_notif_user")
+  @@index([isRead], map: "idx_notif_read")
+  @@index([createdAt], map: "idx_notif_created")
+  @@map("notifications")
+}
+
+// ──────────────────────────────────────────────
+// SUPPORT TICKET MODEL
+// ──────────────────────────────────────────────
+
+model SupportTicket {
+  id              String         @id @default(cuid())
+  userId          String         @map("user_id")
+  subject         String
+  message         String
+  status          TicketStatus   @default(open)
+  priority        TicketPriority @default(medium)
+  assignedTo      String?        @map("assigned_to")
+  closedAt        DateTime?      @map("closed_at")
+
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_ticket_user")
+  @@index([status], map: "idx_ticket_status")
+  @@map("support_tickets")
+}
+
+// ──────────────────────────────────────────────
+// AUDIT LOG MODEL
+// ──────────────────────────────────────────────
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  adminId         String?  @map("admin_id")
+  userId          String?  @map("user_id")
+  action          String
+  resource        String   @default("")
+  resourceId      String?  @map("resource_id")
+  target          String?
+  details         String?  // JSON
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  admin           Admin?   @relation(fields: [adminId], references: [userId])
+  user            User?    @relation("AuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "idx_audit_user")
+  @@index([adminId], map: "idx_audit_admin")
+  @@index([action], map: "idx_audit_action")
+  @@index([createdAt], map: "idx_audit_created")
+  @@map("audit_logs")
+}
+
+// ──────────────────────────────────────────────
+// TWO FACTOR AUTH MODEL
+// ──────────────────────────────────────────────
+
+model TwoFactorAuth {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  secret          String
+  backupCodes     String   @map("backup_codes") // JSON array
+  verified        Boolean  @default(false)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("two_factor_auths")
+}
+
+// ──────────────────────────────────────────────
+// OTP MODEL
+// ──────────────────────────────────────────────
+
+model Otp {
+  id              String   @id @default(cuid())
+  userId          String?  @map("user_id")
+  email           String?
+  type            OtpType
+  code            String
+  expiresAt       DateTime @map("expires_at")
+  verified        Boolean  @default(false)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email], map: "idx_otp_email")
+  @@map("otps")
+}
+
+// ──────────────────────────────────────────────
+// EMAIL LOG MODEL
+// ──────────────────────────────────────────────
+
+model EmailLog {
+  id              String       @id @default(cuid())
+  userId          String       @map("user_id")
+  template        String
+  subject         String
+  status          EmailStatus  @default(sent)
+  errorMessage    String?      @map("error_message")
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  user            User         @relation("EmailRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_email_user")
+  @@map("email_logs")
+}
+
+// ──────────────────────────────────────────────
+// PROMO CODE MODEL
+// ──────────────────────────────────────────────
+
+model PromoCode {
+  id              String              @id @default(cuid())
+  code            String              @unique
+  discountType    PromoDiscountType   @map("discount_type")
+  discountValue   Decimal            @db.Decimal(18,2) @map("discount_value")
+  minDeposit      Decimal?           @db.Decimal(18,2) @map("min_deposit")
+  maxUses         Int?                @map("max_uses")
+  currentUses     Int                 @default(0) @map("current_uses")
+  status          PromoCodeStatus     @default(active)
+  validFrom       DateTime            @map("valid_from")
+  validUntil      DateTime?           @map("valid_until")
+
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  userPromos      UserPromo[]
+
+  @@map("promo_codes")
+}
+
+// ──────────────────────────────────────────────
+// USER PROMO MODEL
+// ──────────────────────────────────────────────
+
+model UserPromo {
+  id              String     @id @default(cuid())
+  userId          String     @map("user_id")
+  promoCodeId     String     @map("promo_code_id")
+  usedAt          DateTime   @map("used_at")
+
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode       PromoCode  @relation(fields: [promoCodeId], references: [id])
+
+  @@unique([userId, promoCodeId], map: "uq_userpromo_user_code")
+  @@index([promoCodeId], map: "idx_userpromo_code")
+  @@map("user_promos")
+}
+
+// ──────────────────────────────────────────────
+// GIFT CARD MODEL
+// ──────────────────────────────────────────────
+
+model GiftCard {
+  id              String         @id @default(cuid())
+  depositId       String?        @map("deposit_id")
+  cardType        String         @map("card_type")
+  cardCode        String         @map("card_code")
+  pinCode         String?        @map("pin_code")
+  amount          Decimal       @db.Decimal(18,2)
+  currency        String         @default("USD")
+  imageUrl        String?        @map("image_url")
+  status          GiftCardStatus @default(pending)
+  rejectionReason String?        @map("rejection_reason")
+  verifiedBy      String?        @map("verified_by")
+  verifiedAt      DateTime?      @map("verified_at")
+
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([status], map: "idx_giftcard_status")
+  @@index([depositId], map: "idx_giftcard_deposit")
+  @@map("gift_cards")
+}
+
+// ──────────────────────────────────────────────
+// PAYMENT ADDRESSES (managed by admin)
+// ──────────────────────────────────────────────
+
+model PaymentAddress {
+  id        String   @id @default(cuid())
+  label     String   @map("label")
+  currency  String   @map("currency")   // BTC, ETH, USDT, etc.
+  network   String?  @map("network")     // e.g. "ERC-20", "TRC-20", "Bitcoin"
+  address   String   @map("address")
+  qrCodeUrl String?  @map("qr_code_url") // optional QR code image URL
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("payment_addresses")
+}
+
+// ──────────────────────────────────────────────
+// SITE SETTINGS
+// ──────────────────────────────────────────────
+
+model SiteSettings {
+  id                String    @id @default("main")
+  aboutPhotoUrl     String?   @map("about_photo_url")
+  aboutPhotoUpdatedAt DateTime? @map("about_photo_updated_at")
+  elonPhotoUrl      String?   @map("elon_photo_url")
+  elonPhotoUpdatedAt DateTime? @map("elon_photo_updated_at")
+  slideshowModels   Json?     @map("slideshow_models")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+// ──────────────────────────────────────────────
+// CHART SPIKE EVENT
+// ──────────────────────────────────────────────
+// Created by admin from the admin panel to "spike"
+// a user's ActiveTradeChart (visible jump up or down).
+// The user's chart polls /api/chart-events, receives
+// any unconsumed spike, applies the jump, then the
+// row is marked consumed so each spike fires exactly once.
+
+model ChartSpikeEvent {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  direction     String   @default("up")    // 'up' | 'down'
+  magnitudePct  Decimal  @db.Decimal(8,4)   // e.g. 10.00 = 10% jump
+  message       String?
+  consumed      Boolean  @default(false)
+  consumedAt    DateTime? @map("consumed_at")
+  createdBy     String   @map("created_by") // admin userId
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId, consumed, createdAt], map: "idx_chart_spike_user_unread")
+  @@map("chart_spike_events")
+}
+
+// ──────────────────────────────────────────────
+// VEHICLE MODELS
+// ──────────────────────────────────────────────
+
+enum VehicleOrderStatus {
+  pending
+  confirmed
+  in_production
+  shipped
+  delivered
+  cancelled
+}
+
+enum VehicleColor {
+  pearl_white
+  solid_black
+  midnight_silver
+  deep_blue
+  red_multi_coat
+  ultra_red
+  quick_silver
+  blue_multi_coat
+}
+
+model TeslaVehicle {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  category      String
+  basePrice     Float    @map("base_price")
+  imageUrl      String   @map("image_url")
+  description   String   @db.Text
+  specs         Json
+  colors        Json
+  interior      String   @default("Premium Black")
+  estimatedDelivery String @map("estimated_delivery")
+  featured      Boolean  @default(false)
+  sortOrder     Int      @default(0) @map("sort_order")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  orders        VehicleOrder[]
+  @@map("tesla_vehicles")
+}
+
+model VehicleOrder {
+  id            String            @id @default(cuid())
+  userId        String            @map("user_id")
+  vehicleId     String            @map("vehicle_id")
+  status        VehicleOrderStatus @default(pending)
+  selectedColor VehicleColor      @default(pearl_white) @map("selected_color")
+  selectedInterior String         @default("Premium Black") @map("selected_interior")
+  totalPrice    Float             @map("total_price")
+  depositAmount Float             @map("deposit_amount")
+  depositPaid   Boolean           @default(false) @map("deposit_paid")
+  fullName      String            @map("full_name")
+  email         String
+  phone         String?
+  address       String            @db.Text
+  city          String
+  state         String
+  postalCode    String            @map("postal_code")
+  country       String            @default("US")
+  orderNumber   String            @unique @map("order_number")
+  trackingInfo  Json?             @map("tracking_info")
+  notes         String?           @db.Text
+  adminNotes    String?           @db.Text @map("admin_notes")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  user          User              @relation(fields: [userId], references: [id])
+  vehicle       TeslaVehicle      @relation(fields: [vehicleId], references: [id])
+
+  @@index([userId], map: "idx_vehicle_order_user")
+  @@index([status], map: "idx_vehicle_order_status")
+  @@map("vehicle_orders")
+}
+

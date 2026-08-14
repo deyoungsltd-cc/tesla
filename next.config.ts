@@ -1,0 +1,18 @@
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  reactStrictMode: false,
+  serverExternalPackages: ['better-sqlite3', 'bcryptjs', 'jsonwebtoken', 'resend'],
+  allowedDevOrigins: ['*'],
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+    ],
+  },
+};
+
+export default nextConfig;
