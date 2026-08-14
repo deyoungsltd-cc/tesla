@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, apiResponse, apiError } from '@/lib/api-helpers';
+import { sendVehicleOrderReceipt } from '@/lib/email';
 import { z } from 'zod';
 
 const orderSchema = z.object({
@@ -80,6 +81,23 @@ async function handler(request: NextRequest, _context: any, user: any) {
         actionUrl: '/vehicles',
       },
     });
+
+    // Send purchase receipt / invoice email (non-blocking)
+    sendVehicleOrderReceipt(data.email, {
+      orderNumber,
+      vehicleName: vehicle.name,
+      selectedColor: data.selectedColor,
+      selectedInterior: data.selectedInterior,
+      totalPrice: vehicle.basePrice,
+      depositAmount,
+      estimatedDelivery: vehicle.estimatedDelivery,
+      fullName: data.fullName,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      postalCode: data.postalCode,
+      country: data.country,
+    }).catch((err: any) => console.error('[VEHICLE ORDER] Failed to send receipt email:', err?.message || err));
 
     // Referral commission: if user was referred, give referrer 5% of deposit
     if (user.referredById) {

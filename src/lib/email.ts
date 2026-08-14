@@ -745,3 +745,126 @@ export async function sendKycCodeDeliveredEmail(to: string, name: string, option
   const html = emailWrapper(headerBlock() + body + footerBlock());
   return sendEmailOrThrow(to, 'Your KYC Verification Code — TeslaPrime', html);
 }
+
+// ── Vehicle Order Receipt / Invoice Email ──
+export async function sendVehicleOrderReceipt(to: string, options: {
+  orderNumber: string;
+  vehicleName: string;
+  vehicleImage?: string;
+  selectedColor: string;
+  selectedInterior: string;
+  totalPrice: number;
+  depositAmount: number;
+  estimatedDelivery: string;
+  fullName: string;
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}) {
+  const {
+    orderNumber, vehicleName, selectedColor, selectedInterior,
+    totalPrice, depositAmount, estimatedDelivery,
+    fullName, address, city, state, postalCode, country,
+  } = options;
+
+  const COLOR_HEX_MAP: Record<string, string> = {
+    pearl_white: '#F5F5F5', solid_black: '#1A1A1A', midnight_silver: '#6E7681',
+    deep_blue: '#1E3A5F', red_multi_coat: '#CC0000', ultra_red: '#B71C1C',
+    quick_silver: '#9CA3AF', blue_multi_coat: '#3B82F6',
+  };
+  const COLOR_NAME_MAP: Record<string, string> = {
+    pearl_white: 'Pearl White', solid_black: 'Solid Black', midnight_silver: 'Midnight Silver',
+    deep_blue: 'Deep Blue', red_multi_coat: 'Red Multi-Coat', ultra_red: 'Ultra Red',
+    quick_silver: 'Quick Silver', blue_multi_coat: 'Blue Multi-Coat',
+  };
+  const colorHex = COLOR_HEX_MAP[selectedColor] || '#888';
+  const colorName = COLOR_NAME_MAP[selectedColor] || selectedColor;
+  const orderDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const body = contentArea(`
+    <p style="color:#ffffff;font-size:14px;margin:0 0 20px;font-weight:500;letter-spacing:0.5px">Dear ${fullName},</p>
+    <p style="color:#888888;font-size:13px;margin:0 0 24px;line-height:1.8;letter-spacing:0.3px">Thank you for your order. Your vehicle purchase has been confirmed and is being processed. Below is your official order receipt.</p>
+
+    <!-- Order Confirmation Badge -->
+    <div style="text-align:center;margin:0 0 28px">
+      <span style="display:inline-block;color:#22C55E;font-size:9px;font-weight:700;letter-spacing:3px;padding:6px 16px;border:1px solid #22C55E;border-radius:3px;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif">Order Confirmed</span>
+    </div>
+
+    <!-- Order Number & Date -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:20px 24px;margin:0 0 20px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:0 0 8px">
+            <p style="color:#666666;font-size:9px;text-transform:uppercase;letter-spacing:2px;margin:0;font-weight:600;font-family:'Helvetica Neue',Arial,sans-serif">Order Number</p>
+            <p style="color:#ffffff;font-size:16px;font-weight:700;margin:4px 0 0;font-family:'SF Mono',Monaco,monospace;letter-spacing:1px">${orderNumber}</p>
+          </td>
+          <td style="padding:0 0 8px;text-align:right">
+            <p style="color:#666666;font-size:9px;text-transform:uppercase;letter-spacing:2px;margin:0;font-weight:600;font-family:'Helvetica Neue',Arial,sans-serif">Order Date</p>
+            <p style="color:#ffffff;font-size:13px;margin:4px 0 0;font-weight:500">${orderDate}</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Vehicle Details -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-left:3px solid #CC0000;border-radius:8px;padding:24px;margin:0 0 20px">
+      <p style="color:#CC0000;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px;font-family:'Helvetica Neue',Arial,sans-serif">Vehicle Details</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#666666;font-size:11px;width:40%;letter-spacing:0.3px">Vehicle</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#ffffff;font-size:13px;font-weight:600">${vehicleName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#666666;font-size:11px;letter-spacing:0.3px">Exterior Color</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#ffffff;font-size:13px">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};border:1px solid rgba(255,255,255,0.2);vertical-align:middle;margin-right:6px"></span>
+            ${colorName}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#666666;font-size:11px;letter-spacing:0.3px">Interior</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#ffffff;font-size:13px">${selectedInterior}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#666666;font-size:11px;letter-spacing:0.3px">Est. Delivery</td>
+          <td style="padding:8px 0;color:#ffffff;font-size:13px">${estimatedDelivery}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Pricing -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:24px;margin:0 0 20px">
+      <p style="color:#CC0000;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin:0 0 16px;font-family:'Helvetica Neue',Arial,sans-serif">Pricing</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#888888;font-size:13px">Vehicle Total</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#ffffff;font-size:13px;font-weight:600;text-align:right">$${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#888888;font-size:13px">Required Deposit (10%)</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#CC0000;font-size:14px;font-weight:700;text-align:right">$${depositAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#888888;font-size:13px">Remaining Balance</td>
+          <td style="padding:8px 0;border-bottom:1px solid #1a1a1a;color:#ffffff;font-size:13px;font-weight:600;text-align:right">$${(totalPrice - depositAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Shipping Address -->
+    <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-left:3px solid #3B82F6;border-radius:8px;padding:24px;margin:0 0 28px">
+      <p style="color:#3B82F6;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;font-family:'Helvetica Neue',Arial,sans-serif">Delivery Address</p>
+      <p style="color:#ffffff;font-size:13px;margin:0 0 4px;font-weight:500">${fullName}</p>
+      <p style="color:#cccccc;font-size:13px;margin:0;line-height:1.8">${address}<br/>${city}, ${state} ${postalCode}<br/>${country}</p>
+    </div>
+
+    <p style="color:#555555;font-size:11px;margin:0 0 20px;line-height:1.7;letter-spacing:0.3px">
+      Your order is now being processed by our team. You will receive email updates at each stage of production and delivery. Track your vehicle in real-time from your dashboard.
+    </p>
+  `);
+
+  const html = emailWrapper(headerBlock() + body + footerBlock());
+  return sendEmail(to, `Order Receipt — ${vehicleName} (#${orderNumber})`, html);
+}

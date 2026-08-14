@@ -79,11 +79,11 @@ const COLOR_LABELS: Record<string, string> = {
 };
 
 const STATUS_STEPS = [
-  { key: 'pending', label: 'Order Placed', icon: '📋' },
-  { key: 'confirmed', label: 'Confirmed', icon: '✓' },
-  { key: 'in_production', label: 'In Production', icon: '🏭' },
-  { key: 'shipped', label: 'Shipped', icon: '🚚' },
-  { key: 'delivered', label: 'Delivered', icon: '🏠' },
+  { key: 'pending', label: 'Order Placed' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'in_production', label: 'In Production' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
