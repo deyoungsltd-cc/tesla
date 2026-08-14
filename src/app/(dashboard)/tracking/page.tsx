@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -30,43 +30,6 @@ const COLOR_LABELS: Record<string, string> = {
   deep_blue: 'Deep Blue', red_multi_coat: 'Red Multi-Coat', ultra_red: 'Ultra Red',
   quick_silver: 'Quick Silver', blue_multi_coat: 'Blue Multi-Coat',
 };
-
-function GlobeSVG() {
-  return (
-    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#CC0000" stop-opacity="0.35" />
-          <stop offset="100%" stop-color="#CC0000" stop-opacity="0.05" />
-        </linearGradient>
-        <radialGradient id="g2" cx="60" cy="60" r="50" gradientUnits="userSpaceOnUse" gradientTransform="rotate(0 0 360)">
-          <stop offset="0%" stop-color="#CC0000" stop-opacity="0.12" />
-          <stop offset="100%" stop-color="#CC0000" stop-opacity="0" />
-        </radialGradient>
-      </defs>
-      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#g2)" stroke-width="0.8" opacity="0.6" />
-      <circle cx="60" cy="60" r="42" fill="none" stroke="url(#g1)" stroke-width="0.4" opacity="0.3" />
-      <ellipse cx="60" cy="60" rx="20" ry="38" stroke="url(#g1)" stroke-width="0.5" opacity="0.2" transform="rotate(60 60 60)" />
-      <ellipse cx="60" cy="60" rx="32" ry="38" stroke="url(#g1)" stroke-width="0.5" opacity="0.2" transform="rotate(-60 60 60)" />
-      <line x1="12" y1="20" x2="12" y2="100" stroke="url(#g1)" stroke-width="0.4" opacity="0.15" />
-      <line x1="108" y1="20" x2="108" y2="100" stroke="url(#g1)" stroke-width="0.4" opacity="0.15" />
-      <circle cx="60" cy="60" r="3" fill="#CC0000" opacity="0.8">
-        <animate attributeName="opacity" values="0.4;1;0.4;0" dur="2s" repeatCount="indefinite" />
-      </circle>
-    </svg>
-  );
-}
-
-function TruckSVG() {
-  return (
-    <svg viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="14" width="38" height="18" rx="4" stroke="currentColor" strokeWidth="2" />
-      <path d="M42 14h10l6-6 7 5v12" />
-      <circle cx="16" cy="36" r="5" stroke="currentColor" strokeWidth="2" />
-      <line x1="46" y1="36" x2="46" y2="36" />
-    </svg>
-  );
-}
 
 export default function TrackingPage() {
   const { token } = useAuthStore();
@@ -121,7 +84,7 @@ export default function TrackingPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Search */
+      {/* Search Card */}
       <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative flex items-center gap-3 mb-4">
@@ -137,13 +100,16 @@ export default function TrackingPage() {
         </div>
         <div className="flex gap-2">
           <input
-            type="text" value={orderNumber} onChange={e => setOrderNumber(e.target.value)}
+            type="text"
+            value={orderNumber}
+            onChange={e => setOrderNumber(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="e.g. TP-2025-XXXXXXX"
             className="flex-1 bg-[#1a1a1a] border border-tesla-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors font-mono"
           />
           <button
-            onClick={handleTrack} disabled={loading || !orderNumber.trim()}
+            onClick={handleTrack}
+            disabled={loading || !orderNumber.trim()}
             className="bg-[#CC0000] hover:bg-[#ff1a1a] disabled:opacity-50 text-white text-sm font-medium px-6 py-3 rounded-xl transition-all active:scale-95 hover:shadow-lg hover:shadow-[#CC0000]/20"
           >
             {loading ? (
@@ -159,18 +125,21 @@ export default function TrackingPage() {
         )}
       </div>
 
-      {/* Results */
+      {/* Tracking Results */}
       {trackingData && order && tracking && (
         <div className="space-y-4" style={{ animation: 'fadeSlideUp 0.6s ease-out' }}>
           <div className="flex items-center justify-between">
-            <p className="text-gray-400 text-xs">Live tracking for <span className="text-white font-mono font-medium">#{order.orderNumber}</span></p>
+            <p className="text-gray-400 text-xs">
+              Live tracking for <span className="text-white font-mono font-medium">#{order.orderNumber}</span>
+            </p>
             <button
               onClick={() => setAutoRefresh(r => !r)}
-              className={"flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 " +
+              className={
+                'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 ' +
                 (autoRefresh
                   ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-lg shadow-green-500/5'
-                  : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20'
-                )
+                  : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20')
+              }
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
@@ -180,7 +149,7 @@ export default function TrackingPage() {
             </button>
           </div>
 
-          {/* Vehicle summary */
+          {/* Vehicle Summary Card */}
           <div className="bg-tesla-card border border-tesla-border rounded-2xl overflow-hidden relative group">
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#CC0000]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#CC0000]/10 transition-all duration-700" />
             <div className="flex items-center gap-4 p-5 relative">
@@ -194,7 +163,8 @@ export default function TrackingPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-white font-semibold">{order.vehicle?.name || 'Vehicle'}</h3>
-                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full border " + (STATUS_COLORS[order.status] || 'bg-gray-700 text-gray-300')}>                    {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                  <span className={"text-xs font-medium px-2 py-0.5 rounded-full border " + (STATUS_COLORS[order.status] || 'bg-gray-700 text-gray-300')}>
+                    {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
@@ -213,85 +183,83 @@ export default function TrackingPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-gray-500 text-[11px]">Deposit:</span>
-                    <span className={"text-[11px] font-medium " + (order.depositPaid ? 'text-green-400' : 'text-yellow-400')}>{Number(order.depositAmount).toLocaleString()} {order.depositPaid ? '(Paid)' : '(Unpaid)'}</span>
+                    <span className={"text-[11px] font-medium " + (order.depositPaid ? 'text-green-400' : 'text-yellow-400')}>
+                      {Number(order.depositAmount).toLocaleString()} {order.depositPaid ? '(Paid)' : '(Unpaid)'}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 3D Route Progress */
+          {/* Route Progress Card */}
           <div className="bg-tesla-card border border-tesla-border rounded-2xl p-6 relative overflow-hidden">
-            <div className="absolute -bottom-16 -right-16 opacity-30 pointer-events-none">
-              <GlobeSVG />
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-white font-semibold text-sm">Delivery Route</h3>
+              <span className="text-gray-500 text-xs font-mono">{Math.round(animatedProgress)}%</span>
             </div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-white font-semibold text-sm">Delivery Route</h3>
-                <span className="text-gray-500 text-xs font-mono">{Math.round(animatedProgress)}%</span>
-              </div>
-              {/* Progress track */
-              <div className="relative mt-2">
-                <div className="absolute top-5 left-6 right-6 h-1.5 bg-white/5 rounded-full z-0" />
-                <div
-                  className="absolute top-5 left-6 h-1.5 rounded-full z-0 transition-all duration-[1500ms] ease-out " +
-                    (tracking.isCancelled ? 'bg-red-500/40' : 'bg-gradient-to-r from-[#CC0000] via-[#ff3333] to-[#ff6666]')
-                  style={{ width: (tracking.isCancelled ? 0 : animatedProgress) + '%', boxShadow: tracking.isCancelled ? 'none' : '0 0 12px rgba(204,0,0,0.4), 0 0 24px rgba(204,0,0,0.15)' }}
-                />
-                {/* Steps */}
-                <div className="relative flex justify-between z-10">
-                  {STATUS_STEPS.map((step, idx) => {
-                    const isComplete = idx <= tracking.currentStep && !tracking.isCancelled;
-                    const isCurrent = step.value === order.status;
-                    const stage = tracking.routeStages?.[idx];
-                    return (
-                      <div key={step.value} className="flex flex-col items-center" style={{ flex: 1 }}>
-                        <div
-                          className={"relative w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-700 " +
-                            (isComplete
-                              ? step.bg + ' ' + step.border + ' ' + step.glow + ' shadow-lg scale-110'
-                              : isCurrent && tracking.isCancelled
-                                ? 'bg-red-500/20 border-red-500/50'
-                                : 'bg-[#1a1a1a] border-tesla-border')
-                          }
-                        >
-                          {isComplete ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
-                          ) : (
-                            <span className={"text-xs font-bold " + (isCurrent ? step.color : 'text-gray-600')}>{idx + 1}</span>
-                          )}
-                          {isCurrent && !tracking.isCancelled && (
-                            <>
-                              <span className={"absolute inset-[-4px] rounded-full border-2 " + step.border + " opacity-40" style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
-                              <span className={"absolute inset-[-8px] rounded-full border " + step.border + " opacity-10" style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite 0.3s' }} />
-                            </>
-                          )}
-                        </div>
-                        <span className={"text-[10px] mt-2.5 text-center font-medium transition-colors duration-500 " + (isCurrent ? 'text-white' : isComplete ? 'text-gray-400' : 'text-gray-600')}>{step.label}</span>
-                        {stage && (isComplete || isCurrent) && (
-                          <span className="text-[9px] text-gray-500 text-center mt-0.5 max-w-[80px] truncate">{stage.location}</span>
+            <div className="relative mt-2">
+              <div className="absolute top-5 left-6 right-6 h-1.5 bg-white/5 rounded-full z-0" />
+              <div
+                className={"absolute top-5 left-6 h-1.5 rounded-full z-0 transition-all duration-[1500ms] ease-out " +
+                  (tracking.isCancelled ? 'bg-red-500/40' : 'bg-gradient-to-r from-[#CC0000] via-[#ff3333] to-[#ff6666]')}
+                style={{
+                  width: (tracking.isCancelled ? 0 : animatedProgress) + '%',
+                  boxShadow: tracking.isCancelled ? 'none' : '0 0 12px rgba(204,0,0,0.4), 0 0 24px rgba(204,0,0,0.15)',
+                }}
+              />
+              <div className="relative flex justify-between z-10">
+                {STATUS_STEPS.map((step, idx) => {
+                  const isComplete = idx <= tracking.currentStep && !tracking.isCancelled;
+                  const isCurrent = step.value === order.status;
+                  const stage = tracking.routeStages?.[idx];
+                  return (
+                    <div key={step.value} className="flex flex-col items-center" style={{ flex: 1 }}>
+                      <div
+                        className={
+                          'relative w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-700 ' +
+                          (isComplete
+                            ? step.bg + ' ' + step.border + ' ' + step.glow + ' shadow-lg scale-110'
+                            : isCurrent && tracking.isCancelled
+                              ? 'bg-red-500/20 border-red-500/50'
+                              : 'bg-[#1a1a1a] border-tesla-border')
+                        }
+                      >
+                        {isComplete ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <span className={"text-xs font-bold " + (isCurrent ? step.color : 'text-gray-600')}>{idx + 1}</span>
+                        )}
+                        {isCurrent && !tracking.isCancelled && (
+                          <span className={"absolute inset-[-4px] rounded-full border-2 " + step.border + ' opacity-40'} style={{ animation: 'pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
                         )}
                       </div>
-                    );
-                  })}
+                      <span className={"text-[10px] mt-2.5 text-center font-medium transition-colors duration-500 " + (isCurrent ? 'text-white' : isComplete ? 'text-gray-400' : 'text-gray-600')}>
+                        {step.label}
+                      </span>
+                      {stage && (isComplete || isCurrent) && (
+                        <span className="text-[9px] text-gray-500 text-center mt-0.5 max-w-[80px] truncate">{stage.location}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Truck animation for shipped status */}
+            {!tracking.isCancelled && tracking.currentStep >= 3 && (
+              <div className="flex justify-center mt-6">
+                <div className="flex items-center gap-2 bg-white/5 border border-tesla-border rounded-full px-4 py-2" style={{ animation: 'floatBounce 3s ease-in-out infinite' }}>
+                  <svg width="24" height="16" viewBox="0 0 80 40" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#CC0000]">
+                    <rect x="2" y="14" width="38" height="18" rx="4" /><path d="M42 14h10l6-6 7 5v12" /><circle cx="16" cy="36" r="5" /><circle cx="56" cy="36" r="5" />
+                  </svg>
+                  <span className="text-xs text-gray-300 font-medium">{tracking.currentLocation || 'En Route'}</span>
                 </div>
               </div>
-              {/* Truck animation */
-              {!tracking.isCancelled && tracking.currentStep >= 2 && (
-                <div className="flex justify-center mt-6">
-                  <div
-                    className="flex items-center gap-2 bg-white/5 border border-tesla-border rounded-full px-4 py-2"
-                    style={{ animation: 'floatBounce 3s ease-in-out infinite' }}
-                  >
-                    <TruckSVG />
-                    <span className="text-xs text-gray-300 font-medium">{tracking.currentLocation || 'En Route'}</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Details Grid */
+          {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-4 transition-all duration-300 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center gap-2 mb-1.5">
@@ -324,15 +292,14 @@ export default function TrackingPage() {
               <p className="text-white text-sm font-medium">{Math.round(animatedProgress)}%</p>
               <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className={"h-full rounded-full transition-all duration-[1500ms] ease-out " +
-                    (tracking.isCancelled ? 'bg-red-500/50' : 'bg-[#CC0000]')
+                  className={"h-full rounded-full transition-all duration-[1500ms] ease-out " + (tracking.isCancelled ? 'bg-red-500/50' : 'bg-[#CC0000]')}
                   style={{ width: animatedProgress + '%', boxShadow: '0 0 8px rgba(204,0,0,0.3)' }}
-                </div>
+                />
               </div>
             </div>
           </div>
 
-          {/* Factory info */}
+          {/* Factory Info */}
           {tracking.factoryLocation && tracking.currentStep >= 2 && (
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-4 transition-all duration-300 hover:border-white/10">
               <div className="flex items-center gap-2 mb-1.5">
@@ -343,14 +310,13 @@ export default function TrackingPage() {
             </div>
           )}
 
-          {/* Shipping banner */}
+          {/* Shipping Route Banner */}
           {tracking.shippingDirection && !tracking.isCancelled && tracking.currentStep >= 3 && (
             <div className="bg-gradient-to-r from-[#CC0000]/10 via-[#CC0000]/5 to-transparent border border-[#CC0000]/20 rounded-xl px-5 py-4 flex items-center gap-4 overflow-hidden relative">
-              <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10 pointer-events-none">
-                <GlobeSVG />
-              </div>
               <div className="w-10 h-10 rounded-full bg-[#CC0000]/20 flex items-center justify-center shrink-0" style={{ animation: 'floatBounce 4s ease-in-out infinite' }}>
-                <TruckSVG />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" /><polyline points="16 12 12 8 8 12" /><line x1="12" y1="16" x2="12" y2="8" />
+                </svg>
               </div>
               <div className="flex-1">
                 <p className="text-white text-sm font-medium">Shipping Route</p>
@@ -363,7 +329,7 @@ export default function TrackingPage() {
             </div>
           )}
 
-          {/* Cancelled banner */}
+          {/* Cancelled Banner */}
           {tracking.isCancelled && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-5 py-4 flex items-center gap-3">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
@@ -385,21 +351,27 @@ export default function TrackingPage() {
                   const isLast = idx === tracking.timeline.length - 1;
                   return (
                     <div key={idx} className="flex items-start gap-4 relative" style={{ animation: isLatest ? 'fadeSlideUp 0.5s ease-out' : undefined }}>
-                      {!isLast && (
-                        <div className="absolute left-[7px] top-6 bottom-0 w-px bg-white/10" />
-                      )}
+                      {!isLast && <div className="absolute left-[7px] top-6 bottom-0 w-px bg-white/10" />}
                       <div
-                        className={"relative w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 z-10 transition-all duration-500 " +
+                        className={
+                          'relative w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5 z-10 transition-all duration-500 ' +
                           (isLatest
                             ? (stepInfo?.bg || 'bg-[#CC0000]') + ' ' + (stepInfo?.border || 'border-[#CC0000]') + ' shadow-lg scale-125'
                             : 'bg-[#1a1a1a] border-tesla-border')
                         }
                       >
-                        {isLatest && <span className={"absolute inset-[-3px] rounded-full " + (stepInfo?.bg || 'bg-[#CC0000]') + " opacity-30"} style={{ animation: 'pingPulse 2s ease-in-out infinite' }} />}
+                        {isLatest && (
+                          <span
+                            className={"absolute inset-[-3px] rounded-full " + (stepInfo?.bg || 'bg-[#CC0000]') + ' opacity-30'}
+                            style={{ animation: 'pingPulse 2s ease-in-out infinite' }}
+                          />
+                        )}
                       </div>
                       <div className={"flex-1 " + (isLast ? '' : 'pb-5')}>
                         <div className="flex items-center gap-2">
-                          <span className={"text-xs font-medium " + (stepInfo?.color || (isLatest ? 'text-white' : 'text-gray-500'))}>{STATUS_STEPS.find(s => s.value === entry.status)?.label || entry.status}</span>
+                          <span className={"text-xs font-medium " + (stepInfo?.color || (isLatest ? 'text-white' : 'text-gray-500'))}>
+                            {STATUS_STEPS.find(s => s.value === entry.status)?.label || entry.status}
+                          </span>
                         </div>
                         {entry.note && <p className="text-gray-400 text-[11px] mt-0.5">{entry.note}</p>}
                         <span className="text-gray-600 text-[10px]">{new Date(entry.timestamp).toLocaleString()}</span>
@@ -416,7 +388,6 @@ export default function TrackingPage() {
           </p>
         </div>
       )}
-
     </div>
   );
 }

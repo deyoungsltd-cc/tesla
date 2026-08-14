@@ -274,7 +274,8 @@ model User {
   otps              Otp[]
   emailLogs         EmailLog[]  @relation("EmailRecipient")
   chartSpikes       ChartSpikeEvent[]
-  vehicleOrders     VehicleOrder[]
+  vehicleOrders           VehicleOrder[]
+  vehicleDepositPayments  VehicleDepositPayment[]
 
   @@index([status], map: "idx_user_status")
   @@index([kycLevel], map: "idx_user_kyc_level")
@@ -955,9 +956,33 @@ model VehicleOrder {
 
   user          User              @relation(fields: [userId], references: [id])
   vehicle       TeslaVehicle      @relation(fields: [vehicleId], references: [id])
+  depositPayments VehicleDepositPayment[]
 
   @@index([userId], map: "idx_vehicle_order_user")
   @@index([status], map: "idx_vehicle_order_status")
   @@map("vehicle_orders")
+}
+
+model VehicleDepositPayment {
+  id              String   @id @default(cuid())
+  orderId         String   @map("order_id")
+  userId          String   @map("user_id")
+  amount          Float
+  cryptoCurrency  String   @map("crypto_currency")   // BTC, ETH, USDT
+  network         String   @map("network")           // ERC-20, TRC-20, Bitcoin
+  txHash          String?  @map("tx_hash")
+  senderAddress   String?  @map("sender_address")
+  status          String   @default("pending") @map("status") // pending, confirmed, rejected
+  confirmedBy     String?  @map("confirmed_by")
+  confirmedAt     DateTime? @map("confirmed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  order           VehicleOrder @relation(fields: [orderId], references: [id])
+  user            User         @relation(fields: [userId], references: [id])
+
+  @@index([orderId], map: "idx_vehicle_deposit_order")
+  @@index([status], map: "idx_vehicle_deposit_status")
+  @@map("vehicle_deposit_payments")
 }
 

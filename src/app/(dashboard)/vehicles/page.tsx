@@ -1,4 +1,4 @@
-'use client';
+    'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
@@ -6,86 +6,49 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 // ── Types ──
 interface VehicleSpecs {
-  range: number;
-  acceleration: string;
-  topSpeed: string;
-  horsepower: number;
-  cargo: string;
-  drivetrain?: string;
+  range: number; acceleration: string; topSpeed: string; horsepower: number; cargo: string; drivetrain?: string;
 }
-
 interface Vehicle {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  basePrice: number;
-  imageUrl: string;
-  description: string;
-  specs: VehicleSpecs;
-  colors: string[];
-  interior: string;
-  estimatedDelivery: string;
-  featured: boolean;
+  id: string; name: string; slug: string; category: string; basePrice: number; imageUrl: string;
+  description: string; specs: VehicleSpecs; colors: string[]; interior: string; estimatedDelivery: string; featured: boolean;
 }
-
-interface TrackingInfo {
-  productionStart?: string;
-  productionEnd?: string;
-  shipDate?: string;
-  deliveryDate?: string;
-  vin?: string;
-  location?: string;
-}
-
 interface VehicleOrder {
-  id: string;
-  orderNumber: string;
-  status: string;
-  selectedColor: string;
-  selectedInterior: string;
-  totalPrice: number;
-  depositAmount: number;
-  depositPaid: boolean;
-  fullName: string;
-  email: string;
-  trackingInfo: TrackingInfo | null;
-  adminNotes?: string;
-  createdAt: string;
-  vehicle: Vehicle;
+  id: string; orderNumber: string; status: string; selectedColor: string; selectedInterior: string;
+  totalPrice: number; depositAmount: number; depositPaid: boolean; fullName: string; email: string;
+  trackingInfo: any; adminNotes?: string; createdAt: string; vehicle: Vehicle;
 }
+
+// ── Configurator Options ──
+const ADDON_OPTIONS = [
+  { id: 'fsd', name: 'Full Self-Driving', price: 12000, icon: '自动驾驶' },
+  { id: 'tow_hitch', name: 'Tow Hitch', price: 1000, icon: '拖车钩' },
+  { id: 'performance_wheels', name: 'Performance Wheels', price: 2500, icon: '轮毂' },
+  { id: 'premium_audio', name: 'Premium Audio', price: 2500, icon: '音响' },
+  { id: 'wall_connector', name: 'Wall Connector', price: 475, icon: '充电桩' },
+  { id: 'all_weather_mats', name: 'All-Weather Mats', price: 250, icon: '脚垫' },
+];
+
+const CRYPTO_OPTIONS = [
+  { value: 'BTC', label: 'Bitcoin (BTC)', networks: ['Bitcoin'] },
+  { value: 'ETH', label: 'Ethereum (ETH)', networks: ['ERC-20'] },
+  { value: 'USDT', label: 'Tether (USDT)', networks: ['ERC-20', 'TRC-20'] },
+];
 
 // ── Constants ──
 const COLOR_MAP: Record<string, string> = {
-  pearl_white: '#F5F5F5',
-  solid_black: '#1A1A1A',
-  midnight_silver: '#6E7681',
-  deep_blue: '#1E3A5F',
-  red_multi_coat: '#CC0000',
-  ultra_red: '#B71C1C',
-  quick_silver: '#9CA3AF',
-  blue_multi_coat: '#3B82F6',
+  pearl_white: '#F5F5F5', solid_black: '#1A1A1A', midnight_silver: '#6E7681',
+  deep_blue: '#1E3A5F', red_multi_coat: '#CC0000', ultra_red: '#B71C1C',
+  quick_silver: '#9CA3AF', blue_multi_coat: '#3B82F6',
 };
-
 const COLOR_LABELS: Record<string, string> = {
-  pearl_white: 'Pearl White',
-  solid_black: 'Solid Black',
-  midnight_silver: 'Midnight Silver',
-  deep_blue: 'Deep Blue',
-  red_multi_coat: 'Red Multi-Coat',
-  ultra_red: 'Ultra Red',
-  quick_silver: 'Quick Silver',
-  blue_multi_coat: 'Blue Multi-Coat',
+  pearl_white: 'Pearl White', solid_black: 'Solid Black', midnight_silver: 'Midnight Silver',
+  deep_blue: 'Deep Blue', red_multi_coat: 'Red Multi-Coat', ultra_red: 'Ultra Red',
+  quick_silver: 'Quick Silver', blue_multi_coat: 'Blue Multi-Coat',
 };
-
 const STATUS_STEPS = [
-  { key: 'pending', label: 'Order Placed' },
-  { key: 'confirmed', label: 'Confirmed' },
-  { key: 'in_production', label: 'In Production' },
-  { key: 'shipped', label: 'Shipped' },
-  { key: 'delivered', label: 'Delivered' },
+  { key: 'pending', label: 'Order Placed' }, { key: 'confirmed', label: 'Confirmed' },
+  { key: 'in_production', label: 'In Production' }, { key: 'shipped', label: 'Shipped' }, { key: 'delivered', label: 'Delivered' },
 ];
-
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   confirmed: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
@@ -94,20 +57,9 @@ const STATUS_COLORS: Record<string, string> = {
   delivered: 'bg-green-500/15 text-green-400 border-green-500/30',
   cancelled: 'bg-red-500/15 text-red-400 border-red-500/30',
 };
-
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  in_production: 'In Production',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
-
-const CATEGORY_ICONS: Record<string, string> = {
-  sedan: '🚗',
-  suv: '🚙',
-  pickup: '🛻',
+  pending: 'Pending', confirmed: 'Confirmed', in_production: 'In Production',
+  shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled',
 };
 
 // ── Component ──
@@ -117,14 +69,16 @@ export default function VehiclesPage() {
   const [orders, setOrders] = useState<VehicleOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [orderModal, setOrderModal] = useState<Vehicle | null>(null);
+  const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const { user } = useAuthStore();
 
-  // Order form state
+  // Order form
   const [selectedColor, setSelectedColor] = useState('pearl_white');
   const [selectedInterior, setSelectedInterior] = useState('Premium Black');
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -134,84 +88,114 @@ export default function VehiclesPage() {
   const [postalCode, setPostalCode] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Crypto deposit modal
+  const [depositModal, setDepositModal] = useState<VehicleOrder | null>(null);
+  const [cryptoCurrency, setCryptoCurrency] = useState('USDT');
+  const [cryptoNetwork, setCryptoNetwork] = useState('TRC-20');
+  const [txHash, setTxHash] = useState('');
+  const [senderAddr, setSenderAddr] = useState('');
+  const [depositing, setDepositing] = useState(false);
+  const [paymentAddresses, setPaymentAddresses] = useState<any[]>([]);
+
+  // Cancel confirm
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
   const fetchVehicles = useCallback(async () => {
-    try {
-      const data = await api.vehicles.list();
-      setVehicles(data as Vehicle[]);
-    } catch (err: any) {
-      console.error('Fetch vehicles error:', err);
-    }
+    try { setVehicles((await api.vehicles.list()) as Vehicle[]); } catch (err) { console.error(err); }
   }, []);
 
   const fetchOrders = useCallback(async () => {
-    try {
-      const data = await api.vehicles.myOrders();
-      setOrders(data as VehicleOrder[]);
-    } catch (err: any) {
-      console.error('Fetch orders error:', err);
-    }
+    try { setOrders((await api.vehicles.myOrders()) as VehicleOrder[]); } catch (err) { console.error(err); }
   }, []);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      await Promise.all([fetchVehicles(), fetchOrders()]);
-      setLoading(false);
-    };
+    const load = async () => { setLoading(true); await Promise.all([fetchVehicles(), fetchOrders()]); setLoading(false); };
     load();
   }, [fetchVehicles, fetchOrders]);
 
-  const openOrderModal = (vehicle: Vehicle) => {
-    setOrderModal(vehicle);
-    setError('');
-    setSuccess('');
-    setSelectedColor('pearl_white');
-    setSelectedInterior('Premium Black');
-    // Pre-fill from profile
-    setFullName(user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim() : '');
-    setEmail(user?.email || '');
-    setPhone(user?.profile?.phone || '');
-    setAddress('');
-    setCity('');
-    setStateVal('');
-    setPostalCode('');
-    setNotes('');
+  // Fetch payment addresses for crypto deposit
+  const openDepositModal = async (order: VehicleOrder) => {
+    setDepositModal(order);
+    setTxHash(''); setSenderAddr('');
+    setCryptoCurrency('USDT'); setCryptoNetwork('TRC-20');
+    try {
+      const res = await fetch('/api/payment-addresses');
+      const json = await res.json();
+      if (json.success) setPaymentAddresses(json.data.addresses || []);
+    } catch { /* ignore */ }
   };
 
+  const openOrderModal = (vehicle: Vehicle) => {
+    setOrderModal(vehicle); setError(''); setSuccess('');
+    setSelectedColor('pearl_white'); setSelectedInterior('Premium Black'); setSelectedAddons([]);
+    setFullName(user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim() : '');
+    setEmail(user?.email || ''); setPhone(user?.profile?.phone || '');
+    setAddress(''); setCity(''); setStateVal(''); setPostalCode(''); setNotes('');
+  };
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddons(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
+
+  const getAddonsTotal = () => selectedAddons.reduce((sum, id) => { const a = ADDON_OPTIONS.find(o => o.id === id); return sum + (a?.price || 0); }, 0);
+
   const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderModal) return;
-    setError('');
-    setSubmitting(true);
-
+    e.preventDefault(); if (!orderModal) return;
+    setError(''); setSubmitting(true);
     try {
+      const addonsTotal = getAddonsTotal();
       const result = await api.vehicles.createOrder({
-        vehicleId: orderModal.id,
-        selectedColor,
-        selectedInterior,
-        fullName,
-        email,
-        phone: phone || undefined,
-        address,
-        city,
-        state: stateVal,
-        postalCode,
-        notes: notes || undefined,
+        vehicleId: orderModal.id, selectedColor, selectedInterior, fullName, email,
+        phone: phone || undefined, address, city, state: stateVal, postalCode,
+        notes: notes || undefined, addons: selectedAddons, addonsTotal,
       });
-
       setSuccess(`Order placed! Order #${(result as any).orderNumber}`);
-      setOrderModal(null);
-      await fetchOrders();
-    } catch (err: any) {
-      setError(err.message || 'Failed to place order');
-    } finally {
-      setSubmitting(false);
-    }
+      setOrderModal(null); await fetchOrders();
+    } catch (err: any) { setError(err.message || 'Failed to place order'); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleSubmitDeposit = async () => {
+    if (!depositModal) return;
+    setError(''); setDepositing(true);
+    try {
+      await api.vehicles.submitDeposit({
+        orderId: depositModal.id, cryptoCurrency, network: cryptoNetwork, txHash, senderAddress: senderAddr || undefined,
+      });
+      setSuccess('Deposit submitted! Awaiting admin confirmation.');
+      setDepositModal(null); await fetchOrders();
+    } catch (err: any) { setError(err.message || 'Deposit failed'); }
+    finally { setDepositing(false); }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    setCancelling(true); setError('');
+    try {
+      await api.vehicles.cancelOrder(orderId);
+      setSuccess('Order cancelled.');
+      setCancelConfirm(null); await fetchOrders();
+    } catch (err: any) { setError(err.message || 'Cancel failed'); }
+    finally { setCancelling(false); }
+  };
+
+  const handleDownloadInvoice = async (orderId: string) => {
+    try {
+      const html = await api.vehicles.invoice(orderId);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'invoice.html'; a.click();
+      URL.revokeObjectURL(url);
+    } catch { setError('Failed to download invoice'); }
   };
 
   const getStepIndex = (status: string) => {
     if (status === 'cancelled') return -1;
     return STATUS_STEPS.findIndex(s => s.key === status);
+  };
+
+  const getAddressForCurrency = (currency: string, network: string) => {
+    return paymentAddresses.find((a: any) => a.currency === currency && (!a.network || a.network === network));
   };
 
   if (loading) {
@@ -236,27 +220,20 @@ export default function VehiclesPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
+      {/* Toast */}
+      {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg px-4 py-3 flex items-center justify-between"><span>{error}</span><button onClick={() => setError('')} className="text-red-300 hover:text-white">✕</button></div>}
+      {success && <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-lg px-4 py-3 flex items-center justify-between"><span>{success}</span><button onClick={() => setSuccess('')} className="text-green-300 hover:text-white">✕</button></div>}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-white">Tesla Vehicles</h1>
-        {/* Tab switcher */}
         <div className="flex bg-tesla-card border border-tesla-border rounded-lg p-0.5">
-          <button
-            onClick={() => setTab('browse')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              tab === 'browse' ? 'bg-[#CC0000] text-white shadow-lg' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Browse
-          </button>
-          <button
-            onClick={() => setTab('orders')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              tab === 'orders' ? 'bg-[#CC0000] text-white shadow-lg' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            My Orders ({orders.length})
-          </button>
+          {(['browse', 'orders'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${tab === t ? 'bg-[#CC0000] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>
+              {t === 'browse' ? 'Browse' : `My Orders (${orders.length})`}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -265,104 +242,58 @@ export default function VehiclesPage() {
         <div className="space-y-4">
           {vehicles.length === 0 ? (
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-                  <circle cx="7" cy="17" r="2" />
-                  <path d="M9 17h6" />
-                  <circle cx="17" cy="17" r="2" />
-                </svg>
-              </div>
               <p className="text-gray-400 text-sm">No vehicles available at this time.</p>
               <p className="text-gray-600 text-xs mt-1">Check back later for new inventory.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {vehicles.map(vehicle => (
-                <div key={vehicle.id} className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden hover:border-[#CC0000]/30 transition-colors">
-                  {/* Vehicle image */}
-                  <div className="relative h-48 bg-gradient-to-b from-white/5 to-transparent overflow-hidden">
-                    {vehicle.imageUrl ? (
-                      <img
-                        src={vehicle.imageUrl}
-                        alt={vehicle.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          if (target.nextElementSibling) (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div className="absolute inset-0 items-center justify-center" style={{ display: vehicle.imageUrl ? 'none' : 'flex' }}>
-                      <div className="text-center">
-                        <div className="text-6xl mb-1">{CATEGORY_ICONS[vehicle.category.toLowerCase()] || '🚗'}</div>
-                        <span className="text-gray-500 text-[10px] font-medium uppercase tracking-wider">{vehicle.category}</span>
+              {vehicles.map(vehicle => {
+                const addonsTotal = 0; // base card doesn't show addons
+                return (
+                  <div key={vehicle.id} className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden hover:border-[#CC0000]/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#CC0000]/5">
+                    <div className="relative h-48 bg-gradient-to-b from-white/5 to-transparent overflow-hidden cursor-pointer" onClick={() => setDetailVehicle(vehicle)}>
+                      {vehicle.imageUrl ? (
+                        <img src={vehicle.imageUrl} alt={vehicle.name} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                      ) : null}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                        <span className="text-gray-300 text-[10px] font-medium uppercase tracking-wider">{vehicle.category}</span>
+                        <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-1 rounded-md">{vehicle.estimatedDelivery}</span>
                       </div>
+                      {vehicle.featured && <div className="absolute top-3 left-3 bg-[#CC0000] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">Featured</div>}
                     </div>
-                    {vehicle.featured && (
-                      <div className="absolute top-3 left-3 bg-[#CC0000] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">
-                        Featured
-                      </div>
-                    )}
-                    <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-1 rounded-md">
-                      {vehicle.estimatedDelivery}
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-white font-bold text-base">{vehicle.name}</h3>
-                        <p className="text-gray-500 text-xs mt-0.5">{vehicle.interior} Interior</p>
-                      </div>
-                      <div className="text-right">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="text-white font-bold text-base cursor-pointer hover:text-[#CC0000] transition-colors" onClick={() => setDetailVehicle(vehicle)}>{vehicle.name}</h3>
+                          <p className="text-gray-500 text-xs mt-0.5">{vehicle.interior} Interior</p>
+                        </div>
                         <p className="text-white font-bold text-lg">${vehicle.basePrice.toLocaleString()}</p>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 mt-3 mb-4">
+                        <div className="bg-white/5 rounded-lg p-2"><p className="text-gray-500 text-[10px]">Range</p><p className="text-white text-sm font-semibold">{vehicle.specs.range} mi</p></div>
+                        <div className="bg-white/5 rounded-lg p-2"><p className="text-gray-500 text-[10px]">0-60 mph</p><p className="text-white text-sm font-semibold">{vehicle.specs.acceleration}</p></div>
+                        <div className="bg-white/5 rounded-lg p-2"><p className="text-gray-500 text-[10px]">Top Speed</p><p className="text-white text-sm font-semibold">{vehicle.specs.topSpeed}</p></div>
+                        <div className="bg-white/5 rounded-lg p-2"><p className="text-gray-500 text-[10px]">Horsepower</p><p className="text-white text-sm font-semibold">{vehicle.specs.horsepower} hp</p></div>
+                      </div>
+                      <div className="flex items-center gap-1.5 mb-4">
+                        <span className="text-gray-500 text-[10px] mr-1">Colors:</span>
+                        {(vehicle.colors as string[]).map((color: string) => (
+                          <div key={color} className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: COLOR_MAP[color] || '#666' }} title={COLOR_LABELS[color] || color} />
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => openOrderModal(vehicle)} className="flex-1 bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-2.5 rounded-lg transition-colors text-sm">
+                          Order Now
+                        </button>
+                        <button onClick={() => setDetailVehicle(vehicle)} className="px-3 py-2.5 bg-white/5 border border-tesla-border rounded-lg text-gray-400 hover:text-white hover:border-white/20 transition-all text-sm">
+                          Details
+                        </button>
+                      </div>
                     </div>
-
-                    {/* Specs row */}
-                    <div className="grid grid-cols-2 gap-2 mt-3 mb-4">
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <p className="text-gray-500 text-[10px]">Range</p>
-                        <p className="text-white text-sm font-semibold">{vehicle.specs.range} mi</p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <p className="text-gray-500 text-[10px]">0-60 mph</p>
-                        <p className="text-white text-sm font-semibold">{vehicle.specs.acceleration}</p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <p className="text-gray-500 text-[10px]">Top Speed</p>
-                        <p className="text-white text-sm font-semibold">{vehicle.specs.topSpeed}</p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <p className="text-gray-500 text-[10px]">Horsepower</p>
-                        <p className="text-white text-sm font-semibold">{vehicle.specs.horsepower} hp</p>
-                      </div>
-                    </div>
-
-                    {/* Color swatches */}
-                    <div className="flex items-center gap-1.5 mb-4">
-                      <span className="text-gray-500 text-[10px] mr-1">Colors:</span>
-                      {(vehicle.colors as string[]).map((color: string) => (
-                        <div
-                          key={color}
-                          className="w-4 h-4 rounded-full border border-white/20"
-                          style={{ backgroundColor: COLOR_MAP[color] || '#666' }}
-                          title={COLOR_LABELS[color] || color}
-                        />
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => openOrderModal(vehicle)}
-                      className="w-full bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
-                    >
-                      Order Now — ${(vehicle.basePrice * 0.1).toLocaleString()} deposit
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -373,227 +304,135 @@ export default function VehiclesPage() {
         <div className="space-y-4">
           {orders.length === 0 ? (
             <div className="bg-tesla-card border border-tesla-border rounded-xl p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-500">
-                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                  <rect x="9" y="3" width="6" height="4" rx="1" />
-                  <path d="M9 12h6" /><path d="M9 16h6" />
-                </svg>
-              </div>
               <p className="text-gray-400 text-sm">No vehicle orders yet.</p>
-              <p className="text-gray-600 text-xs mt-1">Browse our inventory and place your first order.</p>
-              <button
-                onClick={() => setTab('browse')}
-                className="mt-4 bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm"
-              >
-                Browse Vehicles
-              </button>
+              <button onClick={() => setTab('browse')} className="mt-4 bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">Browse Vehicles</button>
             </div>
-          ) : (
-            orders.map(order => {
-              const currentStep = getStepIndex(order.status);
-              const isCancelled = order.status === 'cancelled';
-              const trackingInfo = order.trackingInfo as any || {};
-              const timeline = trackingInfo.timeline || [];
-              const currentLocation = trackingInfo.currentLocation || null;
-              const shippingDirection = trackingInfo.shippingDirection || null;
-              const vin = trackingInfo.vin || null;
-              const estimatedDelivery = trackingInfo.estimatedDelivery || null;
-
-              return (
-                <div key={order.id} className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
-                  {/* Order header */}
-                  <div className="p-4 pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-white font-bold text-base">{order.vehicle.name}</h3>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${STATUS_COLORS[order.status] || ''}`}>
-                            {STATUS_LABELS[order.status]}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-xs mt-0.5">Order #{order.orderNumber}</p>
-                        <p className="text-gray-600 text-[10px] mt-0.5">
-                          Placed {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
+          ) : orders.map(order => {
+            const currentStep = getStepIndex(order.status);
+            const isCancelled = order.status === 'cancelled';
+            const trackingInfo = order.trackingInfo as any || {};
+            return (
+              <div key={order.id} className="bg-tesla-card border border-tesla-border rounded-xl overflow-hidden">
+                <div className="p-4 pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-white font-bold text-base">{order.vehicle.name}</h3>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${STATUS_COLORS[order.status] || ''}`}>{STATUS_LABELS[order.status]}</span>
                       </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <p className="text-white font-bold">${order.totalPrice.toLocaleString()}</p>
-                        <p className="text-gray-500 text-xs">Deposit: ${order.depositAmount.toLocaleString()}</p>
-                      </div>
+                      <p className="text-gray-500 text-xs mt-0.5">Order #{order.orderNumber}</p>
+                      <p className="text-gray-600 text-[10px] mt-0.5">Placed {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     </div>
-
-                    {/* Order details row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-                      <div>
-                        <p className="text-gray-500 text-[10px] uppercase tracking-wider">Color</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <div className="w-3 h-3 rounded-full border border-white/20" style={{ backgroundColor: COLOR_MAP[order.selectedColor] || '#666' }} />
-                          <p className="text-white text-xs">{COLOR_LABELS[order.selectedColor] || order.selectedColor}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-[10px] uppercase tracking-wider">Interior</p>
-                        <p className="text-white text-xs mt-1">{order.selectedInterior}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-[10px] uppercase tracking-wider">Est. Delivery</p>
-                        <p className="text-white text-xs mt-1">{estimatedDelivery ? new Date(estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : order.vehicle.estimatedDelivery}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-[10px] uppercase tracking-wider">Deposit</p>
-                        <p className={`text-xs mt-1 ${order.depositPaid ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {order.depositPaid ? 'Paid' : 'Pending'}
-                        </p>
-                      </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <p className="text-white font-bold">${order.totalPrice.toLocaleString()}</p>
+                      <p className={`text-xs mt-0.5 ${order.depositPaid ? 'text-green-400' : 'text-yellow-400'}`}>Deposit: {order.depositPaid ? 'Paid' : 'Unpaid'}</p>
                     </div>
                   </div>
 
-                  {/* Route tracker with progress */}
-                  {!isCancelled && (
-                    <div className="border-t border-tesla-border px-4 py-4 bg-black/20">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-white text-xs font-semibold">Order Tracking</p>
-                        {currentLocation && (
-                          <p className="text-gray-400 text-[10px]">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 mr-1 animate-pulse" />
-                            {currentLocation}
-                          </p>
-                        )}
-                      </div>
+                  {/* Order details */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                    <div><p className="text-gray-500 text-[10px] uppercase tracking-wider">Color</p><div className="flex items-center gap-1.5 mt-1"><div className="w-3 h-3 rounded-full border border-white/20" style={{ backgroundColor: COLOR_MAP[order.selectedColor] || '#666' }} /><p className="text-white text-xs">{COLOR_LABELS[order.selectedColor] || order.selectedColor}</p></div></div>
+                    <div><p className="text-gray-500 text-[10px] uppercase tracking-wider">Interior</p><p className="text-white text-xs mt-1">{order.selectedInterior}</p></div>
+                    <div><p className="text-gray-500 text-[10px] uppercase tracking-wider">Est. Delivery</p><p className="text-white text-xs mt-1">{order.vehicle.estimatedDelivery}</p></div>
+                    <div><p className="text-gray-500 text-[10px] uppercase tracking-wider">Deposit</p><p className={`text-xs mt-1 ${order.depositPaid ? 'text-green-400' : 'text-yellow-400'}`}>{order.depositPaid ? 'Paid' : 'Pending'}</p></div>
+                  </div>
 
-                      {/* Visual route progress */}
-                      <div className="relative mb-4">
-                        <div className="absolute top-4 left-[10%] right-[10%] h-0.5 bg-white/10 z-0" />
-                        <div className="absolute top-4 left-[10%] h-0.5 bg-[#CC0000] z-0 transition-all duration-700" style={{ width: `${Math.max(0, (currentStep / (STATUS_STEPS.length - 1)) * 80)}%` }} />
-
-                        <div className="relative flex justify-between z-10">
-                          {STATUS_STEPS.map((step, idx) => {
-                            const isActive = idx <= currentStep;
-                            const isCurrent = step.key === order.status;
-                            return (
-                              <div key={step.key} className="flex flex-col items-center" style={{ flex: 1 }}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
-                                  isCurrent ? 'bg-[#CC0000] text-white ring-2 ring-[#CC0000]/30 ring-offset-2 ring-offset-[#111] shadow-lg shadow-[#CC0000]/20' :
-                                  isActive ? 'bg-[#CC0000] text-white' :
-                                  'bg-white/5 text-gray-600 border border-tesla-border'
-                                }`}>
-                                  {isActive ? (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
-                                  ) : (
-                                    <span className="text-[10px]">{idx + 1}</span>
-                                  )}
-                                </div>
-                                <span className={`text-[9px] mt-1.5 text-center leading-tight max-w-[60px] ${
-                                  isCurrent ? 'text-white font-medium' : isActive ? 'text-gray-400' : 'text-gray-600'
-                                }`}>
-                                  {step.label}
-                                </span>
-                              </div>
-                            );
-                          })}
+                  {/* Action buttons */}
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {!order.depositPaid && order.status !== 'cancelled' && (
+                      <button onClick={() => openDepositModal(order)} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-[#CC0000]/10 border border-[#CC0000]/30 text-[#CC0000] hover:bg-[#CC0000]/20 transition-all">Pay Deposit</button>
+                    )}
+                    <button onClick={() => handleDownloadInvoice(order.id)} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-white/5 border border-tesla-border text-gray-400 hover:text-white hover:border-white/20 transition-all">Download Invoice</button>
+                    {order.status === 'pending' && !order.depositPaid && (
+                      cancelConfirm === order.id ? (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleCancelOrder(order.id)} disabled={cancelling} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all">Confirm Cancel</button>
+                          <button onClick={() => setCancelConfirm(null)} className="text-[10px] px-2 py-1.5 text-gray-500 hover:text-white transition-all">No</button>
                         </div>
-                      </div>
-
-                      {/* Direction indicator */}
-                      {shippingDirection && (
-                        <div className="flex items-center gap-2 bg-[#CC0000]/5 border border-[#CC0000]/15 rounded-lg px-3 py-2 mb-3">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="16 12 12 8 8 12" /><line x1="12" y1="16" x2="12" y2="8" /></svg>
-                          <p className="text-gray-300 text-[11px]"><span className="text-[#CC0000] font-medium">Direction:</span> {shippingDirection}</p>
-                        </div>
-                      )}
-
-                      {/* VIN */}
-                      {vin && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2 mb-3">
-                          <p className="text-gray-500 text-[10px]">VIN Number</p>
-                          <p className="text-white text-xs font-mono mt-0.5">{vin}</p>
-                        </div>
-                      )}
-
-                      {/* Timeline */}
-                      {timeline.length > 0 && (
-                        <div>
-                          <p className="text-gray-400 text-[10px] font-semibold mb-2 uppercase tracking-wider">Activity</p>
-                          <div className="space-y-2">
-                            {timeline.slice().reverse().map((entry: any, idx: number) => {
-                              const statusColor = STATUS_COLORS[entry.status];
-                              return (
-                                <div key={idx} className="flex items-start gap-2.5">
-                                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#CC0000] shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${statusColor || 'bg-gray-700/50 text-gray-400 border-gray-600/30'}`}>{STATUS_LABELS[entry.status] || entry.status}</span>
-                                      <span className="text-gray-600 text-[10px]">{new Date(entry.timestamp).toLocaleString()}</span>
-                                    </div>
-                                    {entry.note && <p className="text-gray-400 text-[11px] mt-0.5">{entry.note}</p>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Cancelled banner */}
-                  {isCancelled && (
-                    <div className="border-t border-tesla-border px-4 py-3 bg-red-500/5">
-                      <p className="text-red-400 text-xs font-medium">This order has been cancelled.</p>
-                      {order.adminNotes && <p className="text-gray-500 text-[11px] mt-1">Note: {order.adminNotes}</p>}
-                    </div>
-                  )}
+                      ) : (
+                        <button onClick={() => setCancelConfirm(order.id)} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-white/5 border border-tesla-border text-gray-500 hover:text-red-400 hover:border-red-500/30 transition-all">Cancel Order</button>
+                      )
+                    )}
+                  </div>
                 </div>
-              );
-            })
-          )}
+
+                {/* Progress tracker */}
+                {!isCancelled && (
+                  <div className="border-t border-tesla-border px-4 py-4 bg-black/20">
+                    <div className="relative mb-4">
+                      <div className="absolute top-4 left-[10%] right-[10%] h-0.5 bg-white/10 z-0" />
+                      <div className="absolute top-4 left-[10%] h-0.5 bg-[#CC0000] z-0 transition-all duration-700" style={{ width: `${Math.max(0, (currentStep / (STATUS_STEPS.length - 1)) * 80)}%` }} />
+                      <div className="relative flex justify-between z-10">
+                        {STATUS_STEPS.map((step, idx) => {
+                          const isActive = idx <= currentStep; const isCurrent = step.key === order.status;
+                          return (
+                            <div key={step.key} className="flex flex-col items-center" style={{ flex: 1 }}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${isCurrent ? 'bg-[#CC0000] text-white ring-2 ring-[#CC0000]/30 ring-offset-2 ring-offset-[#111] shadow-lg shadow-[#CC0000]/20' : isActive ? 'bg-[#CC0000] text-white' : 'bg-white/5 text-gray-600 border border-tesla-border'}`}>
+                                {isActive ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg> : <span className="text-[10px]">{idx + 1}</span>}
+                              </div>
+                              <span className={`text-[9px] mt-1.5 text-center leading-tight max-w-[60px] ${isCurrent ? 'text-white font-medium' : isActive ? 'text-gray-400' : 'text-gray-600'}`}>{step.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {isCancelled && <div className="border-t border-tesla-border px-4 py-3 bg-red-500/5"><p className="text-red-400 text-xs font-medium">This order has been cancelled.</p></div>}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Order Modal */}
+      {/* ── Vehicle Detail Modal ── */}
+      {detailVehicle && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDetailVehicle(null)} />
+          <div className="relative bg-[#111] border border-tesla-border rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="sticky top-0 bg-[#111] border-b border-tesla-border p-4 flex items-center justify-between z-10">
+              <h2 className="text-white font-bold text-lg">{detailVehicle.name}</h2>
+              <button onClick={() => setDetailVehicle(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors">✕</button>
+            </div>
+            <div className="p-4 space-y-4">
+              {detailVehicle.imageUrl && <img src={detailVehicle.imageUrl} alt={detailVehicle.name} className="w-full h-56 object-cover rounded-xl" />}
+              <p className="text-gray-400 text-sm leading-relaxed">{detailVehicle.description}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">Range</p><p className="text-white font-bold text-lg">{detailVehicle.specs.range}</p><p className="text-gray-500 text-[10px]">miles</p></div>
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">0-60 mph</p><p className="text-white font-bold text-lg">{detailVehicle.specs.acceleration}</p></div>
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">Horsepower</p><p className="text-white font-bold text-lg">{detailVehicle.specs.horsepower}</p><p className="text-gray-500 text-[10px]">hp</p></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">Top Speed</p><p className="text-white font-bold">{detailVehicle.specs.topSpeed}</p></div>
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">Cargo</p><p className="text-white font-bold">{detailVehicle.specs.cargo}</p></div>
+                <div className="bg-white/5 rounded-lg p-3 text-center"><p className="text-gray-500 text-[10px]">Drivetrain</p><p className="text-white font-bold text-sm">{detailVehicle.specs.drivetrain}</p></div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => { setDetailVehicle(null); openOrderModal(detailVehicle); }} className="flex-1 bg-[#CC0000] hover:bg-[#a30000] text-white font-semibold py-3 rounded-lg transition-colors text-sm">Order Now - ${detailVehicle.basePrice.toLocaleString()}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Order Modal with Configurator ── */}
       {orderModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !submitting && setOrderModal(null)} />
           <div className="relative bg-[#111] border border-tesla-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up">
-            {/* Modal header */}
             <div className="sticky top-0 bg-[#111] border-b border-tesla-border p-4 flex items-center justify-between z-10">
-              <div>
-                <h2 className="text-white font-bold text-lg">Order {orderModal.name}</h2>
-                <p className="text-gray-500 text-xs">Starting at ${orderModal.basePrice.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => !submitting && setOrderModal(null)}
-                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                disabled={submitting}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-              </button>
+              <div><h2 className="text-white font-bold text-lg">Order {orderModal.name}</h2><p className="text-gray-500 text-xs">Starting at ${orderModal.basePrice.toLocaleString()}</p></div>
+              <button onClick={() => !submitting && setOrderModal(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" disabled={submitting}>✕</button>
             </div>
-
             <form onSubmit={handleSubmitOrder} className="p-4 space-y-4">
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg p-3">{error}</div>
-              )}
-              {success && (
-                <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-xs rounded-lg p-3">{success}</div>
-              )}
-
               {/* Color Selection */}
               <div>
                 <label className="text-gray-400 text-xs font-semibold block mb-2">Exterior Color</label>
                 <div className="grid grid-cols-4 gap-2">
                   {(orderModal.colors as string[]).map((color: string) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setSelectedColor(color)}
-                      className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all ${
-                        selectedColor === color
-                          ? 'border-[#CC0000] bg-[#CC0000]/10'
-                          : 'border-tesla-border hover:border-gray-500'
-                      }`}
-                    >
+                    <button key={color} type="button" onClick={() => setSelectedColor(color)}
+                      className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all ${selectedColor === color ? 'border-[#CC0000] bg-[#CC0000]/10' : 'border-tesla-border hover:border-gray-500'}`}>
                       <div className="w-8 h-8 rounded-full border border-white/20" style={{ backgroundColor: COLOR_MAP[color] || '#666' }} />
                       <span className="text-[9px] text-gray-400 leading-tight text-center">{COLOR_LABELS[color] || color}</span>
                     </button>
@@ -606,159 +445,144 @@ export default function VehiclesPage() {
                 <label className="text-gray-400 text-xs font-semibold block mb-2">Interior</label>
                 <div className="grid grid-cols-2 gap-2">
                   {['Premium Black', 'Cream White'].map(int => (
-                    <button
-                      key={int}
-                      type="button"
-                      onClick={() => setSelectedInterior(int)}
-                      className={`p-2.5 rounded-lg border text-xs font-medium transition-all ${
-                        selectedInterior === int
-                          ? 'border-[#CC0000] bg-[#CC0000]/10 text-white'
-                          : 'border-tesla-border text-gray-400 hover:border-gray-500'
-                      }`}
-                    >
+                    <button key={int} type="button" onClick={() => setSelectedInterior(int)}
+                      className={`p-2.5 rounded-lg border text-xs font-medium transition-all ${selectedInterior === int ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
                       {int}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Divider */}
+              {/* Configurator - Addons */}
+              <div>
+                <label className="text-gray-400 text-xs font-semibold block mb-2">Options & Upgrades</label>
+                <div className="space-y-2">
+                  {ADDON_OPTIONS.map(addon => (
+                    <button key={addon.id} type="button" onClick={() => toggleAddon(addon.id)}
+                      className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedAddons.includes(addon.id) ? 'border-[#CC0000] bg-[#CC0000]/5' : 'border-tesla-border hover:border-gray-500'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedAddons.includes(addon.id) ? 'border-[#CC0000] bg-[#CC0000]' : 'border-tesla-border'}`}>
+                          {selectedAddons.includes(addon.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
+                        </div>
+                        <span className="text-white text-sm">{addon.name}</span>
+                      </div>
+                      <span className="text-gray-400 text-sm">+${addon.price.toLocaleString()}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="border-t border-tesla-border" />
 
               {/* Delivery Info */}
               <div>
                 <label className="text-gray-400 text-xs font-semibold block mb-2">Delivery Information</label>
-
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-gray-500 text-[10px] block mb-1">Full Name *</label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                        className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                        placeholder="John Doe"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 text-[10px] block mb-1">Email *</label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                        placeholder="john@example.com"
-                        required
-                      />
-                    </div>
+                    <div><label className="text-gray-500 text-[10px] block mb-1">Full Name *</label><input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="John Doe" required /></div>
+                    <div><label className="text-gray-500 text-[10px] block mb-1">Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="john@example.com" required /></div>
                   </div>
-
-                  <div>
-                    <label className="text-gray-500 text-[10px] block mb-1">Phone</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                      placeholder="+1 (555) 000-0000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-gray-500 text-[10px] block mb-1">Address *</label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={e => setAddress(e.target.value)}
-                      className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                      placeholder="123 Tesla Drive"
-                      required
-                    />
-                  </div>
-
+                  <div><label className="text-gray-500 text-[10px] block mb-1">Phone</label><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="+1 (555) 000-0000" /></div>
+                  <div><label className="text-gray-500 text-[10px] block mb-1">Address *</label><input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="123 Tesla Drive" required /></div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-gray-500 text-[10px] block mb-1">City *</label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={e => setCity(e.target.value)}
-                        className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                        placeholder="Austin"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 text-[10px] block mb-1">State *</label>
-                      <input
-                        type="text"
-                        value={stateVal}
-                        onChange={e => setStateVal(e.target.value)}
-                        className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                        placeholder="TX"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 text-[10px] block mb-1">ZIP *</label>
-                      <input
-                        type="text"
-                        value={postalCode}
-                        onChange={e => setPostalCode(e.target.value)}
-                        className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors"
-                        placeholder="73301"
-                        required
-                      />
-                    </div>
+                    <div><label className="text-gray-500 text-[10px] block mb-1">City *</label><input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="Austin" required /></div>
+                    <div><label className="text-gray-500 text-[10px] block mb-1">State *</label><input type="text" value={stateVal} onChange={e => setStateVal(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="TX" required /></div>
+                    <div><label className="text-gray-500 text-[10px] block mb-1">ZIP *</label><input type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="73301" required /></div>
                   </div>
-
-                  <div>
-                    <label className="text-gray-500 text-[10px] block mb-1">Notes (optional)</label>
-                    <textarea
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                      className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors resize-none"
-                      rows={2}
-                      placeholder="Special delivery instructions..."
-                    />
-                  </div>
+                  <div><label className="text-gray-500 text-[10px] block mb-1">Notes (optional)</label><textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors resize-none" rows={2} placeholder="Special delivery instructions..." /></div>
                 </div>
               </div>
 
               {/* Order Summary */}
               <div className="bg-white/5 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">{orderModal.name} Base Price</span>
-                  <span className="text-white">${orderModal.basePrice.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Deposit (10%)</span>
-                  <span className="text-[#CC0000] font-bold">${(orderModal.basePrice * 0.1).toLocaleString()}</span>
-                </div>
-                <div className="border-t border-tesla-border pt-2 flex justify-between text-sm">
-                  <span className="text-gray-400">Estimated Delivery</span>
-                  <span className="text-white">{orderModal.estimatedDelivery}</span>
+                <div className="flex justify-between text-sm"><span className="text-gray-400">{orderModal.name} Base Price</span><span className="text-white">${orderModal.basePrice.toLocaleString()}</span></div>
+                {selectedAddons.length > 0 && selectedAddons.map(id => { const a = ADDON_OPTIONS.find(o => o.id === id); return a ? <div key={id} className="flex justify-between text-sm"><span className="text-gray-400">{a.name}</span><span className="text-white">${a.price.toLocaleString()}</span></div> : null; })}
+                <div className="flex justify-between text-sm"><span className="text-gray-400">Deposit (10%)</span><span className="text-[#CC0000] font-bold">${(Math.round((orderModal.basePrice + getAddonsTotal()) * 0.1)).toLocaleString()}</span></div>
+                <div className="border-t border-tesla-border pt-2 flex justify-between text-sm"><span className="text-gray-400">Estimated Delivery</span><span className="text-white">{orderModal.estimatedDelivery}</span></div>
+              </div>
+
+              <button type="submit" disabled={submitting} className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
+                {submitting ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Placing Order...</> : `Place Order — $${(Math.round((orderModal.basePrice + getAddonsTotal()) * 0.1)).toLocaleString()} Deposit`}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Crypto Deposit Modal ── */}
+      {depositModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !depositing && setDepositModal(null)} />
+          <div className="relative bg-[#111] border border-tesla-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div className="sticky top-0 bg-[#111] border-b border-tesla-border p-4 flex items-center justify-between z-10">
+              <div><h2 className="text-white font-bold text-lg">Pay Deposit</h2><p className="text-gray-500 text-xs">{depositModal.vehicle.name} — ${depositModal.depositAmount.toLocaleString()}</p></div>
+              <button onClick={() => !depositing && setDepositModal(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" disabled={depositing}>✕</button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Payment address display */}
+              {(() => {
+                const addr = getAddressForCurrency(cryptoCurrency, cryptoNetwork);
+                if (addr) return (
+                  <div className="bg-white/5 rounded-xl p-4 border border-tesla-border">
+                    <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Send {cryptoCurrency} ({cryptoNetwork}) to:</p>
+                    <p className="text-white text-sm font-mono break-all bg-black/40 rounded-lg p-3 select-all">{addr.address}</p>
+                    {addr.qrCodeUrl && <img src={addr.qrCodeUrl} alt="QR Code" className="w-32 h-32 mx-auto mt-3 rounded-lg" />}
+                    <p className="text-yellow-400 text-[10px] mt-2">Only send {cryptoCurrency} on {cryptoNetwork}. Sending the wrong currency may result in permanent loss.</p>
+                  </div>
+                );
+                return <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-yellow-400 text-xs">No payment address configured for {cryptoCurrency} ({cryptoNetwork}). Contact support.</div>;
+              })()}
+
+              {/* Currency selection */}
+              <div>
+                <label className="text-gray-400 text-xs font-semibold block mb-2">Payment Currency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CRYPTO_OPTIONS.map(opt => (
+                    <button key={opt.value} type="button" onClick={() => { setCryptoCurrency(opt.value); setCryptoNetwork(opt.networks[0]); }}
+                      className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoCurrency === opt.value ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Placing Order...
-                  </>
-                ) : (
-                  `Place Order — $${(orderModal.basePrice * 0.1).toLocaleString()} Deposit`
-                )}
+              {/* Network selection */}
+              {(() => {
+                const opt = CRYPTO_OPTIONS.find(o => o.value === cryptoCurrency);
+                if (!opt || opt.networks.length <= 1) return null;
+                return (
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Network</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {opt.networks.map(net => (
+                        <button key={net} type="button" onClick={() => setCryptoNetwork(net)}
+                          className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoNetwork === net ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
+                          {net}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* TX Hash input */}
+              <div>
+                <label className="text-gray-400 text-xs font-semibold block mb-2">Transaction Hash *</label>
+                <input type="text" value={txHash} onChange={e => setTxHash(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="0x... or bc1..." required />
+              </div>
+
+              {/* Sender address */}
+              <div>
+                <label className="text-gray-400 text-xs font-semibold block mb-2">Your Wallet Address (optional)</label>
+                <input type="text" value={senderAddr} onChange={e => setSenderAddr(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="Your sending address..." />
+              </div>
+
+              <button onClick={handleSubmitDeposit} disabled={depositing || !txHash} className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm">
+                {depositing ? 'Submitting...' : 'Submit Deposit Proof'}
               </button>
-            </form>
+
+              <p className="text-gray-600 text-[10px] text-center">After submission, an admin will verify your payment and confirm the deposit.</p>
+            </div>
           </div>
         </div>
       )}

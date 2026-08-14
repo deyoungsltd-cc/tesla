@@ -130,5 +130,11 @@ export const api = {
     createOrder: (body: any) => apiFetch('/api/vehicles/order', { method: 'POST', body: JSON.stringify(body) }),
     tracking: (orderId: string) => apiFetch(`/api/vehicles/tracking?orderId=${orderId}`),
     trackByCode: (orderNumber: string) => apiFetch(`/api/vehicles/track-by-code?orderNumber=${encodeURIComponent(orderNumber)}`),
+    getBySlug: (slug: string) => apiFetch(`/api/vehicles/slug?slug=${encodeURIComponent(slug)}`),
+    cancelOrder: (orderId: string) => apiFetch(`/api/vehicles/cancel-order?orderId=${orderId}`, { method: 'POST' }),
+    submitDeposit: (body: any) => apiFetch('/api/vehicles/deposit', { method: 'POST', body: JSON.stringify(body) }),
+    invoice: (orderId: string) => fetch(`/api/vehicles/invoice?orderId=${orderId}`, {
+      headers: { Authorization: 'Bearer ' + useAuthStore.getState().token },
+    }).then(res => res.text()),
   },
 };

@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { apiResponse, apiError } from '@/lib/api-helpers';
 
 // ── Default Tesla vehicles (returned as fallback if DB is empty or unavailable) ──
-const DEFAULT_VEHICLES = [
+export const DEFAULT_VEHICLES = [
   {
     id: 'default-1',
     name: 'Model S',
