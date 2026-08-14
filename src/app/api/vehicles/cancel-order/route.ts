@@ -29,7 +29,7 @@ async function handler(request: NextRequest, _context: any, user: any) {
           ...(order.trackingInfo as any || {}),
           timeline: [
             { status: 'cancelled', timestamp: new Date().toISOString(), note: 'Order cancelled by customer' },
-            ...(order.trackingInfo as any)?.timeline || []),
+            ...((order.trackingInfo as any)?.timeline || []),
           ],
         },
       },
