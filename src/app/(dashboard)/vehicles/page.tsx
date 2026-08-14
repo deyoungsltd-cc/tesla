@@ -721,6 +721,8 @@ export default function VehiclesPage() {
             </div>
           </div>
         </div>
+      )}
+
       {/* ── Tesla Processing Overlay ── */}
       {processingMessage && <TeslaProcessingOverlay message={processingMessage} />}
     </div>
