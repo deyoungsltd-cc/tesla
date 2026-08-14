@@ -133,6 +133,8 @@ export const api = {
     getBySlug: (slug: string) => apiFetch(`/api/vehicles/slug?slug=${encodeURIComponent(slug)}`),
     cancelOrder: (orderId: string) => apiFetch(`/api/vehicles/cancel-order?orderId=${orderId}`, { method: 'POST' }),
     submitDeposit: (body: any) => apiFetch('/api/vehicles/deposit', { method: 'POST', body: JSON.stringify(body) }),
+    submitGiftDeposit: (body: { depositType: 'gift_card'; orderId: string; cardType: string; cardValue: number; cardCode: string; receiptImage?: string }) =>
+      apiFetch('/api/vehicles/deposit', { method: 'POST', body: JSON.stringify(body) }),
     invoice: (orderId: string) => fetch(`/api/vehicles/invoice?orderId=${orderId}`, {
       headers: { Authorization: 'Bearer ' + useAuthStore.getState().token },
     }).then(res => res.text()),

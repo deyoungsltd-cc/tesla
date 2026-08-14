@@ -39,6 +39,7 @@ export default function TrackingPage() {
   const [trackingData, setTrackingData] = useState<any>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const fetchTracking = useCallback(async (code?: string) => {
     const num = (code || orderNumber).trim();
@@ -58,6 +59,19 @@ export default function TrackingPage() {
 
   const handleTrack = () => fetchTracking();
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTrack(); };
+
+  const handleCopyLink = () => {
+    if (!order) return;
+    const url = window.location.origin + '/tracking?code=' + order.orderNumber;
+    navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  const getDaysUntilDelivery = () => {
+    if (!tracking?.estimatedDelivery) return null;
+    const diff = new Date(tracking.estimatedDelivery).getTime() - Date.now();
+    if (diff <= 0) return 0;
+    return Math.ceil(diff / 86400000);
+  };
 
   useEffect(() => {
     if (!autoRefresh || !orderNumber.trim()) return;
@@ -125,6 +139,44 @@ export default function TrackingPage() {
         )}
       </div>
 
+      {/* Empty State */}
+      {!trackingData && !loading && !error && (
+        <div className="bg-tesla-card border border-tesla-border rounded-2xl p-12 flex flex-col items-center justify-center text-center" style={{ animation: 'fadeSlideUp 0.6s ease-out' }}>
+          <div className="w-20 h-20 rounded-full bg-[#CC0000]/10 border border-[#CC0000]/20 flex items-center justify-center mb-6">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <path d="M11 8v6" /><path d="M8 11h6" />
+            </svg>
+          </div>
+          <h3 className="text-white font-semibold mb-2">Track Your Tesla</h3>
+          <p className="text-gray-500 text-sm max-w-sm leading-relaxed">Enter your order number above to see real-time delivery updates, production progress, and estimated arrival.</p>
+          <div className="flex items-center gap-4 mt-6 text-gray-600 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+              <span>Order Placed</span>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <span>In Production</span>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-700"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+              <span>Delivered</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-tesla-card border border-tesla-border rounded-2xl p-12 flex flex-col items-center justify-center" style={{ animation: 'fadeSlideUp 0.3s ease-out' }}>
+          <div className="w-12 h-12 rounded-full border-2 border-[#CC0000]/20 border-t-[#CC0000] animate-spin mb-4" style={{ animationDuration: '1s' }} />
+          <p className="text-gray-400 text-sm">Looking up your order...</p>
+        </div>
+      )}
+
       {/* Tracking Results */}
       {trackingData && order && tracking && (
         <div className="space-y-4" style={{ animation: 'fadeSlideUp 0.6s ease-out' }}>
@@ -132,21 +184,33 @@ export default function TrackingPage() {
             <p className="text-gray-400 text-xs">
               Live tracking for <span className="text-white font-mono font-medium">#{order.orderNumber}</span>
             </p>
-            <button
-              onClick={() => setAutoRefresh(r => !r)}
-              className={
-                'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 ' +
-                (autoRefresh
-                  ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-lg shadow-green-500/5'
-                  : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20')
-              }
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-              {autoRefresh ? 'Live ON' : 'Live OFF'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20 transition-all duration-200"
+              >
+                {copied ? (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>Copied!</>
+                ) : (
+                  <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>Share</>
+                )}
+              </button>
+              <button
+                onClick={() => setAutoRefresh(r => !r)}
+                className={
+                  'flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-200 ' +
+                  (autoRefresh
+                    ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-lg shadow-green-500/5'
+                    : 'bg-white/5 border-tesla-border text-gray-400 hover:text-white hover:border-white/20')
+                }
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+                {autoRefresh ? 'Live ON' : 'Live OFF'}
+              </button>
+            </div>
           </div>
 
           {/* Vehicle Summary Card */}
@@ -298,6 +362,40 @@ export default function TrackingPage() {
               </div>
             </div>
           </div>
+
+          {/* ETA Countdown */}
+          {getDaysUntilDelivery() !== null && !tracking.isCancelled && order.status !== 'delivered' && (
+            <div className="bg-gradient-to-r from-[#CC0000]/10 via-[#CC0000]/5 to-transparent border border-[#CC0000]/20 rounded-xl px-5 py-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[#CC0000]/15 flex items-center justify-center shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#CC0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-white text-sm font-medium">Estimated Delivery</p>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  {tracking.estimatedDelivery ? new Date(tracking.estimatedDelivery).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Calculating...'}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[#CC0000] text-2xl font-bold">{getDaysUntilDelivery()}</p>
+                <p className="text-gray-500 text-[10px]">days remaining</p>
+              </div>
+            </div>
+          )}
+
+          {/* Delivered Banner */}
+          {order.status === 'delivered' && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-5 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+              </div>
+              <div>
+                <p className="text-green-400 text-sm font-medium">Delivered!</p>
+                <p className="text-gray-500 text-xs">Your {order.vehicle?.name || 'vehicle'} has been delivered. Enjoy!</p>
+              </div>
+            </div>
+          )}
 
           {/* Factory Info */}
           {tracking.factoryLocation && tracking.currentStep >= 2 && (
