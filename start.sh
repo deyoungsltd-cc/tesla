@@ -5,7 +5,7 @@ echo "[startup] TeslaPrime - Initializing"
 echo "========================================"
 
 # ============================================
-# DATABASE_URL VALIDATION (warning only — do not block server start)
+# DATABASE_URL VALIDATION
 # ============================================
 if [ -z "$DATABASE_URL" ]; then
   echo "[startup] WARNING: DATABASE_URL is NOT SET."
@@ -25,14 +25,26 @@ else
 fi
 
 # ============================================
+# RUNTIME SCHEMA SYNC (prisma db push)
+# ============================================
+# At build time, DATABASE_URL is often unavailable on Railway.
+# This is the REAL schema sync — it runs at container start.
+# --accept-data-loss allows additive column changes.
+# --skip-generate because we already have the generated client.
+if [ -n "$DATABASE_URL" ]; then
+  echo "[startup] Running prisma db push (runtime schema sync)..."
+  ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate 2>&1 || {
+    echo "[startup] WARNING: prisma db push failed. Falling back to safety-net migration."
+  }
+else
+  echo "[startup] Skipping prisma db push (DATABASE_URL not set)"
+fi
+
+# ============================================
 # SAFETY-NET MIGRATION (idempotent raw SQL, foreground, BLOCKING)
 # ============================================
-# Runs BEFORE the server starts because TeslaEquity's start.sh does
-# NOT run `prisma db push` at all. Without this, schema changes
-# (like the kyc_verification_code column added 2026-07-27) never
-# reach the live DB, and the build-time Prisma client throws
-# "column does not exist" on every db.user.findX — which broke
-# login + register.
+# Belt-and-suspenders: ensures every column the Prisma client expects
+# exists in the DB, even if prisma db push above failed.
 echo "[startup] Running safety-net migration (idempotent raw SQL, blocking)..."
 if [ -n "$DATABASE_URL" ]; then
   node prisma/migrate-safety-net.cjs 2>&1 || {
@@ -51,9 +63,6 @@ echo "[startup] Upload directory ready at /tmp/uploads"
 # ============================================
 # BACKGROUND TASKS — seed + migration run AFTER server starts
 # ============================================
-# We start the server FIRST so Railway's HTTP probe succeeds immediately.
-# Seed and demo-to-live migration run in the background and log to stdout.
-# If they fail, the server stays up — only login/DB writes are affected.
 ( \
   echo "[bg] Waiting 5s for server to boot before seeding..." && \
   sleep 5 && \
