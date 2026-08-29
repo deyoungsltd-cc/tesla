@@ -1,32 +1,29 @@
 /**
- * SAFETY-NET MIGRATION
- * ───────────────────
- * Runs on every container startup (called from start.sh) BEFORE the
- * Next.js server boots. Ensures that ALL Prisma schema columns/tables
- * exist in the live database so the Prisma client doesn't throw
- * "column does not exist" errors at runtime.
+ * SAFETY-NET MIGRATION — PgBouncer Compatible
+ * ─────────────────────────────────────────────
+ * Runs on every container startup BEFORE the Next.js server boots.
+ * Ensures ALL Prisma schema tables/columns exist in the live database.
  *
- * This is critical because `prisma db push` is often skipped during
- * Railway builds (DATABASE_URL not available at build time), meaning
- * schema changes only reach the DB via this script.
+ * IMPORTANT: PgBouncer (Railway Hobby) blocks multi-statement transactions
+ * (DO $$ ... END $$). Every statement here is a SINGLE DDL statement that
+ * PgBouncer allows through. Errors are caught per-statement (idempotent).
  *
- * All statements are idempotent (IF NOT EXISTS / ADD COLUMN IF NOT EXISTS).
+ * Connection: Uses DIRECT_URL if set (bypasses PgBouncer), otherwise
+ * falls back to DATABASE_URL. Each statement runs individually.
  */
 const { PrismaClient } = require('@prisma/client');
 
-// Use DIRECT_URL for DDL if available (bypasses PgBouncer which blocks DDL).
-// PgBouncer connection_limit for DDL safety-net should be 1.
 const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
+console.log(`[migrate-safety-net] Using ${process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} (${dbUrl ? dbUrl.slice(0, 40) + '...' : 'EMPTY'})`);
+
 const prisma = new PrismaClient({
   datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
-  // Small pool + short timeout so we never hang on startup
   connection_limit: 1,
   pool_timeout: 15,
   log: ['error'],
 });
 
-// Global timeout: kill the process after 50s no matter what
-// (start.sh also wraps this with `timeout 60`, this is belt-and-suspenders)
+// Global timeout: 50s hard kill
 const GLOBAL_TIMEOUT = setTimeout(() => {
   console.error('[migrate-safety-net] FATAL: Global 50s timeout reached, exiting.');
   prisma.$disconnect().then(() => process.exit(1));
@@ -34,7 +31,41 @@ const GLOBAL_TIMEOUT = setTimeout(() => {
 
 const STATEMENTS = [
   // ══════════════════════════════════════════════════════════
-  // USERS TABLE — every scalar column the Prisma User model defines
+  // ENUM TYPES (PgBouncer-safe: single CREATE TYPE statements)
+  // ══════════════════════════════════════════════════════════
+  `CREATE TYPE IF NOT EXISTS "UserStatus" AS ENUM ('pending_verification','active','suspended','banned','closed')`,
+  `CREATE TYPE IF NOT EXISTS "KycLevel" AS ENUM ('LEVEL_0','LEVEL_1','LEVEL_2','LEVEL_3')`,
+  `CREATE TYPE IF NOT EXISTS "WalletType" AS ENUM ('demo','live')`,
+  `CREATE TYPE IF NOT EXISTS "TransactionType" AS ENUM ('deposit','withdrawal','investment','investment_return','referral_bonus','fee','promo_credit','balance_adjustment')`,
+  `CREATE TYPE IF NOT EXISTS "TransactionStatus" AS ENUM ('pending','completed','failed','reversed')`,
+  `CREATE TYPE IF NOT EXISTS "InvestmentStatus" AS ENUM ('active','completed','failed','cancelled')`,
+  `CREATE TYPE IF NOT EXISTS "DepositMethod" AS ENUM ('crypto','gift_card')`,
+  `CREATE TYPE IF NOT EXISTS "CryptoCurrency" AS ENUM ('BTC','ETH','USDT')`,
+  `CREATE TYPE IF NOT EXISTS "DepositStatus" AS ENUM ('pending','pending_verification','confirmed','rejected','expired')`,
+  `CREATE TYPE IF NOT EXISTS "WithdrawalStatus" AS ENUM ('pending','processing','completed','rejected','failed')`,
+  `CREATE TYPE IF NOT EXISTS "WithdrawalDestinationType" AS ENUM ('crypto','bank')`,
+  `CREATE TYPE IF NOT EXISTS "ReferralCommissionType" AS ENUM ('direct','binary')`,
+  `CREATE TYPE IF NOT EXISTS "ReferralCommissionStatus" AS ENUM ('pending','paid','reversed')`,
+  `CREATE TYPE IF NOT EXISTS "BinaryPosition" AS ENUM ('left','right')`,
+  `CREATE TYPE IF NOT EXISTS "KycDocumentType" AS ENUM ('id_front','id_back','selfie','proof_of_address')`,
+  `CREATE TYPE IF NOT EXISTS "KycDocumentStatus" AS ENUM ('pending','approved','rejected','expired')`,
+  `CREATE TYPE IF NOT EXISTS "TicketStatus" AS ENUM ('open','in_progress','waiting_user','resolved','closed')`,
+  `CREATE TYPE IF NOT EXISTS "TicketPriority" AS ENUM ('low','medium','high','urgent')`,
+  `CREATE TYPE IF NOT EXISTS "AdminRoleName" AS ENUM ('SUPER_ADMIN','ADMIN','COMPLIANCE','SUPPORT')`,
+  `CREATE TYPE IF NOT EXISTS "NotificationType" AS ENUM ('deposit_confirmed','deposit_rejected','withdrawal_processed','withdrawal_rejected','investment_activated','investment_completed','investment_return_credited','referral_earned','kyc_submitted','kyc_approved','kyc_rejected','kyc_reminder','security_login_detected','security_password_changed','ticket_response','ticket_resolved','system_maintenance','system_announcement','vehicle_order_placed','vehicle_order_confirmed','vehicle_order_shipped','vehicle_order_delivered','vehicle_order_cancelled','custom')`,
+  `CREATE TYPE IF NOT EXISTS "OtpType" AS ENUM ('email_verification','password_reset','two_factor_setup','two_factor_disable','withdrawal_confirm')`,
+  `CREATE TYPE IF NOT EXISTS "GiftCardStatus" AS ENUM ('pending','verified','rejected','expired')`,
+  `CREATE TYPE IF NOT EXISTS "EmailStatus" AS ENUM ('sent','delivered','failed','bounced')`,
+  `CREATE TYPE IF NOT EXISTS "PayoutStatus" AS ENUM ('pending','processed','failed')`,
+  `CREATE TYPE IF NOT EXISTS "UserMode" AS ENUM ('demo','live')`,
+  `CREATE TYPE IF NOT EXISTS "DurationUnit" AS ENUM ('hours','days')`,
+  `CREATE TYPE IF NOT EXISTS "PromoDiscountType" AS ENUM ('percentage','fixed')`,
+  `CREATE TYPE IF NOT EXISTS "PromoCodeStatus" AS ENUM ('active','inactive','expired','fully_redeemed')`,
+  `CREATE TYPE IF NOT EXISTS "VehicleColor" AS ENUM ('pearl_white','solid_black','midnight_silver','deep_blue','red_multi_coat','ultra_red','quick_silver','blue_multi_coat')`,
+  `CREATE TYPE IF NOT EXISTS "VehicleOrderStatus" AS ENUM ('pending','confirmed','in_production','shipped','delivered','cancelled')`,
+
+  // ══════════════════════════════════════════════════════════
+  // USERS TABLE — add columns (table assumed to exist from prior migrations)
   // ══════════════════════════════════════════════════════════
   `ALTER TABLE public.users ADD COLUMN IF NOT EXISTS kyc_verification_code TEXT`,
   `ALTER TABLE public.users ADD COLUMN IF NOT EXISTS verification_code TEXT`,
@@ -69,21 +100,19 @@ const STATEMENTS = [
   `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS postal_code TEXT`,
 
   // ══════════════════════════════════════════════════════════
-  // ADMINS TABLE
+  // ADMINS TABLE (PgBouncer-safe: split CREATE TABLE + FK)
   // ══════════════════════════════════════════════════════════
-  `DO $$ BEGIN
-    CREATE TABLE IF NOT EXISTS public.admins (
-      id TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'SUPPORT',
-      is_super_admin BOOLEAN NOT NULL DEFAULT false,
-      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT admins_pkey PRIMARY KEY (id),
-      CONSTRAINT admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
-    );
-  EXCEPTION WHEN duplicate_table THEN null; END $$`,
+  `CREATE TABLE IF NOT EXISTS public.admins (
+    id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role "AdminRoleName" NOT NULL DEFAULT 'SUPPORT',
+    is_super_admin BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT admins_pkey PRIMARY KEY (id)
+  )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS admins_user_id_key ON public.admins(user_id)`,
+  `ALTER TABLE public.admins ADD CONSTRAINT admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE`,
 
   // ══════════════════════════════════════════════════════════
   // SITE SETTINGS
@@ -110,16 +139,11 @@ const STATEMENTS = [
     CONSTRAINT chart_spike_events_pkey PRIMARY KEY (id)
   )`,
   `CREATE INDEX IF NOT EXISTS idx_chart_spike_user_unread ON public.chart_spike_events(user_id, consumed, created_at)`,
-  `DO $$ BEGIN
-    ALTER TABLE public.chart_spike_events ADD CONSTRAINT chart_spike_events_user_id_fkey
-    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE;
-  EXCEPTION WHEN duplicate_object THEN null; END $$`,
+  `ALTER TABLE public.chart_spike_events ADD CONSTRAINT chart_spike_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE`,
 
   // ══════════════════════════════════════════════════════════
   // VEHICLE TABLES
   // ══════════════════════════════════════════════════════════
-  `DO $$ BEGIN CREATE TYPE "VehicleColor" AS ENUM ('pearl_white','solid_black','midnight_silver','deep_blue','red_multi_coat','ultra_red','quick_silver','blue_multi_coat'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
-  `DO $$ BEGIN CREATE TYPE "VehicleOrderStatus" AS ENUM ('pending','confirmed','in_production','shipped','delivered','cancelled'); EXCEPTION WHEN duplicate_object THEN null; END $$`,
   `CREATE TABLE IF NOT EXISTS public.tesla_vehicles (
     id TEXT NOT NULL DEFAULT gen_random_uuid()::text,
     name TEXT NOT NULL,
@@ -169,12 +193,8 @@ const STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS vehicle_orders_order_number_key ON public.vehicle_orders(order_number)`,
   `CREATE INDEX IF NOT EXISTS idx_vehicle_order_user ON public.vehicle_orders(user_id)`,
   `CREATE INDEX IF NOT EXISTS idx_vehicle_order_status ON public.vehicle_orders(status)`,
-  `DO $$ BEGIN
-    ALTER TABLE public.vehicle_orders ADD CONSTRAINT vehicle_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE;
-  EXCEPTION WHEN duplicate_object THEN null; END $$`,
-  `DO $$ BEGIN
-    ALTER TABLE public.vehicle_orders ADD CONSTRAINT vehicle_orders_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES public.tesla_vehicles(id) ON DELETE RESTRICT ON UPDATE CASCADE;
-  EXCEPTION WHEN duplicate_object THEN null; END $$`,
+  `ALTER TABLE public.vehicle_orders ADD CONSTRAINT vehicle_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE`,
+  `ALTER TABLE public.vehicle_orders ADD CONSTRAINT vehicle_orders_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES public.tesla_vehicles(id) ON DELETE RESTRICT ON UPDATE CASCADE`,
   `CREATE TABLE IF NOT EXISTS public.vehicle_deposit_payments (
     id TEXT NOT NULL DEFAULT gen_random_uuid()::text,
     order_id TEXT NOT NULL,
@@ -193,30 +213,36 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_vehicle_deposit_order ON public.vehicle_deposit_payments(order_id)`,
   `CREATE INDEX IF NOT EXISTS idx_vehicle_deposit_status ON public.vehicle_deposit_payments(status)`,
-  `DO $$ BEGIN
-    ALTER TABLE public.vehicle_deposit_payments ADD CONSTRAINT vehicle_deposit_payments_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.vehicle_orders(id) ON DELETE RESTRICT ON UPDATE CASCADE;
-  EXCEPTION WHEN duplicate_object THEN null; END $$`,
-  `DO $$ BEGIN
-    ALTER TABLE public.vehicle_deposit_payments ADD CONSTRAINT vehicle_deposit_payments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE;
-  EXCEPTION WHEN duplicate_object THEN null; END $$`,
+  `ALTER TABLE public.vehicle_deposit_payments ADD CONSTRAINT vehicle_deposit_payments_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.vehicle_orders(id) ON DELETE RESTRICT ON UPDATE CASCADE`,
+  `ALTER TABLE public.vehicle_deposit_payments ADD CONSTRAINT vehicle_deposit_payments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE`,
 ];
 
 async function run() {
-  console.log('[migrate-safety-net] Running idempotent schema checks...');
+  console.log(`[migrate-safety-net] Running ${STATEMENTS.length} idempotent schema checks...`);
   let applied = 0;
   let skipped = 0;
   for (const sql of STATEMENTS) {
     try {
       await prisma.$executeRawUnsafe(sql);
-      const label = sql.length > 70 ? sql.slice(0, 67) + '...' : sql;
+      const label = sql.length > 80 ? sql.slice(0, 77) + '...' : sql;
       console.log(`[migrate-safety-net] OK: ${label}`);
       applied += 1;
     } catch (err) {
-      console.error(`[migrate-safety-net] SKIP: ${err.message}`);
+      // Expected errors: duplicate_table, duplicate_object, relation already exists
+      const msg = err.message || '';
+      const isExpected = msg.includes('already exists') ||
+        msg.includes('duplicate') ||
+        msg.includes('relation "') && msg.includes('" already exists') ||
+        msg.includes('type "') && msg.includes('" already exists');
+      if (isExpected) {
+        console.log(`[migrate-safety-net] SKIP (exists): ${sql.slice(0, 60)}`);
+      } else {
+        console.error(`[migrate-safety-net] ERROR: ${msg} | SQL: ${sql.slice(0, 80)}`);
+      }
       skipped += 1;
     }
   }
-  console.log(`[migrate-safety-net] Done. Applied ${applied}, skipped ${skipped}.`);
+  console.log(`[migrate-safety-net] Done. Applied: ${applied}, Skipped: ${skipped}.`);
 }
 
 run()
