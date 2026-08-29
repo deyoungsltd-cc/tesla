@@ -30,8 +30,8 @@ RUN ./node_modules/.bin/prisma generate
 # migration handles schema sync instead (using DIRECT_URL if available).
 RUN if [ -z "$DATABASE_URL" ]; then \
       echo "[build] DATABASE_URL not set — skipping schema sync. Set it in Railway Variables."; \
-    elif echo "$DATABASE_URL" | grep -q pgbouncer; then \
-      echo "[build] PgBouncer detected — skipping prisma db push (DDL blocked). Schema will sync at runtime via safety-net."; \
+    elif echo "$DATABASE_URL" | grep -qE 'pgbouncer|pooler\.supabase\.com'; then \
+      echo "[build] Connection pooler detected (PgBouncer/Supabase) — skipping prisma db push (DDL blocked). Schema will sync at runtime via safety-net."; \
     elif [ -n "$RAILWAY_ENVIRONMENT" ]; then \
       echo "[build] Railway environment — skipping prisma db push (PgBouncer likely). Schema will sync at runtime."; \
     else \

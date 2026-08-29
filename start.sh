@@ -33,8 +33,8 @@ fi
 # For non-PgBouncer setups, we still run it with a 30s timeout to prevent hangs.
 if [ -n "$DATABASE_URL" ]; then
   case "$DATABASE_URL" in
-    *pgbouncer*)
-      echo "[startup] PgBouncer detected in DATABASE_URL — skipping prisma db push (DDL blocked by PgBouncer)."
+    *pgbouncer*|*pooler.supabase.com*)
+      echo "[startup] Connection pooler detected (PgBouncer/Supabase) — skipping prisma db push (DDL blocked by pooler)."
       ;;
     *)
       if [ -n "$RAILWAY_ENVIRONMENT" ]; then
