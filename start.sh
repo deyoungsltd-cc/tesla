@@ -56,9 +56,9 @@ fi
 # ============================================
 # Belt-and-suspenders: ensures every column the Prisma client expects
 # exists in the DB, even if prisma db push above failed.
-echo "[startup] Running safety-net migration (idempotent raw SQL, 60s timeout)..."
+echo "[startup] Running safety-net migration (idempotent raw SQL, 130s timeout)..."
 if [ -n "$DATABASE_URL" ]; then
-  timeout 60 node prisma/migrate-safety-net.cjs 2>&1 || {
+  timeout 130 node prisma/migrate-safety-net.cjs 2>&1 || {
     echo "[startup] Safety-net migration failed or timed out (non-critical, will continue)"
   }
 else
