@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  serverExternalPackages: ['better-sqlite3', 'bcryptjs', 'jsonwebtoken', 'resend'],
+  serverExternalPackages: ['bcryptjs', 'jsonwebtoken', 'resend'],
   allowedDevOrigins: ['*'],
   images: {
     remotePatterns: [
