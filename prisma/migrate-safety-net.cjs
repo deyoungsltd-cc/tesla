@@ -13,13 +13,17 @@
  */
 const { PrismaClient } = require('@prisma/client');
 
-const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
-console.log(`[migrate-safety-net] Using ${process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} (${dbUrl ? dbUrl.slice(0, 40) + '...' : 'EMPTY'})`);
+const dbUrl = (process.env.DIRECT_URL || process.env.DATABASE_URL || '');
+let safetyUrl = dbUrl;
+// Prisma 6 removed connection_limit from constructor — use URL params instead
+if (safetyUrl.includes('pgbouncer') || process.env.RAILWAY_ENVIRONMENT) {
+  const sep = safetyUrl.includes('?') ? '&' : '?';
+  safetyUrl += `${sep}connection_limit=1&pool_timeout=15`;
+}
+console.log(`[migrate-safety-net] Using ${process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} (${safetyUrl ? safetyUrl.slice(0, 40) + '...' : 'EMPTY'})`);
 
 const prisma = new PrismaClient({
-  datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
-  connection_limit: 1,
-  pool_timeout: 15,
+  datasources: dbUrl ? { db: { url: safetyUrl } } : undefined,
   log: ['error'],
 });
 

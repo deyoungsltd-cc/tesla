@@ -6,29 +6,28 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   const DATABASE_URL = process.env.DATABASE_URL || '';
-  
+
   // Railway Hobby plan uses PgBouncer — detect it properly
   // PgBouncer URL contains 'pgbouncer' or Railway sets RAILWAY_ENVIRONMENT
-  const isPgBouncer = DATABASE_URL.includes('pgbouncer') || 
+  const isPgBouncer = DATABASE_URL.includes('pgbouncer') ||
     (process.env.RAILWAY_ENVIRONMENT && process.env.NODE_ENV === 'production');
 
   const config: any = {
-    log: process.env.NODE_ENV === 'development' 
-      ? ['query', 'error', 'warn'] 
+    log: process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'warn']
       : ['error'],
   };
 
   if (isPgBouncer) {
-    // PgBouncer requires small connection pool and short timeouts.
-    // Without these, Prisma opens too many connections and PgBouncer drops them.
+    // PgBouncer requires small connection pool.
+    // Prisma 6 removed connection_limit/pool_timeout from constructor.
+    // Instead, append connection pool params to the DATABASE_URL.
+    let url = DATABASE_URL;
+    const sep = url.includes('?') ? '&' : '?';
+    url += `${sep}connection_limit=5&pool_timeout=10`;
     config.datasources = {
-      db: { url: DATABASE_URL },
+      db: { url },
     };
-    // Prisma 6+ supports these connection pool settings
-    // connection_limit: max connections from this process to PgBouncer
-    // pool_timeout: how long to wait for an available connection (ms)
-    config.connection_limit = 5;
-    config.pool_timeout = 10;
   }
 
   return new PrismaClient(config);
