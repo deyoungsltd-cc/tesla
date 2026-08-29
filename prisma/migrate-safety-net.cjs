@@ -114,6 +114,32 @@ const STATEMENTS = [
   `DO $$ BEGIN
     ALTER TABLE "vehicle_orders" ADD CONSTRAINT "vehicle_orders_vehicle_id_fkey" FOREIGN KEY ("vehicle_id") REFERENCES "tesla_vehicles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
   EXCEPTION WHEN duplicate_object THEN null; END $$`,
+
+  // ── vehicle_deposit_payments table ──
+  `CREATE TABLE IF NOT EXISTS "vehicle_deposit_payments" (
+    "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "order_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "crypto_currency" TEXT NOT NULL DEFAULT '',
+    "network" TEXT NOT NULL DEFAULT '',
+    "tx_hash" TEXT,
+    "sender_address" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "confirmed_by" TEXT,
+    "confirmed_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "vehicle_deposit_payments_pkey" PRIMARY KEY ("id")
+  )`,
+  `CREATE INDEX IF NOT EXISTS "idx_vehicle_deposit_order" ON "vehicle_deposit_payments"("order_id")`,
+  `CREATE INDEX IF NOT EXISTS "idx_vehicle_deposit_status" ON "vehicle_deposit_payments"("status")`,
+  `DO $$ BEGIN
+    ALTER TABLE "vehicle_deposit_payments" ADD CONSTRAINT "vehicle_deposit_payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "vehicle_orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+  EXCEPTION WHEN duplicate_object THEN null; END $$`,
+  `DO $$ BEGIN
+    ALTER TABLE "vehicle_deposit_payments" ADD CONSTRAINT "vehicle_deposit_payments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE;
+  EXCEPTION WHEN duplicate_object THEN null; END $$`,
 ];
 
 async function run() {

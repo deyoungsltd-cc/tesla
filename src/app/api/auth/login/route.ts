@@ -166,8 +166,17 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt,
       },
     });
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    console.error('[LOGIN] Full error:', error);
+    console.error('[LOGIN] Error code:', error?.code);
+    console.error('[LOGIN] Error message:', error?.message);
+    console.error('[LOGIN] DATABASE_URL set:', !!process.env.DATABASE_URL);
+    if (error?.code === 'P1001') {
+      return apiError('Database connection failed. Please try again in a moment.', 'DB_CONNECTION', 503);
+    }
+    if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('connect')) {
+      return apiError('Service temporarily unavailable. Please try again.', 'DB_UNREACHABLE', 503);
+    }
     return apiError('Internal server error', 'INTERNAL_ERROR', 500);
   }
 }
