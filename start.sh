@@ -25,17 +25,28 @@ else
 fi
 
 # ============================================
-# RUNTIME SCHEMA SYNC (prisma db push)
+# RUNTIME SCHEMA SYNC
 # ============================================
-# At build time, DATABASE_URL is often unavailable on Railway.
-# This is the REAL schema sync — it runs at container start.
-# --accept-data-loss allows additive column changes.
-# --skip-generate because we already have the generated client.
+# Railway Hobby plan uses PgBouncer which BLOCKS DDL (prisma db push).
+# The safety-net migration below handles schema sync, so we SKIP prisma db push
+# entirely when PgBouncer is detected (pgbouncer in URL or RAILWAY_ENVIRONMENT set).
+# For non-PgBouncer setups, we still run it with a 30s timeout to prevent hangs.
 if [ -n "$DATABASE_URL" ]; then
-  echo "[startup] Running prisma db push (runtime schema sync)..."
-  ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate 2>&1 || {
-    echo "[startup] WARNING: prisma db push failed. Falling back to safety-net migration."
-  }
+  case "$DATABASE_URL" in
+    *pgbouncer*)
+      echo "[startup] PgBouncer detected in DATABASE_URL — skipping prisma db push (DDL blocked by PgBouncer)."
+      ;;
+    *)
+      if [ -n "$RAILWAY_ENVIRONMENT" ]; then
+        echo "[startup] Railway environment detected — skipping prisma db push (PgBouncer likely in use)."
+      else
+        echo "[startup] Running prisma db push (runtime schema sync, 30s timeout)..."
+        timeout 30 ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate 2>&1 || {
+          echo "[startup] WARNING: prisma db push failed or timed out. Falling back to safety-net migration."
+        }
+      fi
+      ;;
+  esac
 else
   echo "[startup] Skipping prisma db push (DATABASE_URL not set)"
 fi
@@ -45,10 +56,10 @@ fi
 # ============================================
 # Belt-and-suspenders: ensures every column the Prisma client expects
 # exists in the DB, even if prisma db push above failed.
-echo "[startup] Running safety-net migration (idempotent raw SQL, blocking)..."
+echo "[startup] Running safety-net migration (idempotent raw SQL, 60s timeout)..."
 if [ -n "$DATABASE_URL" ]; then
-  node prisma/migrate-safety-net.cjs 2>&1 || {
-    echo "[startup] Safety-net migration failed (non-critical, will continue)"
+  timeout 60 node prisma/migrate-safety-net.cjs 2>&1 || {
+    echo "[startup] Safety-net migration failed or timed out (non-critical, will continue)"
   }
 else
   echo "[startup] Skipping safety-net migration (DATABASE_URL not set)"

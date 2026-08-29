@@ -25,22 +25,19 @@ COPY . .
 RUN ./node_modules/.bin/prisma generate
 
 # Sync database schema at BUILD time.
-# This runs 'prisma db push' automatically on every Railway deploy, so the
-# user doesn't need to find Railway's hidden shell.
-#
-# Requirements:
-#   - DATABASE_URL must be set as a Railway variable (it is by default
-#     available at build time).
-#
-# If DATABASE_URL is missing or DB is unreachable, the build continues —
-# the app will still start, but login/DB operations will fail at runtime
-# until the DB is reachable.
+# On Railway Hobby plan, DATABASE_URL routes through PgBouncer which BLOCKS DDL.
+# We skip prisma db push when PgBouncer is detected — the runtime safety-net
+# migration handles schema sync instead (using DIRECT_URL if available).
 RUN if [ -z "$DATABASE_URL" ]; then \
       echo "[build] DATABASE_URL not set — skipping schema sync. Set it in Railway Variables."; \
+    elif echo "$DATABASE_URL" | grep -q pgbouncer; then \
+      echo "[build] PgBouncer detected — skipping prisma db push (DDL blocked). Schema will sync at runtime via safety-net."; \
+    elif [ -n "$RAILWAY_ENVIRONMENT" ]; then \
+      echo "[build] Railway environment — skipping prisma db push (PgBouncer likely). Schema will sync at runtime."; \
     else \
-      echo "[build] DATABASE_URL detected — syncing schema with 'prisma db push'..."; \
-      ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate || \
-      echo "[build] WARNING: prisma db push failed. Build continues; schema may need manual sync."; \
+      echo "[build] DATABASE_URL detected — syncing schema with 'prisma db push' (30s timeout)..."; \
+      timeout 30 ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate || \
+      echo "[build] WARNING: prisma db push failed or timed out. Build continues; schema will sync at runtime."; \
     fi
 
 RUN npm run build

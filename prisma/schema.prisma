@@ -3,8 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Railway Hobby provides DIRECT_URL for DDL (bypasses PgBouncer).
+  // Prisma CLI uses this for prisma db push / migrate.
+  directUrl = env("DIRECT_URL")
 }
 
 // ──────────────────────────────────────────────

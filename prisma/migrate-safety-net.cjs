@@ -14,7 +14,23 @@
  */
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+// Use DIRECT_URL for DDL if available (bypasses PgBouncer which blocks DDL).
+// PgBouncer connection_limit for DDL safety-net should be 1.
+const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
+const prisma = new PrismaClient({
+  datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
+  // Small pool + short timeout so we never hang on startup
+  connection_limit: 1,
+  pool_timeout: 15,
+  log: ['error'],
+});
+
+// Global timeout: kill the process after 50s no matter what
+// (start.sh also wraps this with `timeout 60`, this is belt-and-suspenders)
+const GLOBAL_TIMEOUT = setTimeout(() => {
+  console.error('[migrate-safety-net] FATAL: Global 50s timeout reached, exiting.');
+  prisma.$disconnect().then(() => process.exit(1));
+}, 50000);
 
 const STATEMENTS = [
   // ══════════════════════════════════════════════════════════
@@ -207,4 +223,7 @@ run()
   .catch((e) => {
     console.error('[migrate-safety-net] FATAL (non-blocking):', e.message);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => {
+    clearTimeout(GLOBAL_TIMEOUT);
+    return prisma.$disconnect();
+  });
