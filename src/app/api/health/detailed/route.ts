@@ -31,9 +31,14 @@ export async function GET() {
 
   // Test DB connection
   try {
+    // Prisma 6.x: pool params go in URL, not constructor
+    let healthDbUrl = process.env.DATABASE_URL || '';
+    if (healthDbUrl.includes('pooler') && !healthDbUrl.includes('connection_limit')) {
+      const sep = healthDbUrl.includes('?') ? '&' : '?';
+      healthDbUrl = `${healthDbUrl}${sep}connection_limit=1&pool_timeout=10&connect_timeout=10`;
+    }
     const prisma = new PrismaClient({
-      connection_limit: 1,
-      pool_timeout: 10,
+      datasources: { db: { url: healthDbUrl } },
       log: ['error'],
     });
 

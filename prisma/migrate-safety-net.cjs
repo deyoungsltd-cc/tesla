@@ -30,20 +30,17 @@ if (dbUrl && !dbUrl.includes('connect_timeout')) {
 console.log(`[migrate-safety-net] Using ${usingDirect ? 'DIRECT_URL' : 'DATABASE_URL'} (pooler: ${isPooler})`);
 console.log(`[migrate-safety-net] URL: ${dbUrl ? dbUrl.slice(0, 50) + '...' : 'EMPTY'}`);
 
-// CRITICAL: When using pooler URL (no DIRECT_URL), limit connections to 1
-// to avoid overwhelming the pooler with DDL statements.
-const prismaConfig = {
-  datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
-  log: ['error'],
-};
-
-if (isPooler) {
-  prismaConfig.connection_limit = 1;
-  prismaConfig.pool_timeout = 15;
-  console.log('[migrate-safety-net] Pooler detected — using connection_limit=1, pool_timeout=15');
+// Prisma 6.x: pool params must be in the URL, NOT in the constructor.
+if (isPooler && !dbUrl.includes('connection_limit')) {
+  const separator = dbUrl.includes('?') ? '&' : '?';
+  dbUrl = `${dbUrl}${separator}connection_limit=1&pool_timeout=15`;
+  console.log('[migrate-safety-net] Pooler detected — appended connection_limit=1 to URL');
 }
 
-const prisma = new PrismaClient(prismaConfig);
+const prisma = new PrismaClient({
+  datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
+  log: ['error'],
+});
 
 // Global timeout: 45s hard kill — if DB is up, DDL should complete fast
 const GLOBAL_TIMEOUT = setTimeout(() => {

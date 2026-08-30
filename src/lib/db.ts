@@ -23,15 +23,12 @@ function createPrismaClient() {
   };
 
   if (isPooler) {
-    // Append connect_timeout to prevent TCP connection hangs
+    // Append pool parameters to URL (Prisma 6.x configures pool via URL, not constructor)
     if (!DATABASE_URL.includes('connect_timeout')) {
       const sep = DATABASE_URL.includes('?') ? '&' : '?';
-      DATABASE_URL = `${DATABASE_URL}${sep}connect_timeout=10`;
+      DATABASE_URL = `${DATABASE_URL}${sep}connect_timeout=10&connection_limit=5&pool_timeout=10`;
     }
     config.datasources = { db: { url: DATABASE_URL } };
-    // PgBouncer/Supabase pooler: keep connection pool small
-    config.connection_limit = 5;
-    config.pool_timeout = 10;
   }
 
   return new PrismaClient(config);
