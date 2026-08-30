@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 5; // never let this hang
+export const maxDuration = 5;
 
-// Lightweight liveness probe — returns 200 immediately.
-// Railway's HTTP probe needs a fast endpoint that doesn't block on DB.
-// Detailed DB status is available at /api/health/detailed (separate route).
+// Lightweight liveness probe — Railway HTTP probe hits this.
+// Returns 200 even if DB is down (so Railway doesn't kill the container).
+// Use /api/health/detailed for DB diagnostics.
 export async function GET() {
+  const dbOk = !!process.env.DATABASE_URL;
   return NextResponse.json(
     {
-      status: 'healthy',
+      status: dbOk ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       service: 'TeslaPrime',
+      db: dbOk ? 'configured' : 'no DATABASE_URL',
     },
-    { status: 200 }
+    { status: dbOk ? 200 : 503 }
   );
 }
