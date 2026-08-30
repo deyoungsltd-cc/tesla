@@ -5,7 +5,7 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const DATABASE_URL = process.env.DATABASE_URL || '';
+  let DATABASE_URL = process.env.DATABASE_URL || '';
 
   // Detect connection pooler (PgBouncer / Supabase Pooler / Railway)
   // - Supabase: pooler.supabase.com in hostname
@@ -23,6 +23,11 @@ function createPrismaClient() {
   };
 
   if (isPooler) {
+    // Append connect_timeout to prevent TCP connection hangs
+    if (!DATABASE_URL.includes('connect_timeout')) {
+      const sep = DATABASE_URL.includes('?') ? '&' : '?';
+      DATABASE_URL = `${DATABASE_URL}${sep}connect_timeout=10`;
+    }
     config.datasources = { db: { url: DATABASE_URL } };
     // PgBouncer/Supabase pooler: keep connection pool small
     config.connection_limit = 5;

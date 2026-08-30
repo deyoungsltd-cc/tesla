@@ -1,5 +1,5 @@
 /**
- * SAFETY-NET MIGRATION — PgBouncer Compatible
+ * SAFETY-NET MIGRATION — PgBouncer / Supabase Pooler Compatible
  * ─────────────────────────────────────────────
  * Runs on every container startup BEFORE the Next.js server boots.
  * Ensures ALL Prisma schema tables exist in the live database.
@@ -14,19 +14,42 @@
  */
 const { PrismaClient } = require('@prisma/client');
 
-const dbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
-console.log(`[migrate-safety-net] Using ${process.env.DIRECT_URL ? 'DIRECT_URL' : 'DATABASE_URL'} (${dbUrl ? dbUrl.slice(0, 40) + '...' : 'EMPTY'})`);
+const rawDbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
+const usingDirect = !!process.env.DIRECT_URL;
 
-const prisma = new PrismaClient({
+// Detect if the URL goes through a connection pooler
+const isPooler = rawDbUrl.includes('pgbouncer') || rawDbUrl.includes('pooler.supabase.com');
+
+// Append connect_timeout to prevent connection hangs (especially on pooler)
+let dbUrl = rawDbUrl;
+if (dbUrl && !dbUrl.includes('connect_timeout')) {
+  const separator = dbUrl.includes('?') ? '&' : '?';
+  dbUrl = `${dbUrl}${separator}connect_timeout=10`;
+}
+
+console.log(`[migrate-safety-net] Using ${usingDirect ? 'DIRECT_URL' : 'DATABASE_URL'} (pooler: ${isPooler})`);
+console.log(`[migrate-safety-net] URL: ${dbUrl ? dbUrl.slice(0, 50) + '...' : 'EMPTY'}`);
+
+// CRITICAL: When using pooler URL (no DIRECT_URL), limit connections to 1
+// to avoid overwhelming the pooler with DDL statements.
+const prismaConfig = {
   datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
   log: ['error'],
-});
+};
 
-// Global timeout: 120s hard kill (30 tables + 56 indexes + 30 FKs)
+if (isPooler) {
+  prismaConfig.connection_limit = 1;
+  prismaConfig.pool_timeout = 15;
+  console.log('[migrate-safety-net] Pooler detected — using connection_limit=1, pool_timeout=15');
+}
+
+const prisma = new PrismaClient(prismaConfig);
+
+// Global timeout: 45s hard kill — if DB is up, DDL should complete fast
 const GLOBAL_TIMEOUT = setTimeout(() => {
-  console.error('[migrate-safety-net] FATAL: Global 120s timeout reached, exiting.');
+  console.error('[migrate-safety-net] FATAL: 45s global timeout reached, exiting.');
   prisma.$disconnect().then(() => process.exit(1));
-}, 120000);
+}, 45000);
 
 // ── DDL statements: CREATE TABLE and CREATE INDEX use IF NOT EXISTS
 // ── Foreign key ALTER TABLE statements are in FK_STATEMENTS (separate try/catch)

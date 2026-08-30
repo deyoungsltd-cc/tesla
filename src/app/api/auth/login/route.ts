@@ -171,10 +171,17 @@ export async function POST(request: NextRequest) {
     console.error('[LOGIN] Error code:', error?.code);
     console.error('[LOGIN] Error message:', error?.message);
     console.error('[LOGIN] DATABASE_URL set:', !!process.env.DATABASE_URL);
+    console.error('[LOGIN] JWT_SECRET set:', !!process.env.JWT_SECRET);
+    if (!process.env.JWT_SECRET) {
+      return apiError('Server is not configured properly. Please contact support.', 'SERVER_MISCONFIGURED', 500);
+    }
     if (error?.code === 'P1001') {
       return apiError('Database connection failed. Please try again in a moment.', 'DB_CONNECTION', 503);
     }
-    if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('connect')) {
+    if (error?.code === 'P1008' || error?.code === 'P2025') {
+      return apiError('Invalid email or password', 'INVALID_CREDENTIALS', 401);
+    }
+    if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('connect') || error?.message?.includes('timeout') || error?.message?.includes('ETIMEDOUT')) {
       return apiError('Service temporarily unavailable. Please try again.', 'DB_UNREACHABLE', 503);
     }
     return apiError('Internal server error', 'INTERNAL_ERROR', 500);

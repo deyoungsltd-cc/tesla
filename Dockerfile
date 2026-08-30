@@ -93,10 +93,9 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Healthcheck — Railway uses HTTP probing, but this also helps local Docker.
-# Hit the homepage (lightweight, no DB queries) so the probe never hangs.
-# Use node (always available) instead of wget/curl.
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+# Healthcheck — use lightweight /api/health endpoint (no DB queries, instant response)
+# This ensures Railway detects the server as healthy as soon as it starts listening.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["/app/start.sh"]

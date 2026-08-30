@@ -5,6 +5,19 @@ echo "[startup] TeslaPrime - Initializing"
 echo "========================================"
 
 # ============================================
+# CRITICAL ENV VAR CHECKS (log only, never expose values)
+# ============================================
+echo "[startup] DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo 'YES' || echo 'NO')"
+echo "[startup] DIRECT_URL set: $([ -n "$DIRECT_URL" ] && echo 'YES' || echo 'NO')"
+echo "[startup] JWT_SECRET set: $([ -n "$JWT_SECRET" ] && echo 'YES' || echo 'NO')"
+echo "[startup] RAILWAY_ENVIRONMENT: ${RAILWAY_ENVIRONMENT:-not set}"
+echo "[startup] NODE_ENV: ${NODE_ENV:-not set}"
+
+if [ -z "$JWT_SECRET" ]; then
+  echo "[startup] ⚠️  WARNING: JWT_SECRET is NOT SET. Login WILL fail with 500 error."
+fi
+
+# ============================================
 # DATABASE_URL VALIDATION
 # ============================================
 if [ -z "$DATABASE_URL" ]; then
@@ -56,9 +69,9 @@ fi
 # ============================================
 # Belt-and-suspenders: ensures every column the Prisma client expects
 # exists in the DB, even if prisma db push above failed.
-echo "[startup] Running safety-net migration (idempotent raw SQL, 130s timeout)..."
+echo "[startup] Running safety-net migration (idempotent raw SQL, 50s timeout)..."
 if [ -n "$DATABASE_URL" ]; then
-  timeout 130 node prisma/migrate-safety-net.cjs 2>&1 || {
+  timeout 50 node prisma/migrate-safety-net.cjs 2>&1 || {
     echo "[startup] Safety-net migration failed or timed out (non-critical, will continue)"
   }
 else
