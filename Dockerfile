@@ -4,6 +4,10 @@
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 
+# Cache-break: unique per deploy, forces rebuild when changed
+ARG BUILD_ID=unknown
+RUN echo "build-id=$BUILD_ID"
+
 FROM base AS deps
 WORKDIR /app
 
