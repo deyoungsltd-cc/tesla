@@ -1,0 +1,424 @@
+2026-08-30T01:50:15.217212582Z [inf]  [m[migrate-safety-net] Running 114 DDL + 30 FK statements...
+2026-08-30T01:50:15.217248343Z [inf]  ========================================
+2026-08-30T01:50:15.217274255Z [inf]  [startup] TeslaPrime - Initializing
+2026-08-30T01:50:15.217292155Z [inf]  ========================================
+2026-08-30T01:50:15.217300147Z [inf]  [startup] DATABASE_URL OK (PostgreSQL format)
+2026-08-30T01:50:15.217304919Z [inf]  [startup] Connection pooler detected (PgBouncer/Supabase) — skipping prisma db push (DDL blocked by pooler).
+2026-08-30T01:50:15.217309868Z [inf]  [startup] Running safety-net migration (idempotent raw SQL, 130s timeout)...
+2026-08-30T01:50:15.217318397Z [inf]  [migrate-safety-net] Using DATABASE_URL (postgresql://postgres.wavrqqsasdybndzctm...)
+2026-08-30T01:50:15.275545335Z [inf]  Starting Container
+2026-08-30T01:50:18.326925241Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "UserStatus" AS ENUM ('pending_verification','active',
+2026-08-30T01:50:18.327081407Z [inf]  prisma:error 
+2026-08-30T01:50:18.327086888Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:18.327092692Z [inf]  
+2026-08-30T01:50:18.327099116Z [inf]  
+2026-08-30T01:50:18.327104275Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:18.327109497Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:18.327115016Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:18.327120119Z [inf]  
+2026-08-30T01:50:18.327125528Z [inf]  
+2026-08-30T01:50:21.560541626Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "KycLevel" AS ENUM ('LEVEL_0','LEVEL_1','LEVEL_2','LEV
+2026-08-30T01:50:21.560730435Z [inf]  prisma:error 
+2026-08-30T01:50:21.560736808Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:21.560744094Z [inf]  
+2026-08-30T01:50:21.560752590Z [inf]  
+2026-08-30T01:50:21.560760500Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:21.560767001Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:21.560772702Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:21.560777151Z [inf]  
+2026-08-30T01:50:21.560783604Z [inf]  
+2026-08-30T01:50:24.971467303Z [inf]  prisma:error 
+2026-08-30T01:50:24.971473650Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:24.971480529Z [inf]  
+2026-08-30T01:50:24.971486819Z [inf]  
+2026-08-30T01:50:24.971493426Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:24.971499775Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:24.971506488Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:24.971514839Z [inf]  
+2026-08-30T01:50:24.971521066Z [inf]  
+2026-08-30T01:50:24.971526920Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "WalletType" AS ENUM ('demo','live')
+2026-08-30T01:50:28.376835498Z [inf]  
+2026-08-30T01:50:28.376844912Z [inf]  
+2026-08-30T01:50:28.376854485Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "TransactionType" AS ENUM ('deposit','withdrawal','inv
+2026-08-30T01:50:28.376868586Z [inf]  prisma:error 
+2026-08-30T01:50:28.376882194Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:28.376895996Z [inf]  
+2026-08-30T01:50:28.376902518Z [inf]  
+2026-08-30T01:50:28.376908026Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:28.376914706Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:28.376921039Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:31.822249514Z [inf]  prisma:error 
+2026-08-30T01:50:31.822253322Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:31.822257570Z [inf]  
+2026-08-30T01:50:31.822261743Z [inf]  
+2026-08-30T01:50:31.822266827Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:31.822272412Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:31.822277787Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:31.822283532Z [inf]  
+2026-08-30T01:50:31.822287765Z [inf]  
+2026-08-30T01:50:31.822291962Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "TransactionStatus" AS ENUM ('pending','completed','fa
+2026-08-30T01:50:34.920819662Z [inf]  
+2026-08-30T01:50:34.920831648Z [inf]  
+2026-08-30T01:50:34.920838726Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "InvestmentStatus" AS ENUM ('active','completed','fail
+2026-08-30T01:50:34.920855502Z [inf]  prisma:error 
+2026-08-30T01:50:34.920862211Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:34.920868950Z [inf]  
+2026-08-30T01:50:34.920875299Z [inf]  
+2026-08-30T01:50:34.920881411Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:34.920888033Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:34.920895023Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:38.911180217Z [inf]  prisma:error 
+2026-08-30T01:50:38.911186608Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:38.911193417Z [inf]  
+2026-08-30T01:50:38.911199305Z [inf]  
+2026-08-30T01:50:38.911209272Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:38.911216828Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:38.911224621Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:38.911232264Z [inf]  
+2026-08-30T01:50:38.911239242Z [inf]  
+2026-08-30T01:50:38.911245529Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "DepositMethod" AS ENUM ('crypto','gift_card')
+2026-08-30T01:50:42.562430642Z [inf]  prisma:error 
+2026-08-30T01:50:42.563329246Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:42.563335395Z [inf]  
+2026-08-30T01:50:42.563341007Z [inf]  
+2026-08-30T01:50:42.563347812Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:42.563353159Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:42.563358326Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:42.563363379Z [inf]  
+2026-08-30T01:50:42.563369354Z [inf]  
+2026-08-30T01:50:42.563374518Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "CryptoCurrency" AS ENUM ('BTC','ETH','USDT')
+2026-08-30T01:50:45.765660981Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:45.765669824Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:45.765675315Z [inf]  
+2026-08-30T01:50:45.765679683Z [inf]  
+2026-08-30T01:50:45.765683797Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "DepositStatus" AS ENUM ('pending','pending_verificati
+2026-08-30T01:50:45.765714511Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:45.765722372Z [inf]  
+2026-08-30T01:50:45.765728305Z [inf]  prisma:error 
+2026-08-30T01:50:45.765731544Z [inf]  
+2026-08-30T01:50:45.765740075Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:48.613043072Z [inf]  prisma:error 
+2026-08-30T01:50:48.613058879Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:48.613066632Z [inf]  
+2026-08-30T01:50:48.613073278Z [inf]  
+2026-08-30T01:50:48.613080959Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:48.613086796Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:48.613097251Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:48.613103429Z [inf]  
+2026-08-30T01:50:48.613110035Z [inf]  
+2026-08-30T01:50:48.613116718Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "WithdrawalStatus" AS ENUM ('pending','processing','co
+2026-08-30T01:50:52.151457078Z [inf]  prisma:error 
+2026-08-30T01:50:52.151463952Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:52.151471797Z [inf]  
+2026-08-30T01:50:52.151482391Z [inf]  
+2026-08-30T01:50:52.151490891Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:52.151495739Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:52.151500855Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:52.151505877Z [inf]  
+2026-08-30T01:50:52.151510717Z [inf]  
+2026-08-30T01:50:52.151515337Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "WithdrawalDestinationType" AS ENUM ('crypto','bank')
+2026-08-30T01:50:55.216470987Z [inf]  prisma:error 
+2026-08-30T01:50:55.216477698Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:55.216489135Z [inf]  
+2026-08-30T01:50:55.216495430Z [inf]  
+2026-08-30T01:50:55.216501669Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:55.216508309Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:55.216514884Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:55.216522136Z [inf]  
+2026-08-30T01:50:55.216530042Z [inf]  
+2026-08-30T01:50:55.216540578Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "ReferralCommissionType" AS ENUM ('direct','binary')
+2026-08-30T01:50:58.407145862Z [inf]  prisma:error 
+2026-08-30T01:50:58.407149735Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:58.407154182Z [inf]  
+2026-08-30T01:50:58.407158264Z [inf]  
+2026-08-30T01:50:58.407162115Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:50:58.407166268Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:50:58.407170278Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:50:58.407174549Z [inf]  
+2026-08-30T01:50:58.407178468Z [inf]  
+2026-08-30T01:50:58.407182621Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "ReferralCommissionStatus" AS ENUM ('pending','paid','
+2026-08-30T01:51:02.403168635Z [inf]  prisma:error 
+2026-08-30T01:51:02.403172937Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:02.403177377Z [inf]  
+2026-08-30T01:51:02.403183520Z [inf]  
+2026-08-30T01:51:02.403189402Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:02.403194760Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:02.403200238Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:02.403206484Z [inf]  
+2026-08-30T01:51:02.403213023Z [inf]  
+2026-08-30T01:51:02.403218533Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "BinaryPosition" AS ENUM ('left','right')
+2026-08-30T01:51:05.599999896Z [inf]  
+2026-08-30T01:51:05.600081167Z [inf]  prisma:error 
+2026-08-30T01:51:05.600087016Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:05.600092662Z [inf]  
+2026-08-30T01:51:05.600284415Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:05.600292001Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:05.600297879Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:05.600303570Z [inf]  
+2026-08-30T01:51:05.600311788Z [inf]  
+2026-08-30T01:51:05.600317051Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "KycDocumentType" AS ENUM ('id_front','id_back','selfi
+2026-08-30T01:51:08.900353336Z [inf]  
+2026-08-30T01:51:08.900360514Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:08.900365713Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:08.900371354Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:08.900373336Z [inf]  prisma:error 
+2026-08-30T01:51:08.900377112Z [inf]  
+2026-08-30T01:51:08.900379991Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:08.900384866Z [inf]  
+2026-08-30T01:51:08.900391672Z [inf]  
+2026-08-30T01:51:08.900396630Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "KycDocumentStatus" AS ENUM ('pending','approved','rej
+2026-08-30T01:51:13.318842283Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:13.319320361Z [inf]  
+2026-08-30T01:51:13.319333712Z [inf]  
+2026-08-30T01:51:13.319340562Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "TicketStatus" AS ENUM ('open','in_progress','waiting_
+2026-08-30T01:51:13.319901773Z [inf]  prisma:error 
+2026-08-30T01:51:13.319913061Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:13.319922056Z [inf]  
+2026-08-30T01:51:13.319929935Z [inf]  
+2026-08-30T01:51:13.319937021Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:13.319944193Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:15.557588864Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:15.557613399Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:15.557622767Z [inf]  
+2026-08-30T01:51:15.557628970Z [inf]  
+2026-08-30T01:51:15.557635748Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "TicketPriority" AS ENUM ('low','medium','high','urgen
+2026-08-30T01:51:15.557745421Z [inf]  prisma:error 
+2026-08-30T01:51:15.557751931Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:15.557758438Z [inf]  
+2026-08-30T01:51:15.557764691Z [inf]  
+2026-08-30T01:51:15.557770804Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:19.751407272Z [inf]  prisma:error 
+2026-08-30T01:51:19.751411017Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:19.751415228Z [inf]  
+2026-08-30T01:51:19.751419283Z [inf]  
+2026-08-30T01:51:19.751424077Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:19.751427830Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:19.751432854Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:19.751436683Z [inf]  
+2026-08-30T01:51:19.751440630Z [inf]  
+2026-08-30T01:51:19.751444522Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "AdminRoleName" AS ENUM ('SUPER_ADMIN','ADMIN','COMPLI
+2026-08-30T01:51:21.882088561Z [inf]  prisma:error 
+2026-08-30T01:51:21.882092578Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:21.882097400Z [inf]  
+2026-08-30T01:51:21.882102112Z [inf]  
+2026-08-30T01:51:21.882106416Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:21.882110939Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:21.882115808Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:21.882120299Z [inf]  
+2026-08-30T01:51:21.882124903Z [inf]  
+2026-08-30T01:51:21.882129334Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "NotificationType" AS ENUM ('deposit_confirmed','depos
+2026-08-30T01:51:25.201995181Z [inf]  prisma:error 
+2026-08-30T01:51:25.202000575Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:25.202005314Z [inf]  
+2026-08-30T01:51:25.202009436Z [inf]  
+2026-08-30T01:51:25.202013434Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:25.202020532Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:25.202025504Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:25.202030011Z [inf]  
+2026-08-30T01:51:25.202034004Z [inf]  
+2026-08-30T01:51:25.202038643Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "OtpType" AS ENUM ('email_verification','password_rese
+2026-08-30T01:51:29.448793193Z [inf]  prisma:error 
+2026-08-30T01:51:29.448797404Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:29.448801335Z [inf]  
+2026-08-30T01:51:29.448804852Z [inf]  
+2026-08-30T01:51:29.448808450Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:29.448813167Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:29.448816709Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:29.448820641Z [inf]  
+2026-08-30T01:51:29.448825378Z [inf]  
+2026-08-30T01:51:29.448829349Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "GiftCardStatus" AS ENUM ('pending','verified','reject
+2026-08-30T01:51:32.577459901Z [inf]  prisma:error 
+2026-08-30T01:51:32.577466002Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:32.577472166Z [inf]  
+2026-08-30T01:51:32.577478863Z [inf]  
+2026-08-30T01:51:32.577484739Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:32.577490810Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:32.577496957Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:32.577503262Z [inf]  
+2026-08-30T01:51:32.577510482Z [inf]  
+2026-08-30T01:51:32.577516501Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "EmailStatus" AS ENUM ('sent','delivered','failed','bo
+2026-08-30T01:51:35.505802932Z [inf]  prisma:error 
+2026-08-30T01:51:35.505806601Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:35.505810951Z [inf]  
+2026-08-30T01:51:35.505814736Z [inf]  
+2026-08-30T01:51:35.505818381Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:35.505822253Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:35.505826592Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:35.505830312Z [inf]  
+2026-08-30T01:51:35.505834068Z [inf]  
+2026-08-30T01:51:35.505837891Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "PayoutStatus" AS ENUM ('pending','processed','failed'
+2026-08-30T01:51:38.536141049Z [inf]  prisma:error 
+2026-08-30T01:51:38.536152160Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:38.536160571Z [inf]  
+2026-08-30T01:51:38.536166972Z [inf]  
+2026-08-30T01:51:38.536173682Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:38.536180578Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:38.536187766Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:38.536193388Z [inf]  
+2026-08-30T01:51:38.536199049Z [inf]  
+2026-08-30T01:51:38.536205484Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "UserMode" AS ENUM ('demo','live')
+2026-08-30T01:51:42.747369505Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "DurationUnit" AS ENUM ('hours','days')
+2026-08-30T01:51:42.747374583Z [inf]  prisma:error 
+2026-08-30T01:51:42.747379016Z [inf]  
+2026-08-30T01:51:42.747385344Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:42.747385700Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:42.747391367Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:42.747394596Z [inf]  
+2026-08-30T01:51:42.747399152Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:42.747404409Z [inf]  
+2026-08-30T01:51:42.747409478Z [inf]  
+2026-08-30T01:51:46.125915251Z [inf]  prisma:error 
+2026-08-30T01:51:46.125920382Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:46.125924991Z [inf]  
+2026-08-30T01:51:46.125929344Z [inf]  
+2026-08-30T01:51:46.125933470Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:46.125938048Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:46.125942052Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:46.125997901Z [inf]  
+2026-08-30T01:51:46.126002608Z [inf]  
+2026-08-30T01:51:46.126007522Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "PromoDiscountType" AS ENUM ('percentage','fixed')
+2026-08-30T01:51:49.449299341Z [inf]  prisma:error 
+2026-08-30T01:51:49.449304482Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:49.449311099Z [inf]  
+2026-08-30T01:51:49.449316562Z [inf]  
+2026-08-30T01:51:49.449322534Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:49.449330701Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:49.449336232Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:49.449341958Z [inf]  
+2026-08-30T01:51:49.449348171Z [inf]  
+2026-08-30T01:51:49.449354696Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "PromoCodeStatus" AS ENUM ('active','inactive','expire
+2026-08-30T01:51:52.461990764Z [inf]  prisma:error 
+2026-08-30T01:51:52.461999437Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:52.462006601Z [inf]  
+2026-08-30T01:51:52.462012990Z [inf]  
+2026-08-30T01:51:52.462039356Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:52.462046603Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:52.462053082Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:52.462059234Z [inf]  
+2026-08-30T01:51:52.462065928Z [inf]  
+2026-08-30T01:51:52.462072508Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "VehicleColor" AS ENUM ('pearl_white','solid_black','m
+2026-08-30T01:51:55.603088097Z [inf]  prisma:error 
+2026-08-30T01:51:55.603094266Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:55.603100812Z [inf]  
+2026-08-30T01:51:55.603107474Z [inf]  
+2026-08-30T01:51:55.603113427Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:55.603119505Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:55.603131779Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:55.603137920Z [inf]  
+2026-08-30T01:51:55.603143749Z [inf]  
+2026-08-30T01:51:55.603149244Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TYPE IF NOT EXISTS "VehicleOrderStatus" AS ENUM ('pending','confirmed','i
+2026-08-30T01:51:58.703324269Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "users" (
+2026-08-30T01:51:58.703335523Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:51:58.703342816Z [inf]      "email" TEXT NO
+2026-08-30T01:51:58.703365172Z [inf]  prisma:error 
+2026-08-30T01:51:58.703373419Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:58.703380577Z [inf]  
+2026-08-30T01:51:58.703386250Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:51:58.703387005Z [inf]  
+2026-08-30T01:51:58.703392475Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:51:58.703398366Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:51:58.703408215Z [inf]  
+2026-08-30T01:51:58.703414755Z [inf]  
+2026-08-30T01:52:02.863209032Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:52:02.863221667Z [inf]      "user_id" TE
+2026-08-30T01:52:02.863239829Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:02.863248876Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:52:02.863254907Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:02.863261510Z [inf]  
+2026-08-30T01:52:02.863267468Z [inf]  
+2026-08-30T01:52:02.863274456Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "profiles" (
+2026-08-30T01:52:02.863288941Z [inf]  prisma:error 
+2026-08-30T01:52:02.863294437Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:02.863300890Z [inf]  
+2026-08-30T01:52:02.863308814Z [inf]  
+2026-08-30T01:52:06.113392413Z [inf]  prisma:error 
+2026-08-30T01:52:06.113399009Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:06.113404792Z [inf]  
+2026-08-30T01:52:06.113410631Z [inf]  
+2026-08-30T01:52:06.113416223Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:06.113421890Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:52:06.113428800Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:06.113434284Z [inf]  
+2026-08-30T01:52:06.113441420Z [inf]  
+2026-08-30T01:52:06.113445658Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "wallets" (
+2026-08-30T01:52:06.113449898Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:52:06.113453778Z [inf]      "user_id" TEX
+2026-08-30T01:52:09.138373486Z [inf]      "wallet_
+2026-08-30T01:52:09.138401329Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:09.138411395Z [inf]  
+2026-08-30T01:52:09.138420677Z [inf]  
+2026-08-30T01:52:09.138422794Z [inf]  prisma:error 
+2026-08-30T01:52:09.138429378Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "transactions" (
+2026-08-30T01:52:09.138438162Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:52:09.138442852Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:09.138459771Z [inf]  
+2026-08-30T01:52:09.138472072Z [inf]  
+2026-08-30T01:52:09.138480732Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:09.138489178Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:52:12.055379541Z [inf]      "nam
+2026-08-30T01:52:12.055429215Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:12.055448077Z [inf]  prisma:error 
+2026-08-30T01:52:12.055452184Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:12.055453147Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:52:12.055461373Z [inf]  
+2026-08-30T01:52:12.055462708Z [inf]  
+2026-08-30T01:52:12.055474310Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:52:12.055475294Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "investment_plans" (
+2026-08-30T01:52:12.055476836Z [inf]  
+2026-08-30T01:52:12.055479743Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:12.055484918Z [inf]  
+2026-08-30T01:52:14.996438148Z [inf]  [migrate-safety-net] FATAL: Global 120s timeout reached, exiting.
+2026-08-30T01:52:16.155983102Z [inf]  prisma:error 
+2026-08-30T01:52:16.155988688Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:16.155995076Z [inf]  
+2026-08-30T01:52:16.156003689Z [inf]  
+2026-08-30T01:52:16.156010265Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:16.156017475Z [inf]  [m[migrate-safety-net] ERROR: 
+2026-08-30T01:52:16.156024161Z [inf]  Invalid `prisma.$executeRawUnsafe()` invocation:
+2026-08-30T01:52:16.156031543Z [inf]  
+2026-08-30T01:52:16.156039429Z [inf]  
+2026-08-30T01:52:16.156046426Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found | SQL: CREATE TABLE IF NOT EXISTS "user_investments" (
+2026-08-30T01:52:16.156052303Z [inf]      "id" TEXT NOT NULL,
+2026-08-30T01:52:16.156059132Z [inf]      "use
+2026-08-30T01:52:16.156066419Z [inf]  /app/node_modules/@prisma/client/runtime/library.js:112
+2026-08-30T01:52:16.156074015Z [inf]  You may have to run ${qe("prisma generate")} for your changes to take effect.`,this.config.clientVersion);return r}}parseEngineResponse(r){if(!r)throw new V("Response from the Engine was empty",{clientVersion:this.config.clientVersion});try{return JSON.parse(r)}catch{throw new V("Unable to JSON.parse response from engine",{clientVersion:this.config.clientVersion})}}async loadEngine(){if(!this.engine){this.QueryEngineConstructor||(this.library=await this.libraryLoader.loadLibrary(this.config),this.QueryEngineConstructor=this.library.QueryEngine);try{let r=new WeakRef(this);this.adapterPromise||(this.adapterPromise=this.config.adapter?.connect()?.then(tn));let t=await this.adapterPromise;t&&Re("Using driver adapter: %O",t),this.engine=this.wrapEngine(new this.QueryEngineConstructor({datamodel:this.datamodel,env:process.env,logQueries:this.config.logQueries??!1,ignoreEnvVarErrors:!0,datasourceOverrides:this.datasourceOverrides??{},logLevel:this.logLevel,configDir:this.config.cwd,engineProtocol:"json",enableTracing:this.tracingHelper.isEnabled()},n=>{r.deref()?.logger(n)},t))}catch(r){let t=r,n=this.parseInitError(t.message);throw typeof n=="string"?t:new P(n.message,this.config.clientVersion,n.error_code)}}}logger(r){let t=this.parseEngineResponse(r);t&&(t.level=t?.level.toLowerCase()??"unknown",yf(t)?this.logEmitter.emit("query",{timestamp:new Date,query:t.query,params:t.params,duration:Number(t.duration_ms),target:t.module_path}):bf(t)?this.loggerRustPanic=new ae(Po(this,`${t.message}: ${t.reason} in ${t.file}:${t.line}:${t.column}`),this.config.clientVersion):this.logEmitter.emit(t.level,{timestamp:new Date,message:t.message,target:t.module_path}))}parseInitError(r){try{return JSON.parse(r)}catch{}return r}parseRequestError(r){try{return JSON.parse(r)}catch{}return r}onBeforeExit(){throw new Error('"beforeExit" hook is not applicable to the library engine since Prisma 5.0.0, it is only relevant and implemented for the binary engine. Please add your event listener to the `process` object directly instead.')}async start(){if(this.libraryInstantiationPromise||(this.libraryInstantiationPromise=this.instantiateLibrary()),await this.libraryInstantiationPromise,await this.libraryStoppingPromise,this.libraryStartingPromise)return Re(`library already starting, this.libraryStarted: ${this.libraryStarted}`),this.libraryStartingPromise;if(this.libraryStarted)return;let r=async()=>{Re("library starting");try{let t={traceparent:this.tracingHelper.getTraceParent()};await this.engine?.connect(JSON.stringify(t)),this.libraryStarted=!0,this.adapterPromise||(this.adapterPromise=this.config.adapter?.connect()?.then(tn)),await this.adapterPromise,Re("library started")}catch(t){let n=this.parseInitError(t.message);throw typeof n=="string"?t:new P(n.message,this.config.clientVersion,n.error_code)}finally{this.libraryStartingPromise=void 0}};return this.libraryStartingPromise=this.tracingHelper.runInChildSpan("connect",r),this.libraryStartingPromise}async stop(){if(await this.libraryInstantiationPromise,await this.libraryStartingPromise,await this.executingQueryPromise,this.libraryStoppingPromise)return Re("library is already stopping"),this.libraryStoppingPromise;if(!this.libraryStarted){await(await this.adapterPromise)?.dispose(),this.adapterPromise=void 0;return}let r=async()=>{await new Promise(n=>setImmediate(n)),Re("library stopping");let t={traceparent:this.tracingHelper.getTraceParent()};await this.engine?.disconnect(JSON.stringify(t)),this.engine?.free&&this.engine.free(),this.engine=void 0,this.libraryStarted=!1,this.libraryStoppingPromise=void 0,this.libraryInstantiationPromise=void 0,await(await this.adapterPromise)?.dispose(),this.adapterPromise=void 0,Re("library stopped")};return this.libraryStoppingPromise=this.tracingHelper.runInChildSpan("disconnect",r),this.libraryStoppingPromise}version(){return this.versionInfo=this.library?.version(),this.versionInfo?.version??"unknown"}debugPanic(r){return this.library?.debugPanic(r)}async request(r,{traceparent:t,interactiveTransaction:n}){Re(`sending request, this.libraryStarted: ${this.libraryStarted}`);let i=JSON.stringify({traceparent:t}),o=JSON.stringify(r);try{await this.start();let s=await this.adapterPromise;this.executingQueryPromise=this.engine?.query(o,i,n?.id),this.lastQuery=o;let a=this.parseEngineResponse(await this.executingQueryPromise);if(a.errors)throw a.errors.length===1?this.buildQueryError(a.errors[0],s?.errorRegistry):new V(JSON.stringify(a.errors),{clientVersion:this.config.clientVersion});if(this.loggerRustPanic)throw this.loggerRustPanic;return{data:a}}catch(s){if(s instanceof P)throw s;if(s.code==="GenericFailure"&&s.message?.startsWith("PANIC:"))throw new ae(Po(this,s.message),this.config.clientVersion);let a=this.parseRequestError(s.message);throw typeof a=="string"?s:new V(`${a.message}
+2026-08-30T01:52:16.157566828Z [inf]  ========================================
+2026-08-30T01:52:16.157591973Z [inf]      at r (/app/node_modules/@prisma/client/runtime/library.js:112:2770) {
+2026-08-30T01:52:16.157601249Z [inf]    clientVersion: '6.19.2',
+2026-08-30T01:52:16.157607927Z [inf]    errorCode: undefined,
+2026-08-30T01:52:16.157613817Z [inf]    retryable: undefined
+2026-08-30T01:52:16.157620727Z [inf]  }
+2026-08-30T01:52:16.157627380Z [inf]  
+2026-08-30T01:52:16.157632869Z [inf]  Node.js v20.20.2
+2026-08-30T01:52:16.157637792Z [inf]  Segmentation fault
+2026-08-30T01:52:16.157648942Z [inf]  [startup] Safety-net migration failed or timed out (non-critical, will continue)
+2026-08-30T01:52:16.157656347Z [inf]  [startup] Upload directory ready at /tmp/uploads
+2026-08-30T01:52:16.157684965Z [inf]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+2026-08-30T01:52:16.157692823Z [inf]  
+2026-08-30T01:52:16.157701158Z [inf]  PrismaClientInitializationError: Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:16.161050152Z [inf]  [startup] Starting Next.js server NOW...
+2026-08-30T01:52:16.161054305Z [inf]  [startup] Health check: /api/health
+2026-08-30T01:52:16.161058436Z [inf]  [startup] Background seed/migration will log with [bg] prefix
+2026-08-30T01:52:16.161062612Z [inf]  ========================================
+2026-08-30T01:52:16.161066278Z [inf]  [bg] Waiting 5s for server to boot before seeding...
+2026-08-30T01:52:16.161069994Z [inf]  [bg] Waiting 10s for server to boot before demo-to-live migration...
+2026-08-30T01:52:16.161073784Z [inf]  ▲ Next.js 16.1.3
+2026-08-30T01:52:16.161078661Z [inf]  - Local:         http://localhost:8080
+2026-08-30T01:52:16.161082761Z [inf]  - Network:       http://0.0.0.0:8080
+2026-08-30T01:52:16.161087552Z [inf]  
+2026-08-30T01:52:16.161093516Z [inf]  ✓ Starting...
+2026-08-30T01:52:16.161100969Z [inf]  ✓ Ready in 106ms
+2026-08-30T01:52:16.190758391Z [inf]  [EMAIL] Using Gmail API via OAuth2 refresh token (from: teslaprimesupportt@gmail.com)
+2026-08-30T01:52:17.177824454Z [inf]  [EMAIL] ✅ Startup health check PASSED — OAuth token valid (expires in 3599s)
+2026-08-30T01:52:21.177355947Z [inf]  [bg] Seeding database (timeout 60s, non-fatal)...
+2026-08-30T01:52:24.241527844Z [inf]  
+2026-08-30T01:52:24.241541860Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
+2026-08-30T01:52:24.241578444Z [inf]  [seed] Error: 
+2026-08-30T01:52:24.241582693Z [inf]  Invalid `prisma.user.upsert()` invocation:
+2026-08-30T01:52:24.241587738Z [inf]  
+2026-08-30T01:52:26.247415360Z [inf]  [bg] Migrating demo users to live mode (timeout 30s, non-fatal)...
+2026-08-30T01:52:29.336594852Z [inf]  [bg] Migration failed: 
+2026-08-30T01:52:29.336602041Z [inf]  Invalid `prisma.user.updateMany()` invocation:
+2026-08-30T01:52:29.336608166Z [inf]  
+2026-08-30T01:52:29.336615234Z [inf]  
+2026-08-30T01:52:29.336621261Z [inf]  Error querying the database: FATAL: (ENOTFOUND) tenant/user postgres.wavrqqsasdybndzctmxg not found
